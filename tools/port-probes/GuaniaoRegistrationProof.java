@@ -38,7 +38,7 @@ public final class GuaniaoRegistrationProof {
 
     public static FullColorSpawnEggItem testPaintedSpawnEgg() {
         return new FullColorSpawnEggItem(
-                () -> EntityType.PIG, 0xffffff, 0x000000,
+                GuaniaoRegistrationProof::testEntity, 0xffffff, 0x000000,
                 new Item.Properties().setId(GuaniaoRegistryIds.item("__compile_only_egg")));
     }
 

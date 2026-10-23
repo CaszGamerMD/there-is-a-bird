@@ -42,13 +42,13 @@ print("PARITY OK: bird textures, sound assets and models remain unchanged.")
 def compare_deferred_registry(file):
     old, new = baseline(file), local(file)
     field_pattern = re.compile(
-        r"public\\s+static\\s+final\\s+(?:RegistryObject|FabricRegistryQueue\\.Ref)<[^\\n=]+>\\s+(\\w+)\\s*="
+        r"public\s+static\s+final\s+(?:RegistryObject|FabricRegistryQueue\.Ref)<[^\n=]+>\s+(\w+)\s*="
     )
     original_fields = set(field_pattern.findall(old))
     port_fields = set(field_pattern.findall(new))
     if not original_fields or original_fields != port_fields:
         raise SystemExit(f"{file}: declared fields differ: {sorted(original_fields)} != {sorted(port_fields)}")
-    ids_pattern = re.compile(r"\\.register\\(\\s*\\\"([^\\\"]+)\\\"")
+    ids_pattern = re.compile(r'\.register\(\s*"([^"]+)"')
     original_ids = set(ids_pattern.findall(old))
     port_ids = set(ids_pattern.findall(new))
     if original_ids != port_ids:

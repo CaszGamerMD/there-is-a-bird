@@ -100,8 +100,19 @@ if min(indices) < 0 or indices != sorted(indices):
 callbacks = (
     "BirdConfigLifecycleEvents", "BirdServerTickManager", "EarthwormRainEvents",
     "CrowNestLifecycleEvents", "PhotoLegacyMigrationEvents", "PhotoTransferEvents",
-    "BirdRuntimeConfigEvents")
+    "BirdRuntimeConfigEvents", "BirdHeadPerchEvents")
 for callback in callbacks:
     if f"{callback}.registerCallbacks();" not in boot:
         raise SystemExit(f"Missing Fabric bootstrap event wiring: {callback}")
 print("LIFECYCLE OK: original config paths, server lifecycle, worm parameters, photo tracking and registry ordering.")
+
+old_head, head = assert_ported("event/BirdHeadPerchEvents.java")
+for token in (
+        "UseBlockCallback.EVENT.register",
+        "ServerPlayConnectionEvents.DISCONNECT.register",
+        "ServerLifecycleEvents.SERVER_STOPPING.register",
+        "BirdHeadPlacement.tryPlace(owner, hand, hit)",
+        "BirdHeadPlacement.isPlacementGesture(owner, hand)",
+        "releaseHeadBirds(player)"):
+    if token not in head:
+        raise SystemExit(f"Head bird placement/release port missing: {token}")

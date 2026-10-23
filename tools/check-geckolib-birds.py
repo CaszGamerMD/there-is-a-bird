@@ -55,3 +55,16 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
 if count < 15:
     raise SystemExit(f"Expected at least 15 migrated GeckoLib bird entity sources, found {count}")
 print(f"GECKO BIRD PARITY OK: {count} bird entity files contain only listed GeckoLib API changes.")
+
+# The original bird gait constants were authored for these specific animation
+# clips. Switching the registry accessor must not alter even one constant.
+stride_path = "src/main/java/EdDYON/guaniao/content/bird/BirdWalkStride.java"
+before = subprocess.check_output(["git", "show", "origin/main:" + stride_path], cwd=root, text=True)
+expected = before.replace("import net.minecraftforge.registries.ForgeRegistries;", "import net.minecraft.core.registries.BuiltInRegistries;")
+expected = expected.replace(
+    "ForgeRegistries.ENTITY_TYPES.getKey(bird.getType()).getPath()",
+    "BuiltInRegistries.ENTITY_TYPE.getKey(bird.getType()).getPath()")
+after = (root / stride_path).read_text("utf-8")
+if after.replace("\r\n", "\n") != expected.replace("\r\n", "\n"):
+    raise SystemExit("BirdWalkStride: authored bird gait constants or cadence rules changed")
+print("GECKO BIRD PARITY OK: every original gait value and cadence limit retained")

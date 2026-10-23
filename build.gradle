@@ -50,16 +50,18 @@ tasks.named('jar') {
 }
 
 /**
- * Compile migrated sound and particle registries independently while unrelated legacy
+ * Compile migrated standalone Fabric infrastructure independently while unrelated legacy
  * Forge sources remain unported. This is a genuine 26.2 API compilation gate.
  */
 tasks.register('verifyRegistriesPort', JavaCompile) {
     group = 'verification'
-    description = 'Compile the Fabric sound and particle registries against Minecraft 26.2.'
+    description = 'Compile migrated Fabric registries, perch tag and registration queue against Minecraft 26.2.'
     source = fileTree('src/main/java') {
         include 'EdDYON/guaniao/registry/GuaniaoSoundEvents.java'
         include 'EdDYON/guaniao/registry/GuaniaoParticleTypes.java'
         include 'EdDYON/guaniao/fabric/GuaniaoFabricEntrypoint.java'
+        include 'EdDYON/guaniao/fabric/FabricRegistryQueue.java'
+        include 'EdDYON/guaniao/registry/GuaniaoBlockTags.java'
     }
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')

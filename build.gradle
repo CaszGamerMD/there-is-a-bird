@@ -66,7 +66,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
         include 'EdDYON/guaniao/registry/GuaniaoBlockTags.java'
         include 'EdDYON/guaniao/content/bird/FullColorSpawnEggItem.java'
     }
-    source files('tools/port-probes/GuaniaoRegistrationProof.java', 'tools/port-probes/GuaniaoLifecycleProof.java', 'tools/port-probes/GuaniaoGeckoProof.java')
+    source files('tools/port-probes/GuaniaoRegistrationProof.java', 'tools/port-probes/GuaniaoLifecycleProof.java', 'tools/port-probes/GuaniaoGeckoProof.java', 'tools/port-probes/GuaniaoGeckoAnimationProof.java')
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
     options.release = 25

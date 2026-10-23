@@ -9,6 +9,7 @@ import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.item.Item;
+import EdDYON.guaniao.content.bird.FullColorSpawnEggItem;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 
 /**
@@ -33,6 +34,12 @@ public final class GuaniaoRegistrationProof {
                 .sized(0.9f, 0.9f)
                 .clientTrackingRange(8)
                 .build(GuaniaoRegistryIds.entity("__compile_only_pig"));
+    }
+
+    public static FullColorSpawnEggItem testPaintedSpawnEgg() {
+        return new FullColorSpawnEggItem(
+                () -> EntityType.PIG, 0xffffff, 0x000000,
+                new Item.Properties().setId(GuaniaoRegistryIds.item("__compile_only_egg")));
     }
 
     public static BlockEntityType<ChestBlockEntity> testBlockEntity() {

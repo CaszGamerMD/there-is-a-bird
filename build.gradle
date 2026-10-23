@@ -59,7 +59,8 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
     source = fileTree('src/main/java') {
         include 'EdDYON/guaniao/registry/GuaniaoSoundEvents.java'
         include 'EdDYON/guaniao/registry/GuaniaoParticleTypes.java'
-        include 'EdDYON/guaniao/fabric/GuaniaoFabricEntrypoint.java'
+        // The real initializer depends on unported gameplay classes and is checked by full compileJava.
+        include 'EdDYON/guaniao/GuaniaoMod.java'
         include 'EdDYON/guaniao/fabric/FabricRegistryQueue.java'
         include 'EdDYON/guaniao/fabric/GuaniaoRegistryIds.java'
         include 'EdDYON/guaniao/registry/GuaniaoBlockTags.java'

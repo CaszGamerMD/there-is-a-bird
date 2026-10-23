@@ -76,3 +76,37 @@ or safe to distribute based on individual compiling files or passing parity test
 - Convert photo/camera UI and networking; **wire all lifecycle callback registrations**
 - Port recipe/loot/enchantment/menu/mixin APIs; update resource formats
 - Full client and dedicated-server tests and behavioral comparison against the original mod
+
+
+## Item, spawn-egg and resource compatibility checkpoint
+
+The 1.20.1 `GuaniaoItems` declarations have been converted from
+`RegistryObject` to native `FabricRegistryQueue.Ref` and supplied with
+26.2 item resource keys. The original field names, literal IDs,
+species-to-feather mappings and fries nutrition/saturation were retained.
+
+The original painted eggs now extend 26.2 `SpawnEggItem` and specify their
+spawned species using `Item.Properties.spawnEgg`. Cockatoo and kingfisher
+were vanilla-style tinted spawn eggs in the original mod; their 26.2
+`assets/guaniao/items/*.json` definitions explicitly retain the authored
+primary and secondary colors. The other painted eggs receive no second tint.
+
+All 67 original item models now have client item JSON references targeting
+the **existing** model IDs without duplicating or editing textures.
+This is a compatibility bridge, not final proof of correct rendering:
+the custom Forge `separate_transforms` camera/guide models, dynamic photograph
+renderers, and enchanted feather-fan predicates must still be ported and tested
+against 26.2 rendering/model APIs.
+
+The original music disc declared `lengthInTicks = 2411` and comparator 7 in
+Minecraft 1.20.1; **the equivalent modern song duration is 120.55 seconds**
+(2411 / 20), not 2411 seconds. The newer 1.21.1 NeoForge source contained
+a 2411-second value, which is not behaviorally identical to the 1.20.1
+baseline. The Fabric data-driven song corrects this and retains the same
+sound event and translated description. CI derives the expected duration from
+the original Forge `RecordItem` declaration to catch regressions.
+
+Combined pack metadata now declares the 26.2 resource format 88.0 and data
+format 107.1 range. The mod is still **not runnable**: source registries and
+the updated item assets do not substitute for fully ported bird entities,
+items, renderer hooks, menus, gameplay/network systems and client/server tests.

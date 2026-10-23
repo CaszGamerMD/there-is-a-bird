@@ -61,8 +61,10 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
         include 'EdDYON/guaniao/registry/GuaniaoParticleTypes.java'
         include 'EdDYON/guaniao/fabric/GuaniaoFabricEntrypoint.java'
         include 'EdDYON/guaniao/fabric/FabricRegistryQueue.java'
+        include 'EdDYON/guaniao/fabric/GuaniaoRegistryIds.java'
         include 'EdDYON/guaniao/registry/GuaniaoBlockTags.java'
     }
+    source files('tools/port-probes/GuaniaoRegistrationProof.java')
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
     options.release = 25

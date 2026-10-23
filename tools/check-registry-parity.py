@@ -36,3 +36,29 @@ restricted = [name for name in changed if Path(name).suffix.lower() in (".png", 
 if restricted:
     raise SystemExit("Restricted visual/audio assets were altered: " + ", ".join(restricted))
 print("PARITY OK: bird textures, sound assets and models remain unchanged.")
+
+# Preserve the direct declarations and register(...) IDs while porting the
+# ordinary block, block-entity, and world-feature Forge registries.
+def compare_deferred_registry(file):
+    old, new = baseline(file), local(file)
+    field_pattern = re.compile(
+        r"public\\s+static\\s+final\\s+(?:RegistryObject|FabricRegistryQueue\\.Ref)<[^\\n=]+>\\s+(\\w+)\\s*="
+    )
+    original_fields = set(field_pattern.findall(old))
+    port_fields = set(field_pattern.findall(new))
+    if not original_fields or original_fields != port_fields:
+        raise SystemExit(f"{file}: declared fields differ: {sorted(original_fields)} != {sorted(port_fields)}")
+    ids_pattern = re.compile(r"\\.register\\(\\s*\\\"([^\\\"]+)\\\"")
+    original_ids = set(ids_pattern.findall(old))
+    port_ids = set(ids_pattern.findall(new))
+    if original_ids != port_ids:
+        raise SystemExit(f"{file}: direct registration IDs differ: {sorted(original_ids)} != {sorted(port_ids)}")
+    print(f"PARITY OK: {file}: {len(original_fields)} declarations, {len(original_ids)} direct IDs")
+
+for registry_file in ("GuaniaoBlocks.java", "GuaniaoBlockEntityTypes.java", "GuaniaoFeatures.java"):
+    compare_deferred_registry(registry_file)
+tag_before = baseline("GuaniaoBlockTags.java")
+tag_after = local("GuaniaoBlockTags.java")
+if '"guaniao", "bird_perches"' not in tag_before or '"guaniao", "bird_perches"' not in tag_after:
+    raise SystemExit("Bird perch tag namespace or path changed.")
+print("PARITY OK: guaniao:bird_perches block tag ID.")

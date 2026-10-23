@@ -1,24 +1,26 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
-import net.minecraftforge.event.server.ServerAboutToStartEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.server.MinecraftServer;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
+/**
+ * Keep the original server-scoped configuration lifecycle. The global
+ * settings are restored when the world shuts down.
+ */
 public final class BirdConfigLifecycleEvents {
-    private BirdConfigLifecycleEvents() {
+    private BirdConfigLifecycleEvents() { }
+
+    public static void onServerAboutToStart(MinecraftServer server) {
+        BirdConfigManager.loadForServer(server);
     }
 
-    @SubscribeEvent
-    public static void onServerAboutToStart(ServerAboutToStartEvent event) {
-        BirdConfigManager.loadForServer(event.getServer());
-    }
-
-    @SubscribeEvent
-    public static void onServerStopping(ServerStoppingEvent event) {
+    public static void onServerStopping(MinecraftServer server) {
         BirdConfigManager.loadOrCreateDefaults();
+    }
+
+    public static void registerCallbacks() {
+        ServerLifecycleEvents.SERVER_STARTING.register(BirdConfigLifecycleEvents::onServerAboutToStart);
+        ServerLifecycleEvents.SERVER_STOPPING.register(BirdConfigLifecycleEvents::onServerStopping);
     }
 }

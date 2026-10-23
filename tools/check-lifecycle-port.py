@@ -54,7 +54,7 @@ for token in (
         "level.isRaining()", "Math.abs(surface.getY() - player.getY()) > 12.0D"):
     if token not in old_rain or token not in rain:
         raise SystemExit(f"Rain earthworm behavior changed/lost: {token}")
-for token in ("ServerTickEvents.END_WORLD_TICK.register", "ServerLevelEvents.UNLOAD.register", "COOLDOWNS.remove(level)"):
+for token in ("ServerTickEvents.END_LEVEL_TICK.register", "ServerLevelEvents.UNLOAD.register", "COOLDOWNS.remove(level)"):
     if token not in rain:
         raise SystemExit(f"Rain earthworm lifecycle hook missing: {token}")
 

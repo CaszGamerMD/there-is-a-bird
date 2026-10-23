@@ -59,7 +59,7 @@ public final class EarthwormRainEvents {
     }
 
     public static void registerCallbacks() {
-        ServerTickEvents.END_WORLD_TICK.register(EarthwormRainEvents::onLevelTick);
+        ServerTickEvents.END_LEVEL_TICK.register(EarthwormRainEvents::onLevelTick);
         ServerLevelEvents.UNLOAD.register((server, level) -> onUnload(level));
     }
 }

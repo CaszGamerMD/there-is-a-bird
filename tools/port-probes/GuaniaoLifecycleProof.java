@@ -25,7 +25,7 @@ public final class GuaniaoLifecycleProof {
         ServerLevelEvents.UNLOAD.register((server, level) -> { });
         ServerTickEvents.END_SERVER_TICK.register(server -> { });
         ServerTickEvents.START_SERVER_TICK.register(server -> { });
-        ServerTickEvents.END_WORLD_TICK.register(level -> { });
+        ServerTickEvents.END_LEVEL_TICK.register(level -> { });
         ServerLifecycleEvents.SERVER_STARTED.register(server -> { });
         ServerLifecycleEvents.SERVER_STARTING.register(server -> { });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> { });

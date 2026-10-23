@@ -3,9 +3,11 @@ package EdDYON.guaniao.fabric;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.event.BirdConfigLifecycleEvents;
 import EdDYON.guaniao.event.BirdServerTickManager;
+import EdDYON.guaniao.event.BirdRuntimeConfigEvents;
 import EdDYON.guaniao.event.CrowNestLifecycleEvents;
 import EdDYON.guaniao.event.EarthwormRainEvents;
 import EdDYON.guaniao.event.PhotoTransferEvents;
+import EdDYON.guaniao.event.PhotoLegacyMigrationEvents;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoBlocks;
 import EdDYON.guaniao.registry.GuaniaoCreativeTabs;
@@ -47,7 +49,9 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         BirdServerTickManager.registerCallbacks();
         EarthwormRainEvents.registerCallbacks();
         CrowNestLifecycleEvents.registerCallbacks();
+        PhotoLegacyMigrationEvents.registerCallbacks();
         PhotoTransferEvents.registerCallbacks();
+        BirdRuntimeConfigEvents.registerCallbacks();
 
         // TODO: register migrated menus, recipes, effects, enchantments,
         // networking, spawn placements, client renderers and all other

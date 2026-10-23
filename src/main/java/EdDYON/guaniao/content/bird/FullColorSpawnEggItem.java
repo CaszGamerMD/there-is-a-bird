@@ -1,31 +1,28 @@
 package EdDYON.guaniao.content.bird;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.common.ForgeSpawnEggItem;
+import net.minecraft.world.item.SpawnEggItem;
 
 /**
- * A spawn egg whose item model already contains its final colors.
+ * Spawn egg with a fully painted icon, as in the original Forge release.
  *
- * <p>Forge registers an item-color handler for every {@link ForgeSpawnEggItem}
- * and normally multiplies layer 0 by the egg's background color. These eggs use
- * complete painted icons, so that multiplication would make the packaged icon
- * much darker than the source texture.</p>
+ * Minecraft 26.2 determines the spawned type through Item.Properties.spawnEgg()
+ * instead of a ForgeSpawnEggItem constructor. The legacy color values remain
+ * constructor inputs for source compatibility; the packaged model is already
+ * colored and must not receive a second runtime tint.
  */
-public final class FullColorSpawnEggItem extends ForgeSpawnEggItem {
+public final class FullColorSpawnEggItem extends SpawnEggItem {
     public FullColorSpawnEggItem(
             Supplier<? extends EntityType<? extends Mob>> entityType,
             int backgroundColor,
             int highlightColor,
             Item.Properties properties
     ) {
-        super(entityType, backgroundColor, highlightColor, properties);
-    }
-
-    @Override
-    public int getColor(int tintIndex) {
-        return 0xFFFFFFFF;
+        super(Objects.requireNonNull(properties, "properties")
+                .spawnEgg(Objects.requireNonNull(entityType.get(), "entityType")));
     }
 }

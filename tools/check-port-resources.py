@@ -42,7 +42,7 @@ for name, subpath in definitions.items():
 
 songpath = root / "src/main/resources/data/guaniao/jukebox_song/uwu_funk.json"
 song = json.loads(songpath.read_text("utf-8"))
-if song.get("sound_event") != "guaniao:music_disc.uwu_funk" or song.get("length_in_seconds") != 2411.0 or song.get("comparator_output") != 7:
+if song.get("sound_event") != "guaniao:music_disc.uwu_funk" or song.get("length_in_seconds") != 120.55 or song.get("comparator_output") != 7:
     raise SystemExit("UWU Funk disc sound, duration, or redstone output differs from the original.")
 if song.get("description", {}).get("translate") != "item.guaniao.music_disc_uwu_funk.desc":
     raise SystemExit("Music disc translated title was modified.")

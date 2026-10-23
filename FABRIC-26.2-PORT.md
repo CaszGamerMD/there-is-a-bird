@@ -9,7 +9,7 @@ https://github.com/EdDYON/there-is-a-bird/tree/port/1.21.1
 
 * Minecraft 26.2 (Mojang mappings, un-obfuscated code)
 * Fabric Loader 0.19.5; Fabric API 0.161.0+26.2
-* Fabric Loom 1.18-SNAPSHOT; Gradle 9.5.1; Java 25
+* Fabric Loom 1.18-SNAPSHOT (currently resolving to 1.18.4); Gradle 9.7.1; Java 25
 * GeckoLib Fabric 5.5.5; keep bird geometry, animation and textures unchanged
 
 The build scripts and Fabric metadata are initial wiring only. The inherited

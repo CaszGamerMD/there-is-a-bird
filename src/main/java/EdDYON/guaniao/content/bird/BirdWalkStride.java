@@ -1,7 +1,7 @@
 package EdDYON.guaniao.content.bird;
 
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 /** Walking foot travel or hopping stride, in model pixels per animation tick, before render scale. */
 public final class BirdWalkStride {
@@ -9,11 +9,11 @@ public final class BirdWalkStride {
     private BirdWalkStride() { }
 
     public static double pixelsPerTick(PathfinderMob bird, Gait gait) {
-        return pixelsPerTick(ForgeRegistries.ENTITY_TYPES.getKey(bird.getType()).getPath(), gait);
+        return pixelsPerTick(BuiltInRegistries.ENTITY_TYPE.getKey(bird.getType()).getPath(), gait);
     }
 
     public static double maximumAnimationTicksPerTick(PathfinderMob bird, Gait gait) {
-        return maximumAnimationTicksPerTick(ForgeRegistries.ENTITY_TYPES.getKey(bird.getType()).getPath(), gait);
+        return maximumAnimationTicksPerTick(BuiltInRegistries.ENTITY_TYPE.getKey(bird.getType()).getPath(), gait);
     }
 
     static double maximumAnimationTicksPerTick(String species, Gait gait) {

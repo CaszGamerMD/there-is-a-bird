@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
@@ -25,6 +27,7 @@ public final class GuaniaoLifecycleProof {
         ServerLevelEvents.UNLOAD.register((server, level) -> { });
         ServerTickEvents.END_SERVER_TICK.register(server -> { });
         ServerTickEvents.START_SERVER_TICK.register(server -> { });
+        UseBlockCallback.EVENT.register((player, level, hand, hit) -> InteractionResult.PASS);
         ServerTickEvents.END_LEVEL_TICK.register(level -> { });
         ServerLifecycleEvents.SERVER_STARTED.register(server -> { });
         ServerLifecycleEvents.SERVER_STARTING.register(server -> { });

@@ -1,6 +1,5 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.bird.BirdScanBudget;
 import EdDYON.guaniao.content.bird.BirdTags;
 import EdDYON.guaniao.content.earthworm.EarthwormEntity;
@@ -9,25 +8,20 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class EarthwormRainEvents {
     private static final Map<ServerLevel, Map<Long, Long>> COOLDOWNS = new WeakHashMap<>();
 
     private EarthwormRainEvents() { }
 
-    @SubscribeEvent
-    public static void onLevelTick(TickEvent.LevelTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !(event.level instanceof ServerLevel level)) return;
+    public static void onLevelTick(ServerLevel level) {
         long now = level.getGameTime();
         if (now % 200L != 0L) return;
         Map<Long, Long> cells = COOLDOWNS.computeIfAbsent(level, ignored -> new HashMap<>());
@@ -60,8 +54,12 @@ public final class EarthwormRainEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) COOLDOWNS.remove(level);
+    public static void onUnload(ServerLevel level) {
+        COOLDOWNS.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerTickEvents.END_WORLD_TICK.register(EarthwormRainEvents::onLevelTick);
+        ServerLevelEvents.UNLOAD.register((server, level) -> onUnload(level));
     }
 }

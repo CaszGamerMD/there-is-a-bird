@@ -17,6 +17,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
+    # The Fabric migration PR targets main, but must not run the legacy Java 17 Forge job.
+    if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'port/fabric-26.2') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

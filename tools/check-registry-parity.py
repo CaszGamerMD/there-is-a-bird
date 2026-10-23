@@ -55,7 +55,7 @@ def compare_deferred_registry(file):
         raise SystemExit(f"{file}: direct registration IDs differ: {sorted(original_ids)} != {sorted(port_ids)}")
     print(f"PARITY OK: {file}: {len(original_fields)} declarations, {len(original_ids)} direct IDs")
 
-for registry_file in ("GuaniaoBlocks.java", "GuaniaoBlockEntityTypes.java", "GuaniaoFeatures.java", "GuaniaoEntityTypes.java", "GuaniaoCreativeTabs.java"):
+for registry_file in ("GuaniaoBlocks.java", "GuaniaoBlockEntityTypes.java", "GuaniaoFeatures.java", "GuaniaoEntityTypes.java", "GuaniaoCreativeTabs.java", "GuaniaoItems.java"):
     compare_deferred_registry(registry_file)
 tag_before = baseline("GuaniaoBlockTags.java")
 tag_after = local("GuaniaoBlockTags.java")
@@ -74,3 +74,12 @@ if ".build(GuaniaoRegistryIds.entity(id))" not in entities:
 if any(re.search(pattern, entities) for pattern in (r"net\.minecraftforge", r"new ResourceLocation", r"RegistryObject")):
     raise SystemExit("Old Forge entity registration remains.")
 print("PARITY OK: keyed 26.2 block and bird entity constructors.")
+
+items = local("GuaniaoItems.java")
+assert "jukeboxPlayable(" in items and '"music_disc_uwu_funk"' in items, "Music disc conversion missing"
+assert "new FullColorSpawnEggItem" in items, "Painted spawn egg conversion missing"
+assert "saturationModifier(0.35F)" in items, "Original fries saturation was not preserved"
+assert "FEATHERS_BY_SPECIES" in items and "FabricRegistryQueue.Ref::get" in items, "Natural feather mapping broken"
+if "ForgeSpawnEggItem" in items or "RecordItem" in items:
+    raise SystemExit("Item registry still depends on Forge's spawn eggs or removed RecordItem.")
+print("PARITY OK: item fields, direct IDs, food values, feather mapping and music disc conversion.")

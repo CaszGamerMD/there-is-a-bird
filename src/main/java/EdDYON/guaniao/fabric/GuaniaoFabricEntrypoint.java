@@ -16,6 +16,7 @@ import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoFeatures;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import EdDYON.guaniao.registry.GuaniaoParticleTypes;
+import EdDYON.guaniao.registry.GuaniaoRecipeSerializers;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import net.fabricmc.api.ModInitializer;
 
@@ -38,6 +39,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         GuaniaoBlockEntityTypes.BLOCK_ENTITY_TYPES.registerAll();
         GuaniaoEntityTypes.ENTITY_TYPES.registerAll();
         GuaniaoItems.ITEMS.registerAll();
+        GuaniaoRecipeSerializers.RECIPE_SERIALIZERS.registerAll();
         GuaniaoFeatures.FEATURES.registerAll();
         GuaniaoCreativeTabs.CREATIVE_MODE_TABS.registerAll();
 

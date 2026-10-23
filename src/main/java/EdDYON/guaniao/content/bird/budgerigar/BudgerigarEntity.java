@@ -99,15 +99,15 @@ import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 public class BudgerigarEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdSleepWakeable, BirdMutationHolder {
     private static final EntityDataAccessor<Boolean> NAVIGATION_FLIGHT_ACTIVE = SynchedEntityData.defineId(BudgerigarEntity.class, EntityDataSerializers.BOOLEAN);
@@ -1851,17 +1851,17 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         return this.currentIdleAnimation;
     }
 
-    private <T extends BudgerigarEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(4);
+    private <T extends BudgerigarEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(4);
         RawAnimation guidePreviewRawAnimation = this.guidePreviewAnimation.animation();
         if (guidePreviewRawAnimation != null) {
             return animationState.setAndContinue(guidePreviewRawAnimation);
         }
         BudgerigarBehaviorState state = this.getBehaviorState();
         if (this.shouldPlayFlyAnimation()) {
-            animationState.getController().transitionLength(0);
-            animationState.getController().setAnimationSpeed(this.flightAnimationSpeed());
+            animationState.controller().setTransitionTicks(0);
+            animationState.controller().setAnimationSpeed(this.flightAnimationSpeed());
             return BirdFlightAnimation.play(animationState, FLY_ANIMATION);
         }
         if (state == BudgerigarBehaviorState.EATING || this.eatingTicks > 0) {

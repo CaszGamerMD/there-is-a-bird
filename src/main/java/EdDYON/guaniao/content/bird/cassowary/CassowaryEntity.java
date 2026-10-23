@@ -69,15 +69,15 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 /**
  * A solitary, ground-only cassowary. Goals own movement and interaction while
@@ -1256,8 +1256,8 @@ public class CassowaryEntity extends PathfinderMob
         this.guidePreviewAnimation = animation == null ? GuidePreviewAnimation.NONE : animation;
     }
 
-    private <T extends CassowaryEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
+    private <T extends CassowaryEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
         if (this.guidePreviewAnimation.animation != null) {
             return animationState.setAndContinue(this.guidePreviewAnimation.animation);
         }
@@ -1278,7 +1278,7 @@ public class CassowaryEntity extends PathfinderMob
             case SLEEP_ENTER -> animationState.setAndContinue(SLEEP_ENTER_ANIMATION);
             case SLEEPING -> animationState.setAndContinue(SLEEP_ANIMATION);
             case SLEEP_EXIT -> {
-                if (this.wasRecentlyProvoked()) animationState.getController().setAnimationSpeed(1.35D);
+                if (this.wasRecentlyProvoked()) animationState.controller().setAnimationSpeed(1.35D);
                 yield animationState.setAndContinue(SLEEP_EXIT_ANIMATION);
             }
             case CALM -> BirdGroundAnimation.hasWalkMotion(this, animationState.isMoving())
@@ -1287,7 +1287,7 @@ public class CassowaryEntity extends PathfinderMob
         };
     }
 
-    private <T extends CassowaryEntity> PlayState movementAnimation(AnimationState<T> animationState,
+    private <T extends CassowaryEntity> PlayState movementAnimation(AnimationTest<T> animationState,
                                                                      boolean forceFast) {
         double speed = BirdGroundAnimation.horizontalSpeed(this);
         if (!BirdGroundAnimation.hasWalkMotion(this)) return animationState.setAndContinue(IDLE_ANIMATION);

@@ -31,10 +31,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
 import javax.annotation.Nullable;
 
@@ -161,9 +161,9 @@ public class CockatooEntity extends BudgerigarEntity {
         controllers.add(new BirdMovementAnimationController<>(this, "movement", 4, this::movementController));
     }
 
-    private PlayState movementController(AnimationState<CockatooEntity> state) {
-        state.getController().setAnimationSpeed(1.0D);
-        state.getController().transitionLength(4);
+    private PlayState movementController(AnimationTest<CockatooEntity> state) {
+        state.controller().setAnimationSpeed(1.0D);
+        state.controller().setTransitionTicks(4);
         if (preview != GuidePreviewAnimation.NONE) {
             return state.setAndContinue(switch (preview) {
                 case WALK -> WALK;
@@ -176,8 +176,8 @@ public class CockatooEntity extends BudgerigarEntity {
             });
         }
         if (shouldPlayFlyAnimation()) {
-            state.getController().transitionLength(0);
-            state.getController().setAnimationSpeed(flightAnimationSpeed());
+            state.controller().setTransitionTicks(0);
+            state.controller().setAnimationSpeed(flightAnimationSpeed());
             return BirdFlightAnimation.play(state, FLY);
         }
         BudgerigarBehaviorState behavior = getBehaviorState();

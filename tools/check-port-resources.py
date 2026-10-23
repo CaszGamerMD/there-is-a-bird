@@ -3,6 +3,7 @@
 from pathlib import Path
 import json
 import re
+import subprocess
 
 root = Path(__file__).resolve().parents[1]
 assets = root / "src/main/resources/assets/guaniao"
@@ -42,7 +43,19 @@ for name, subpath in definitions.items():
 
 songpath = root / "src/main/resources/data/guaniao/jukebox_song/uwu_funk.json"
 song = json.loads(songpath.read_text("utf-8"))
-if song.get("sound_event") != "guaniao:music_disc.uwu_funk" or song.get("length_in_seconds") != 120.55 or song.get("comparator_output") != 7:
+original_items = subprocess.check_output(
+    ["git", "show", "origin/main:src/main/java/EdDYON/guaniao/registry/GuaniaoItems.java"],
+    cwd=root, text=True)
+legacy_record = re.search(
+    r"new RecordItem\((\d+),\s*GuaniaoSoundEvents\.MUSIC_DISC_UWU_FUNK,"
+    r"\s*new Item\.Properties\(\)\.stacksTo\(1\),\s*(\d+)\)",
+    original_items)
+if not legacy_record:
+    raise SystemExit("Unable to confirm the original RecordItem comparator and length in ticks.")
+comparator, length_ticks = map(int, legacy_record.groups())
+if (song.get("sound_event") != "guaniao:music_disc.uwu_funk"
+        or song.get("length_in_seconds") != length_ticks / 20.0
+        or song.get("comparator_output") != comparator):
     raise SystemExit("UWU Funk disc sound, duration, or redstone output differs from the original.")
 if song.get("description", {}).get("translate") != "item.guaniao.music_disc_uwu_funk.desc":
     raise SystemExit("Music disc translated title was modified.")

@@ -38,6 +38,8 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew verifyRegistriesPort --no-daemon --stacktrace
+      - name: Verify distance-driven walking regression behavior
+        run: java -cp build/port-proof/sounds EdDYON.guaniao.content.bird.BirdWalkDistanceRegression
       - name: Gradle compilation (must pass before release)
         run: |
           chmod +x gradlew

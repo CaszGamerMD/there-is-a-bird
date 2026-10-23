@@ -19,6 +19,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Audit legacy API references
         run: python3 tools/port-audit.py
+      - name: Verify migrated sound API compiles on 26.2
+        run: |
+          chmod +x gradlew
+          ./gradlew verifySoundPort --no-daemon --stacktrace
       - name: Gradle compilation (must pass before release)
         run: |
           chmod +x gradlew

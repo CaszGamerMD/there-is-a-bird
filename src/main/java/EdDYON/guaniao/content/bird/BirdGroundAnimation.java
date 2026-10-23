@@ -2,10 +2,10 @@ package EdDYON.guaniao.content.bird;
 
 import EdDYON.guaniao.content.bird.scale.ScalableBirdModel;
 import net.minecraft.world.entity.PathfinderMob;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
 public final class BirdGroundAnimation {
     private BirdGroundAnimation() { }
@@ -38,13 +38,13 @@ public final class BirdGroundAnimation {
         return bird instanceof ScalableBirdModel scalable ? scalable.getModelRenderScale() : 1;
     }
 
-    public static <T extends GeoAnimatable> PlayState play(AnimationState<T> state, PathfinderMob bird, RawAnimation clip) {
+    public static <T extends GeoAnimatable> PlayState play(AnimationTest<T> state, PathfinderMob bird, RawAnimation clip) {
         return play(state, bird, clip, BirdWalkStride.Gait.WALK);
     }
 
-    public static <T extends GeoAnimatable> PlayState play(AnimationState<T> state, PathfinderMob bird,
+    public static <T extends GeoAnimatable> PlayState play(AnimationTest<T> state, PathfinderMob bird,
                                                           RawAnimation clip, BirdWalkStride.Gait gait) {
-        if (!(state.getController() instanceof BirdMovementAnimationController<?> controller)) {
+        if (!(state.controller() instanceof BirdMovementAnimationController<?> controller)) {
             throw new IllegalStateException("Bird locomotion requires a distance-driven movement controller");
         }
         controller.useGroundMovement(BirdWalkStride.pixelsPerTick(bird, gait),

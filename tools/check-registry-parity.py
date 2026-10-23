@@ -55,7 +55,7 @@ def compare_deferred_registry(file):
         raise SystemExit(f"{file}: direct registration IDs differ: {sorted(original_ids)} != {sorted(port_ids)}")
     print(f"PARITY OK: {file}: {len(original_fields)} declarations, {len(original_ids)} direct IDs")
 
-for registry_file in ("GuaniaoBlocks.java", "GuaniaoBlockEntityTypes.java", "GuaniaoFeatures.java", "GuaniaoEntityTypes.java", "GuaniaoCreativeTabs.java", "GuaniaoItems.java"):
+for registry_file in ("GuaniaoBlocks.java", "GuaniaoBlockEntityTypes.java", "GuaniaoFeatures.java", "GuaniaoEntityTypes.java", "GuaniaoCreativeTabs.java", "GuaniaoItems.java", "GuaniaoRecipeSerializers.java"):
     compare_deferred_registry(registry_file)
 tag_before = baseline("GuaniaoBlockTags.java")
 tag_after = local("GuaniaoBlockTags.java")

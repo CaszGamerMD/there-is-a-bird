@@ -19,7 +19,9 @@ public final class GuaniaoLifecycleProof {
         ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> { });
         ServerLevelEvents.UNLOAD.register((server, level) -> { });
         ServerTickEvents.END_SERVER_TICK.register(server -> { });
+        ServerTickEvents.END_WORLD_TICK.register(level -> { });
         ServerLifecycleEvents.SERVER_STARTED.register(server -> { });
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> { });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> { });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> { });
         EntityTrackingEvents.START_TRACKING.register((target, player) -> { });

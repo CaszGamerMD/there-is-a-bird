@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "guaniao",
+  "version": "${version}",
+  "name": "Bird Watching (Fabric port, INCOMPLETE)",
+  "description": "Unreleased compatibility port of EdDYON's Bird Watching. Do not distribute test builds.",
+  "authors": [
+    "EdDYON"
+  ],
+  "license": "MIT code; restricted model assets (see LICENSE-MODELS.md)",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "EdDYON.guaniao.GuaniaoMod"
+    ]
+  },
+  "mixins": [
+    "guaniao.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "26.2",
+    "java": ">=25",
+    "fabric-api": "*",
+    "geckolib": ">=5.5.5"
+  }
+}

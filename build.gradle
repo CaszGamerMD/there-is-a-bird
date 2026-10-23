@@ -1,186 +1,50 @@
-buildscript {
-    repositories {
-        maven { url = 'https://maven.minecraftforge.net' }
-        maven { url = 'https://maven.parchmentmc.org' }
-        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '[6.0,6.2)', changing: true
-        classpath group: 'org.parchmentmc', name: 'librarian', version: '1.+', changing: true
-        classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
-    }
-}
-
 plugins {
-    id 'eclipse'
-    id 'idea'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
 }
-
-apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'org.parchmentmc.librarian.forgegradle'
-apply plugin: 'org.spongepowered.mixin'
-
-version = mod_version
+version = "${mod_version}+fabric26.2.dev"
 group = mod_group_id
-
-base {
-    archivesName = mod_id
-}
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
-
-minecraft {
-    mappings channel: mapping_channel, version: mapping_version
-
-    copyIdeResources = true
-
-    runs {
-        configureEach {
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            property 'geckolib.disable_examples', 'true'
-
-            mods {
-                create(mod_id) {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        client {
-            workingDirectory project.file('run/client')
-        }
-
-        server {
-            workingDirectory project.file('run/server')
-        }
-
-        data {
-            workingDirectory project.file('run/data')
-            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-        }
-    }
-}
-
-sourceSets.main.resources { srcDir 'src/generated/resources' }
-
-mixin {
-    add sourceSets.main, 'guaniao.refmap.json'
-    config 'guaniao.mixins.json'
-}
+base { archivesName = "guaniao-fabric-26.2-UNFINISHED" }
 
 repositories {
     mavenCentral()
     maven {
+        name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
-        content {
-            includeGroupByRegex('software\\.bernie.*')
-            includeGroup('com.eliotlash.mclib')
-        }
+        content { includeGroupAndSubgroups 'com.geckolib' }
     }
 }
-
 dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    implementation fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:${geckolib_version}")
-    implementation "com.eliotlash.mclib:mclib:20"
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    modImplementation "com.geckolib:geckolib-fabric-${minecraft_version}:${geckolib_version}"
 }
-
-jar {
-    // The handbook uses native JSON and textures; website sources are authoring inputs only.
-    exclude '**/*.html', '**/*.htm', '**/*.css', '**/*.js', '**/*.map'
-    manifest {
-        attributes([
-                'Specification-Title'     : mod_name,
-                'Specification-Vendor'    : mod_authors,
-                'Specification-Version'   : '1',
-                'Implementation-Title'    : project.name,
-                'Implementation-Version'  : project.jar.archiveVersion,
-                'Implementation-Vendor'   : mod_authors
-        ])
-    }
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
 }
-
-jar.finalizedBy('reobfJar')
-
-// Keep the ForgeGradle remap input available even when Gradle has stale
-// incremental task state.  ForgeGradle creates reobfJar after this script
-// reaches this point, so configure it lazily when the task is registered.
-tasks.configureEach {
-    if (name == 'reobfJar') {
-        dependsOn(tasks.named('jar'))
-    }
-}
-
-task sourceJar(type: Jar) {
-    archiveClassifier.set('sources')
-    from sourceSets.main.allJava
-}
-
-artifacts {
-    archives sourceJar
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact jar
-            artifact sourceJar
-        }
-    }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
-    }
-}
-
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.release = 25
+    options.compilerArgs.addAll(['-Xmaxerrs', '3000'])
 }
-
-tasks.register('verifyReleaseJar') {
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    withSourcesJar()
+}
+tasks.register('migrationAudit', Exec) {
     group = 'verification'
-    description = 'Checks version metadata and Mixin registration in the reobfuscated release JAR.'
-    dependsOn 'reobfJar'
-    doLast {
-        def archive = tasks.named('jar', Jar).get().archiveFile.get().asFile
-        new java.util.jar.JarFile(archive).withCloseable { jarFile ->
-            def attributes = jarFile.manifest.mainAttributes
-            if (attributes.getValue('Implementation-Version') != project.version.toString()) {
-                throw new GradleException('Release JAR version does not match mod_version')
-            }
-            def configs = (attributes.getValue('MixinConfigs') ?: '').split(',')*.trim()
-            if (!configs.contains('guaniao.mixins.json')) {
-                throw new GradleException('Release JAR does not register guaniao.mixins.json')
-            }
-            def readJson = { String name ->
-                def entry = jarFile.getJarEntry(name)
-                if (entry == null) throw new GradleException("Release JAR is missing ${name}")
-                jarFile.getInputStream(entry).withCloseable { stream ->
-                    new groovy.json.JsonSlurper().parse(stream, 'UTF-8')
-                }
-            }
-            def config = readJson('guaniao.mixins.json')
-            def refmap = readJson(config.refmap)
-            config.mixins.each { mixinName ->
-                def classPath = "${config.package.replace('.', '/')}/${mixinName}"
-                if (jarFile.getJarEntry("${classPath}.class") == null || !refmap.mappings[classPath]) {
-                    throw new GradleException("Release JAR is missing the class or mappings for ${mixinName}")
-                }
-            }
-            logger.lifecycle("Verified release JAR: ${archive.name}")
-        }
-    }
+    description = 'Report unported Forge, networking, GeckoLib and other 26.2 API code.'
+    commandLine 'python3', 'tools/port-audit.py', '--strict'
 }
-
-tasks.named('check') {
-    dependsOn 'verifyReleaseJar'
+tasks.named('check') { dependsOn 'migrationAudit' }
+tasks.named('jar') {
+    // The port is not a release. Retain copyright data during local development.
+    from('LICENSE') { rename { 'LICENSE_guaniao' } }
+    from('LICENSE-MODELS.md')
+    from('DISTRIBUTION-POLICY.md')
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
 }

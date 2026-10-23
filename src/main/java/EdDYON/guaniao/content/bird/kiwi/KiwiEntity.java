@@ -57,15 +57,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 public class KiwiEntity extends PathfinderMob
         implements GeoEntity, ScalableBirdModel, BirdSleepWakeable, BirdLoudSoundListener, BirdMutationHolder {
@@ -717,13 +717,13 @@ public class KiwiEntity extends PathfinderMob
         this.entityData.set(MODEL_SCALE, BirdModelScale.sanitize(scale, this.modelScaleProfile()));
     }
 
-    private <T extends KiwiEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
+    private <T extends KiwiEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
         if (this.guidePreviewAnimation.animation != null) {
             return animationState.setAndContinue(this.guidePreviewAnimation.animation);
         }
         if (this.getConflictState() == KiwiConflictState.FIGHTING) {
-            animationState.getController().setAnimationSpeed(2.25D);
+            animationState.controller().setAnimationSpeed(2.25D);
             return animationState.setAndContinue(WALK_ANIMATION);
         }
         return switch (this.getBehaviorState()) {

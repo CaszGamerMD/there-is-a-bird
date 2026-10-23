@@ -45,12 +45,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -262,9 +262,9 @@ public class LongTailedTitEntity extends SparrowEntity {
         controllers.add(new AnimationController[]{new BirdMovementAnimationController((GeoAnimatable) this, "movement", 4, this::movementController)});
     }
 
-    private <T extends LongTailedTitEntity> PlayState movementController(AnimationState<T> state) {
-        state.getController().setAnimationSpeed(1.0D);
-        state.getController().transitionLength(4);
+    private <T extends LongTailedTitEntity> PlayState movementController(AnimationTest<T> state) {
+        state.controller().setAnimationSpeed(1.0D);
+        state.controller().setTransitionTicks(4);
         RawAnimation preview = this.guidePreviewAnimation.animation;
         if (preview != null) {
             return state.setAndContinue(preview);

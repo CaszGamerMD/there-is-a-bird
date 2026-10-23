@@ -56,12 +56,12 @@ import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
 /**
  * Crested myna using the shared small-bird flight foundation with its own
@@ -422,9 +422,9 @@ public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleep
                 this.getDeltaMovement(), 6);
     }
 
-    private <T extends MynaEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(4);
+    private <T extends MynaEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(4);
         RawAnimation preview = this.guidePreviewAnimation.animation();
         if (preview != null) {
             return animationState.setAndContinue(preview);

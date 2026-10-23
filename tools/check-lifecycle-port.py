@@ -90,6 +90,7 @@ queue_order = (
     "GuaniaoBlockEntityTypes.BLOCK_ENTITY_TYPES.registerAll()",
     "GuaniaoEntityTypes.ENTITY_TYPES.registerAll()",
     "GuaniaoItems.ITEMS.registerAll()",
+    "GuaniaoRecipeSerializers.RECIPE_SERIALIZERS.registerAll()",
     "GuaniaoFeatures.FEATURES.registerAll()",
     "GuaniaoCreativeTabs.CREATIVE_MODE_TABS.registerAll()",
 )

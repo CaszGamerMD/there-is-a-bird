@@ -9,6 +9,9 @@ import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import EdDYON.guaniao.content.bird.FullColorSpawnEggItem;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 
@@ -34,6 +37,19 @@ public final class GuaniaoRegistrationProof {
                 .sized(0.9f, 0.9f)
                 .clientTrackingRange(8)
                 .build(GuaniaoRegistryIds.entity("__compile_only_pig"));
+    }
+
+    public static Item testFriesNutrition() {
+        return new Item(new Item.Properties()
+                .setId(GuaniaoRegistryIds.item("__compile_only_fries"))
+                .food(new FoodProperties.Builder().nutrition(4).saturationModifier(0.35F).build()));
+    }
+
+    public static Item testMusicDisc() {
+        return new Item(new Item.Properties()
+                .setId(GuaniaoRegistryIds.item("__compile_only_disc"))
+                .stacksTo(1)
+                .jukeboxPlayable(ResourceKey.create(Registries.JUKEBOX_SONG, GuaniaoRegistryIds.id("uwu_funk"))));
     }
 
     public static FullColorSpawnEggItem testPaintedSpawnEgg() {

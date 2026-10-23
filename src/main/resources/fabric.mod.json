@@ -11,7 +11,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "EdDYON.guaniao.GuaniaoMod"
+      "EdDYON.guaniao.fabric.GuaniaoFabricEntrypoint"
     ]
   },
   "mixins": [

@@ -110,3 +110,51 @@ Combined pack metadata now declares the 26.2 resource format 88.0 and data
 format 107.1 range. The mod is still **not runnable**: source registries and
 the updated item assets do not substitute for fully ported bird entities,
 items, renderer hooks, menus, gameplay/network systems and client/server tests.
+
+
+## Fabric bootstrap, server lifecycle and GeckoLib 5 checkpoint
+
+The original Forge `GuaniaoMod` class now retains only its stable mod ID and
+logger; the Fabric initializer performs startup. Ported native registration
+queues run in dependency order: sounds/particles, blocks, block entities,
+bird entity types, items, features and creative tab. This is the initial
+bootstrap skeleton only; the original menus, network packets, enchantments,
+biome spawning, all gameplay events and GeckoLib client renderers are still
+required. **Do not interpret bootstrap wiring as a runnable mod.**
+
+The original global `config/guaniao/bird_settings.json` path now uses Fabric
+Loader's config directory. Its existing world scope and default-reload logic
+remain intact. The corresponding pre-server-start and stopping lifecycle
+events are now Fabric hooks, with the original per-server load and global
+reset behavior. Migrated events also cover active bird ticking, rain-triggered
+earthworm spawning at the original 200-tick cadence and 800-tick cooldown,
+nest cleanup, photo transfers, join-time runtime bird-config sync and
+legacy-photo scanning on login and newly opened server containers.
+
+Unlike Forge's `PlayerContainerEvent.Open`, newly opened container menus
+are observed by identity at the start of each server tick. Every newly opened
+container is queued once, without repeatedly scanning an unchanged menu; menu
+tracking is discarded on disconnect and server shutdown. Actual photo
+conversion still uses the original `LegacyPhotoMigration` queue. In-game
+verification of this replacement event timing is required.
+
+The head-perched hummingbird, kestrel and umbrella cockatoo cleanup now uses
+Fabric logout/stop callbacks; owner-only top-face placement is registered with
+Fabric's block-use callback. The transition from Forge event priorities to
+Fabric callback ordering needs real interaction testing for mod compatibility.
+
+Four GeckoLib 4 block-entity interfaces have been mapped to their GeckoLib 5
+equivalents without changing any other implementation line:
+bird cages, bird baths, bagged fries and crow nests.
+`tools/check-geckolib-blockentities.py` compares each migrated file against
+the Forge baseline to enforce this invariant. The independent real 26.2
+compile gate now includes GeckoLib 5 block/entity API proof sources and
+modern server lifecycle/menu access probes. **Renderers, GeckoLib animation
+controllers and client-side rendering are not ported by these changes.**
+
+Regression scripts used by CI:
+`tools/check-registry-parity.py`,
+`tools/check-port-resources.py`,
+`tools/check-lifecycle-port.py`,
+`tools/check-geckolib-blockentities.py`.
+The full Java compile and real-world functional tests remain release blockers.

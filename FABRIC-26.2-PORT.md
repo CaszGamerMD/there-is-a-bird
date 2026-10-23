@@ -54,3 +54,25 @@ those call sites have been ported.
 Run `python3 tools/port-audit.py` for a categorised source inventory and
 `python3 tools/port-audit.py --strict` to block release when obvious old APIs
 remain. These checks deliberately **do not** claim to prove gameplay parity.
+ 
+## Current implementation checkpoint (2026-10-23)
+
+These pieces have been **converted at source level** on `port/fabric-26.2`:
+- Original sound and eight custom particle IDs use native Fabric registration and have passed isolated compilation.
+- Block, block-entity, entity, feature and creative-tab declarations now use `FabricRegistryQueue`. All registry identifiers are compared with `main` by CI.
+- All original block constructors now provide 26.2 block keys. All entity builders provide entity keys. Block entity registration uses Fabric's factory.
+- `GuaniaoBlockTags` was ported and compiled against the new 26.2 registry API.
+- `BirdServerTickManager` and `PhotoTransferEvents` now have Fabric event callback registrations in source. These **are not wired to the game initializer yet**: their dependencies need porting first.
+- CI separately compiles Fabric infrastructure and probes for updated 26.2 construction and lifecycle APIs. These probe files are never included in the mod JAR.
+
+**Important:** The inherited source still has many Forge and GeckoLib 4 usages; the full
+`./gradlew build` failing is expected. Do not claim the mod is loadable, functional,
+or safe to distribute based on individual compiling files or passing parity tests.
+
+### Remaining implementation dependencies
+- Port `GuaniaoItems` without replacing custom spawn eggs or changing item behavior
+- Port all bird classes, 26.2 attributes, biome spawns, nesting AI and world state
+- Migrate GeckoLib 4 to GeckoLib 5 and the modern 26.2 rendering architecture
+- Convert photo/camera UI and networking; **wire all lifecycle callback registrations**
+- Port recipe/loot/enchantment/menu/mixin APIs; update resource formats
+- Full client and dedicated-server tests and behavioral comparison against the original mod

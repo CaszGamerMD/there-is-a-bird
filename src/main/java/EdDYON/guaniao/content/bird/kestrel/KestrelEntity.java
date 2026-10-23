@@ -97,15 +97,15 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 /** A solitary diurnal falcon with its own perch, hover, dive and recovery loop. */
 public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAnimal,
@@ -1915,9 +1915,9 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAni
         super.playSound(sound, BirdSoundVolume.apply(this, volume), pitch);
     }
 
-    private <T extends KestrelEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(3);
+    private <T extends KestrelEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(3);
         if (this.guidePreviewAnimation.animation != null) {
             return animationState.setAndContinue(this.guidePreviewAnimation.animation);
         }
@@ -1934,7 +1934,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAni
                 return BirdFlightAnimation.play(animationState, GLIDE_ANIMATION);
             }
             if (this.entityData.get(WING_MODE) == WING_CONTINUOUS || state == KestrelBehaviorState.TAKEOFF) {
-                animationState.getController().setAnimationSpeed(state == KestrelBehaviorState.FLEE ? 1.25D : 1.08D);
+                animationState.controller().setAnimationSpeed(state == KestrelBehaviorState.FLEE ? 1.25D : 1.08D);
                 return BirdFlightAnimation.play(animationState, FLAP_LOOP_ANIMATION);
             }
             if (this.entityData.get(WING_MODE) == WING_PULSE) {
@@ -1948,7 +1948,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAni
         return this.playIdleAnimation(animationState);
     }
 
-    private <T extends KestrelEntity> PlayState playIdleAnimation(AnimationState<T> animationState) {
+    private <T extends KestrelEntity> PlayState playIdleAnimation(AnimationTest<T> animationState) {
         int phase = Math.floorMod(this.tickCount + this.getUUID().hashCode(), 420);
         if (phase < 32) return animationState.setAndContinue(IDLE_1_ANIMATION);
         if (phase >= 140 && phase < 180) return animationState.setAndContinue(IDLE_2_ANIMATION);

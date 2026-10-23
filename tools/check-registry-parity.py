@@ -55,10 +55,22 @@ def compare_deferred_registry(file):
         raise SystemExit(f"{file}: direct registration IDs differ: {sorted(original_ids)} != {sorted(port_ids)}")
     print(f"PARITY OK: {file}: {len(original_fields)} declarations, {len(original_ids)} direct IDs")
 
-for registry_file in ("GuaniaoBlocks.java", "GuaniaoBlockEntityTypes.java", "GuaniaoFeatures.java"):
+for registry_file in ("GuaniaoBlocks.java", "GuaniaoBlockEntityTypes.java", "GuaniaoFeatures.java", "GuaniaoEntityTypes.java", "GuaniaoCreativeTabs.java"):
     compare_deferred_registry(registry_file)
 tag_before = baseline("GuaniaoBlockTags.java")
 tag_after = local("GuaniaoBlockTags.java")
 if '"guaniao", "bird_perches"' not in tag_before or '"guaniao", "bird_perches"' not in tag_after:
     raise SystemExit("Bird perch tag namespace or path changed.")
 print("PARITY OK: guaniao:bird_perches block tag ID.")
+
+# Minecraft 26.2 requires resource-keyed constructors. Ensure every original
+# block declaration has its proper key, including variant-based cages/baths.
+blocks = local("GuaniaoBlocks.java")
+if blocks.count(".setId(GuaniaoRegistryIds.block(") != 8:
+    raise SystemExit("GuaniaoBlocks must key all 6 literal + 2 variant block factories.")
+entities = local("GuaniaoEntityTypes.java")
+if ".build(GuaniaoRegistryIds.entity(id))" not in entities:
+    raise SystemExit("Bird entity type registration lacks 26.2 resource key.")
+if any(re.search(pattern, entities) for pattern in (r"net\.minecraftforge", r"new ResourceLocation", r"RegistryObject")):
+    raise SystemExit("Old Forge entity registration remains.")
+print("PARITY OK: keyed 26.2 block and bird entity constructors.")

@@ -59,6 +59,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
     source = fileTree('src/main/java') {
         include 'EdDYON/guaniao/registry/GuaniaoSoundEvents.java'
         include 'EdDYON/guaniao/registry/GuaniaoParticleTypes.java'
+        include 'EdDYON/guaniao/fabric/GuaniaoFabricEntrypoint.java'
     }
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')

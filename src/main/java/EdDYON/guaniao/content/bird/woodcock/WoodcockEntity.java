@@ -63,12 +63,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
 /**
  * A solitary woodland ground bird. Its signature locomotion alternates two
@@ -914,9 +914,9 @@ public class WoodcockEntity extends SparrowEntity
                 this.getDeltaMovement(), 6);
     }
 
-    private <T extends WoodcockEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(1);
+    private <T extends WoodcockEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(1);
         // The handbook selects Sparrow's shared preview modes, but this species
         // owns its controller and animation names. Keep previews out of live AI.
         RawAnimation preview = switch (this.getGuidePreviewAnimation()) {
@@ -931,14 +931,14 @@ public class WoodcockEntity extends SparrowEntity
             return animationState.setAndContinue(preview);
         }
         if (this.isSpontaneouslyStill()) {
-            animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+            animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
             return animationState.setAndContinue(IDLE_ANIMATION);
         }
         if (this.getWoodcockBehaviorState() == WoodcockBehaviorState.SLEEP_PREP) {
             return animationState.setAndContinue(SLEEP_ENTER_ANIMATION);
         }
         if (this.getWoodcockBehaviorState() == WoodcockBehaviorState.SLEEPING) {
-            animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+            animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
             return animationState.setAndContinue(SLEEP_LOOP_ANIMATION);
         }
         if (this.shouldPlayFlyAnimation()) {
@@ -946,40 +946,40 @@ public class WoodcockEntity extends SparrowEntity
         }
         return switch (this.getWoodcockBehaviorState()) {
             case STEP_1 -> {
-                animationState.getController().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
+                animationState.controller().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
                 yield animationState.setAndContinue(STEP_1_ANIMATION);
             }
             case ROCK_1 -> {
-                animationState.getController().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
+                animationState.controller().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
                 yield animationState.setAndContinue(ROCK_1_ANIMATION);
             }
             case STEP_2 -> {
-                animationState.getController().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
+                animationState.controller().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
                 yield animationState.setAndContinue(STEP_2_ANIMATION);
             }
             case ROCK_2 -> {
-                animationState.getController().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
+                animationState.controller().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
                 yield animationState.setAndContinue(ROCK_2_ANIMATION);
             }
             case FORAGING -> animationState.setAndContinue(PROBE_ANIMATION);
             case EATING -> animationState.setAndContinue(EAT_ANIMATION);
             case SPECIAL_IDLE -> animationState.setAndContinue(IDLE_VARIATION_ANIMATION);
             case STILL -> {
-                animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+                animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
                 yield animationState.setAndContinue(IDLE_ANIMATION);
             }
             case NORMAL_WALK, FORAGE_APPROACH, SEEK_COVER -> {
                 if (BirdGroundAnimation.hasWalkMotion(this, animationState.isMoving())) {
                     yield BirdGroundAnimation.play(animationState, this, WALK_ANIMATION);
                 }
-                animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+                animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
                 yield animationState.setAndContinue(IDLE_ANIMATION);
             }
             default -> {
                 if (BirdGroundAnimation.hasWalkMotion(this, animationState.isMoving())) {
                     yield BirdGroundAnimation.play(animationState, this, WALK_ANIMATION);
                 }
-                animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+                animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
                 yield animationState.setAndContinue(IDLE_ANIMATION);
             }
         };

@@ -61,11 +61,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
@@ -1141,10 +1141,10 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
         controllers.add(new BirdMovementAnimationController<>(this, "movement", 5, this::movementController));
     }
 
-    private <T extends UmbrellaCockatooEntity> PlayState movementController(AnimationState<T> animationState) {
+    private <T extends UmbrellaCockatooEntity> PlayState movementController(AnimationTest<T> animationState) {
         this.cockatooAnimationTick = animationState.getAnimationTick();
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(5);
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(5);
         BudgerigarBehaviorState state = this.getBehaviorState();
         boolean flying = this.shouldPlayFlyAnimation();
         boolean sleeping = this.isBirdSleeping() || state == BudgerigarBehaviorState.SLEEPING
@@ -1164,16 +1164,16 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
         if (this.getPerchedOwner() != null) {
             // End the previous flight pose on the mounting frame; a large bird's
             // folded-flight legs and horizontal torso cannot stand on the crown.
-            animationState.getController().transitionLength(0);
+            animationState.controller().setTransitionTicks(0);
             return animationState.setAndContinue(OWNER_PERCH_ANIMATION);
         }
         if (this.isSpecialPerformanceActive()) {
-            animationState.getController().transitionLength(2);
+            animationState.controller().setTransitionTicks(2);
             return animationState.setAndContinue(flying ? SPECIAL_CALL_FLY_ANIMATION : SPECIAL_CALL_ANIMATION);
         }
         if (flying) {
-            animationState.getController().transitionLength(0);
-            animationState.getController().setAnimationSpeed(this.flightAnimationSpeed());
+            animationState.controller().setTransitionTicks(0);
+            animationState.controller().setAnimationSpeed(this.flightAnimationSpeed());
             return BirdFlightAnimation.play(animationState, FLY_ANIMATION);
         }
         if (state == BudgerigarBehaviorState.EATING) {

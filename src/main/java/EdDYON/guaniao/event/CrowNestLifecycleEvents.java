@@ -1,21 +1,18 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.nest.CrowNestBlockEntity;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.minecraft.server.level.ServerLevel;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
+/** Clear transient nest tracking when a server world unloads. */
 public final class CrowNestLifecycleEvents {
-    private CrowNestLifecycleEvents() {
+    private CrowNestLifecycleEvents() { }
+
+    public static void onLevelUnload(ServerLevel level) {
+        CrowNestBlockEntity.clearLoadedNests(level);
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof Level level) {
-            CrowNestBlockEntity.clearLoadedNests(level);
-        }
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 }

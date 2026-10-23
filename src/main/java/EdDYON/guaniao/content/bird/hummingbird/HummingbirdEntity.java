@@ -45,7 +45,8 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.ForgeEventFactory;
 import com.geckolib.animatable.GeoEntity;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.*;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
 import com.geckolib.util.GeckoLibUtil;
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -396,7 +397,7 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
     }
     @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         // Explicit enter/exit clips provide transitions; keep all three layer clocks aligned.
-        controllers.add(new AnimationController<>(this, "body", 0, state -> {
+        controllers.add(new AnimationController<>("body", 0, state -> {
             int detail = preview == null ? entityData.get(IDLE_DETAIL) : 0;
             String name = detail != 0 ? "idle_diff_" + detail
                     : preview != null ? switch (preview) { case "fly" -> "flight"; case "nectar" -> "nectar_loop"; case "sleep" -> "sleep"; default -> "idle"; }
@@ -410,13 +411,13 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
             RawAnimation animation = RawAnimation.begin();
             return state.setAndContinue(loop ? animation.thenLoop("animation.body." + name) : animation.thenPlayAndHold("animation.body." + name));
         }));
-        controllers.add(new AnimationController<>(this, "wings", 0, state -> {
+        controllers.add(new AnimationController<>("wings", 0, state -> {
             int detail = preview == null ? entityData.get(IDLE_DETAIL) : 0;
             return state.setAndContinue(detail != 0
                     ? RawAnimation.begin().thenPlayAndHold("animation.wings.idle_diff_" + detail)
                     : RawAnimation.begin().thenLoop("animation.wings." + (isAirborne() ? "fly" : "idle")));
         }));
-        controllers.add(new AnimationController<>(this, "eyes", 0, state -> {
+        controllers.add(new AnimationController<>("eyes", 0, state -> {
             int detail = preview == null ? entityData.get(IDLE_DETAIL) : 0;
             return state.setAndContinue(detail != 0
                     ? RawAnimation.begin().thenPlayAndHold("animation.eyes.idle_diff_" + detail)

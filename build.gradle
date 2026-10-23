@@ -48,3 +48,19 @@ tasks.named('jar') {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
 }
+
+/**
+ * Compile the migrated sound registry independently while unrelated legacy
+ * Forge sources remain unported. This is a genuine 26.2 API compilation gate.
+ */
+tasks.register('verifySoundPort', JavaCompile) {
+    group = 'verification'
+    description = 'Compile the Fabric sound registry against actual Minecraft 26.2.'
+    source = fileTree('src/main/java') {
+        include 'EdDYON/guaniao/registry/GuaniaoSoundEvents.java'
+    }
+    classpath = sourceSets.main.compileClasspath
+    destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
+    options.release = 25
+    options.encoding = 'UTF-8'
+}

@@ -50,6 +50,19 @@ for rel in relative_files:
         if f"import {previous};" not in original:
             raise SystemExit(f"Original GeckoLib import unexpectedly absent: {rel}: {previous}")
         expected = expected.replace(previous, updated)
+        if rel.startswith("content/nest/"):
+            old_load = "    @Override\n    public void onLoad() {\n        super.onLoad();\n        if (this.level != null && !this.level.isClientSide) {\n            LOADED_NESTS.computeIfAbsent(this.level, ignored -> new HashSet<>()).add(this);\n        }\n    }"
+            new_load = "    @Override\n    public void setLevel(Level level) {\n        // BlockEntity.onLoad no longer exists in 26.2. Index the nest when\n        // Minecraft assigns the level; setRemoved still unregisters it.\n        super.setLevel(level);\n        if (level != null && !level.isClientSide()) {\n            LOADED_NESTS.computeIfAbsent(level, ignored -> new HashSet<>()).add(this);\n        }\n    }"
+            if old_load not in expected or new_load not in migrated:
+                raise SystemExit("Crow nest load hook changed beyond 26.2 compatibility substitution")
+            expected = expected.replace(old_load, new_load, 1)
+            expected = expected.replace(".isClientSide", ".isClientSide()").replace(".isClientSide()()", ".isClientSide()")
+            expected = expected.replace(
+                "ItemStack.isSameItemSameTags(stored, incoming)",
+                "ItemStack.isSameItemSameComponents(stored, incoming)")
+            expected = expected.replace(
+                "    @Override\n    public AABB getRenderBoundingBox()",
+                "    public AABB getRenderBoundingBox()")
     if rel in persisted:
         # Only the imports and method region for save, load and packet syncing
         # may change; particle, animation and entity behavior remains identical.
@@ -66,7 +79,7 @@ for rel in relative_files:
             expected = expected.replace("import net.minecraft.nbt.ListTag;\n", "")
         old_start = "    @Override\n    protected void saveAdditional(CompoundTag tag) {"
         new_start = "    @Override\n    protected void saveAdditional(ValueOutput output) {"
-        end = ("    @Override\n    public AABB getRenderBoundingBox()" if rel.startswith("content/nest/")
+        end = ("    public AABB getRenderBoundingBox()" if rel.startswith("content/nest/")
                else "    @Override\n    public void registerControllers(")
         old_region = expected[expected.index(old_start):expected.index(end)]
         new_region = migrated[migrated.index(new_start):migrated.index(end)]

@@ -86,6 +86,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
         include 'EdDYON/guaniao/content/bird/FullColorSpawnEggItem.java'
         include 'EdDYON/guaniao/content/bird/flight/BirdFlightAnimation.java'
         include 'EdDYON/guaniao/content/bird/flight/BirdFlightLock.java'
+        include 'EdDYON/guaniao/mixin/ItemEntityAgeAccessor.java'
         include 'EdDYON/guaniao/content/bird/BirdWalkStride.java'
         include 'EdDYON/guaniao/content/bird/BirdWalkDistance.java'
     }

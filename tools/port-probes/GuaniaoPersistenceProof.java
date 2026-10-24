@@ -17,6 +17,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 public final class GuaniaoPersistenceProof extends BlockEntity {
     private int count;
     private boolean prank;
+    private java.util.UUID lastVisitor;
 
     public GuaniaoPersistenceProof() {
         super(BlockEntityType.CHEST, BlockPos.ZERO, Blocks.CHEST.defaultBlockState());
@@ -27,6 +28,11 @@ public final class GuaniaoPersistenceProof extends BlockEntity {
         super.saveAdditional(output);
         output.putInt("Count", this.count);
         output.putBoolean("Prank", this.prank);
+        if (this.lastVisitor != null) {
+            long hi = this.lastVisitor.getMostSignificantBits();
+            long lo = this.lastVisitor.getLeastSignificantBits();
+            output.putIntArray("LastVisitor", new int[]{(int)(hi >> 32), (int)hi, (int)(lo >> 32), (int)lo});
+        }
     }
 
     @Override
@@ -36,6 +42,12 @@ public final class GuaniaoPersistenceProof extends BlockEntity {
             this.count = input.getIntOr("Count", 0);
         }
         this.prank = input.getBooleanOr("Prank", false);
+        this.lastVisitor = input.getIntArray("LastVisitor")
+                .filter(parts -> parts.length == 4)
+                .map(parts -> new java.util.UUID(
+                        ((long)parts[0] << 32) | (parts[1] & 0xffffffffL),
+                        ((long)parts[2] << 32) | (parts[3] & 0xffffffffL)))
+                .orElse(null);
     }
 
     @Override

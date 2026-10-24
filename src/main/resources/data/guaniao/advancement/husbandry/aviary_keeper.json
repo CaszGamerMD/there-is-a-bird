@@ -2,7 +2,7 @@
   "parent": "guaniao:husbandry/accepted_by_bird",
   "display": {
     "icon": {
-      "item": "guaniao:large_bird_cage"
+      "id": "guaniao:large_bird_cage"
     },
     "title": {
       "translate": "advancements.guaniao.husbandry.aviary_keeper.title"

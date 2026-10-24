@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "item": "minecraft:written_book"
+      "id": "minecraft:written_book"
     },
     "title": {
       "translate": "advancements.guaniao.husbandry.bird_note.title"

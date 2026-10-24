@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "item": "guaniao:bird_guide"
+      "id": "guaniao:bird_guide"
     },
     "title": {
       "translate": "advancements.guaniao.husbandry.bird_conference.title"

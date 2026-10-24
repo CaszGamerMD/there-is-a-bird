@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "item": "guaniao:budgerigar_spawn_egg"
+      "id": "guaniao:budgerigar_spawn_egg"
     },
     "title": {
       "translate": "advancements.guaniao.husbandry.chirpy_partner.title"

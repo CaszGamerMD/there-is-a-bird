@@ -5,6 +5,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 NAMES = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","CockatooEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","LongTailedTitEntity.java","MacawEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
+IDENTIFIER_PORTED = ("CrowEntity.java", "KestrelEntity.java")
 RENAMES = (
     ("MobSpawnType", "EntitySpawnReason"),
     ("BlockPathTypes", "PathType"),
@@ -22,6 +23,10 @@ for path in sorted(base.rglob("*Entity.java")):
         ["git", "show", "origin/main:" + path.relative_to(ROOT).as_posix()],
         cwd=ROOT, text=True).replace("\r\n", "\n")
     current = path.read_text("utf-8").replace("\r\n", "\n")
+    if path.name in IDENTIFIER_PORTED:
+        assert "ResourceLocation" not in current
+        assert "import net.minecraft.resources.Identifier;" in current
+        assert "Identifier" in current
     for old, new in RENAMES:
         if old in original:
             assert new in current, f"{path.name}: missing renamed type {new}"

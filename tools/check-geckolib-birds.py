@@ -43,6 +43,10 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
                                     "net.minecraft.world.entity.animal.fish.AbstractFish")
         expected = expected.replace("net.minecraft.world.level.chunk.ChunkStatus",
                                     "net.minecraft.world.level.chunk.status.ChunkStatus")
+    # Minecraft 26.2 ResourceLocation -> Identifier retains all authored IDs,
+    # including Kestrel's serialized learned-item name and Crow's texture path.
+    if p.name in ("CrowEntity.java", "KestrelEntity.java"):
+        expected = expected.replace("ResourceLocation", "Identifier")
     if relative.endswith("/hummingbird/HummingbirdEntity.java"):
         expected = expected.replace(
             "import software.bernie.geckolib.core.animation.*;",

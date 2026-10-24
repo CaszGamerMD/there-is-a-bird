@@ -50,7 +50,7 @@ import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -216,7 +216,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAni
     @Nullable
     private UUID fetchTargetId;
     @Nullable
-    private ResourceLocation learnedFetchItem;
+    private Identifier learnedFetchItem;
 
     @Override
     protected BodyRotationControl createBodyControl() {
@@ -426,7 +426,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAni
             this.homePos = BlockPos.of(tag.getLong(HOME_NBT_KEY));
         }
         if (tag.contains(LEARNED_ITEM_NBT_KEY, 8)) {
-            ResourceLocation parsed = ResourceLocation.tryParse(tag.getString(LEARNED_ITEM_NBT_KEY));
+            Identifier parsed = Identifier.tryParse(tag.getString(LEARNED_ITEM_NBT_KEY));
             if (parsed != null && BuiltInRegistries.ITEM.containsKey(parsed)) {
                 this.learnedFetchItem = parsed;
             }

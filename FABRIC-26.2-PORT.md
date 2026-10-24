@@ -413,3 +413,13 @@ The original spawn-reason comparisons and path penalties remain untouched.
 The 20-source parity gate and GeckoLib parity test remain active.
 These class moves do not repair the other unported AI, persistence, Forge
 event, flight or rendering APIs and do not yield a playable JAR.
+
+## Crow/Kestrel namespaced identifier types (2026-10-24)
+
+Converted the original crow texture getter and kestrel learned-fetch item
+field and save parser from Minecraft `ResourceLocation` to the native 26.2
+`Identifier`. Kestrel still saves the **same namespaced item string** under
+the exact original save key; `Identifier.tryParse` continues returning
+`null` for malformed IDs and the original registry-existence check is kept.
+An isolated Java API proof and GeckoLib/AI source parity test guard the
+conversion. No crow texture or kestrel fetch targeting behavior was changed.

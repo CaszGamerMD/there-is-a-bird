@@ -24,9 +24,11 @@ public final class BirdAmbientDropControl {
     }
 
     public static boolean hasNearbyPlayer(ServerLevel level, Entity source) {
-        return level.hasNearbyAlivePlayer(
-                source.getX(), source.getY(), source.getZ(), PLAYER_ACTIVITY_RADIUS
-        );
+        // Vanilla 26.2 removed hasNearbyAlivePlayer. Keep the original
+        // alive-player-only 64-block radius and avoid loading chunks.
+        return level.players().stream().anyMatch(player ->
+                player.isAlive() && player.distanceToSqr(source)
+                        <= PLAYER_ACTIVITY_RADIUS * PLAYER_ACTIVITY_RADIUS);
     }
 
     public static int randomLifetime(RandomSource random) {

@@ -76,7 +76,7 @@ for rel in relative_files:
             if key not in old_region or key not in new_region:
                 raise SystemExit(f"{rel}: persistent data field lost: {key}")
         old_write_fields = set(re.findall(
-            r"tag\.put(?:Int|Boolean|Long|UUID)\((\w+)_TAG\b", old_region))
+            r"tag\.put(?:IntArray|Int|Boolean|Long|UUID)\((\w+)_TAG\b", old_region))
         new_write_fields = set(re.findall(
             r"output\.put(?:Int|Boolean|Long|IntArray)\((\w+)_TAG\b", new_region))
         if old_write_fields != new_write_fields:

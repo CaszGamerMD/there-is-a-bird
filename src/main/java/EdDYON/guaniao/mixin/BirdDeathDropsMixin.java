@@ -23,7 +23,7 @@ public abstract class BirdDeathDropsMixin {
     @Shadow
     protected abstract void dropExperience(ServerLevel level, @Nullable Entity killer);
 
-    @Inject(method = "dropAllDeathLoot", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "dropAllDeathLoot", at = @At("HEAD"), cancellable = true, require = 1)
     private void guaniao$replaceBirdDeathDrops(ServerLevel level, DamageSource source, CallbackInfo ci) {
         LivingEntity bird = (LivingEntity) (Object) this;
         if (!BirdFeatherEvents.suppressDeathDrops(bird)) {

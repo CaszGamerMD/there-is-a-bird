@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.sparrow;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class SparrowDefinition {
     public static final String ENTITY_ID = "sparrow";
@@ -13,14 +13,14 @@ public final class SparrowDefinition {
     public static final double WALK_SPEED = 0.25;
     public static final double FOLLOW_RANGE = 18.0;
     public static final double SOCIAL_RADIUS = 9.0;
-    public static final ResourceLocation MODEL = SparrowDefinition.resource("geo/sparrow.geo.json");
-    public static final ResourceLocation TEXTURE = SparrowDefinition.resource("textures/entity/sparrow.png");
-    public static final ResourceLocation ANIMATION = SparrowDefinition.resource("animations/sparrow.animation.json");
+    public static final Identifier MODEL = SparrowDefinition.resource("geo/sparrow.geo.json");
+    public static final Identifier TEXTURE = SparrowDefinition.resource("textures/entity/sparrow.png");
+    public static final Identifier ANIMATION = SparrowDefinition.resource("animations/sparrow.animation.json");
 
     private SparrowDefinition() {
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation("guaniao", path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath("guaniao", path);
     }
 }

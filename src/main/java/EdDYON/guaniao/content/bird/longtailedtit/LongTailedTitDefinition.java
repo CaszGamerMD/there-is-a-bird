@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.longtailedtit;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class LongTailedTitDefinition {
     public static final String ENTITY_ID = "long_tailed_tit";
@@ -9,14 +9,14 @@ public final class LongTailedTitDefinition {
     public static final int SPAWN_EGG_SPOT_COLOR = 0x9D6F75;
     public static final float WIDTH = 0.18F;
     public static final float HEIGHT = 0.20F;
-    public static final ResourceLocation MODEL = resource("geo/long_tailed_tit.geo.json");
-    public static final ResourceLocation TEXTURE = resource("textures/entity/long_tailed_tit.png");
-    public static final ResourceLocation ANIMATION = resource("animations/long_tailed_tit.animation.json");
+    public static final Identifier MODEL = resource("geo/long_tailed_tit.geo.json");
+    public static final Identifier TEXTURE = resource("textures/entity/long_tailed_tit.png");
+    public static final Identifier ANIMATION = resource("animations/long_tailed_tit.animation.json");
 
     private LongTailedTitDefinition() {
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation("guaniao", path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath("guaniao", path);
     }
 }

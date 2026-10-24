@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.seagull;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class SeagullDefinition {
     public static final String ENTITY_ID = "seagull";
@@ -13,14 +13,14 @@ public final class SeagullDefinition {
     public static final double WALK_SPEED = 0.27D;
     public static final double FLYING_SPEED = 0.62D;
     public static final double FOLLOW_RANGE = 22.0D;
-    public static final ResourceLocation MODEL = SeagullDefinition.resource("geo/seagull.geo.json");
-    public static final ResourceLocation TEXTURE = SeagullDefinition.resource("textures/entity/seagull.png");
-    public static final ResourceLocation ANIMATION = SeagullDefinition.resource("animations/seagull.animation.json");
+    public static final Identifier MODEL = SeagullDefinition.resource("geo/seagull.geo.json");
+    public static final Identifier TEXTURE = SeagullDefinition.resource("textures/entity/seagull.png");
+    public static final Identifier ANIMATION = SeagullDefinition.resource("animations/seagull.animation.json");
 
     private SeagullDefinition() {
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation("guaniao", path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath("guaniao", path);
     }
 }

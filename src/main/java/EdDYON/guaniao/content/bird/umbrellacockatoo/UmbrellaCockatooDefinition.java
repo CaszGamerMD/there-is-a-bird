@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.umbrellacockatoo;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** Authoring constants for the umbrella cockatoo, including its own art paths. */
 public final class UmbrellaCockatooDefinition {
@@ -15,9 +15,9 @@ public final class UmbrellaCockatooDefinition {
     public static final double FLYING_SPEED = 0.37D;
     public static final double FOLLOW_RANGE = 28.0D;
 
-    public static final ResourceLocation MODEL = resource("geo/umbrella_cockatoo.geo.json");
-    public static final ResourceLocation ANIMATION = resource("animations/umbrella_cockatoo.animation.json");
-    public static final ResourceLocation TEXTURE = resource("textures/entity/umbrella_cockatoo.png");
+    public static final Identifier MODEL = resource("geo/umbrella_cockatoo.geo.json");
+    public static final Identifier ANIMATION = resource("animations/umbrella_cockatoo.animation.json");
+    public static final Identifier TEXTURE = resource("textures/entity/umbrella_cockatoo.png");
 
     /** Progressive taming: total trust needed, and the range granted by one accepted feed. */
     public static final int TAMING_TRUST_MAX = 100;
@@ -33,7 +33,7 @@ public final class UmbrellaCockatooDefinition {
     private UmbrellaCockatooDefinition() {
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation("guaniao", path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath("guaniao", path);
     }
 }

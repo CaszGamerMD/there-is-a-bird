@@ -30,7 +30,7 @@ processResources {
             include 'data/guaniao/advancement/husbandry/*.json'
         }.each { file ->
             def existing = file.getText('UTF-8')
-            def migrated = existing.replaceFirst(/("icon"\s*:\s*\{\s*)"item"(\s*:)/, '\$1"id"\$2')
+            def migrated = existing.replaceFirst(/("icon"\s*:\s*\{\s*)"item"(\s*:)/, '$1"id"$2')
             if (migrated != existing) file.setText(migrated, 'UTF-8')
         }
     }

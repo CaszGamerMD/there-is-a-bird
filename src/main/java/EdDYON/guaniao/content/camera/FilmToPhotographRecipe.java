@@ -2,31 +2,33 @@ package EdDYON.guaniao.content.camera;
 
 import EdDYON.guaniao.registry.GuaniaoItems;
 import EdDYON.guaniao.registry.GuaniaoRecipeSerializers;
-import net.minecraft.core.RegistryAccess;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 public class FilmToPhotographRecipe extends CustomRecipe {
-    public FilmToPhotographRecipe(ResourceLocation id, CraftingBookCategory category) {
-        super(id, category);
+    public static final FilmToPhotographRecipe INSTANCE = new FilmToPhotographRecipe();
+    public static final RecipeSerializer<FilmToPhotographRecipe> SERIALIZER =
+            new RecipeSerializer<>(MapCodec.unit(INSTANCE), StreamCodec.unit(INSTANCE));
+
+    public FilmToPhotographRecipe() { }
+
+    @Override
+    public boolean matches(CraftingInput input, @NotNull Level level) {
+        return input.width() == 3 && input.height() == 3 && !this.findFilm(input).isEmpty();
     }
 
     @Override
-    public boolean matches(CraftingContainer container, @NotNull Level level) {
-        return container.getWidth() == 3 && container.getHeight() == 3 && !this.findFilm(container).isEmpty();
-    }
-
-    @Override
-    public @NotNull ItemStack assemble(CraftingContainer container, @NotNull RegistryAccess registryAccess) {
-        ItemStack film = this.findFilm(container);
+    public @NotNull ItemStack assemble(CraftingInput input) {
+        ItemStack film = this.findFilm(input);
         if (film.isEmpty()) {
             return ItemStack.EMPTY;
         }
@@ -40,28 +42,18 @@ public class FilmToPhotographRecipe extends CustomRecipe {
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return width >= 3 && height >= 3;
-    }
-
-    @Override
-    public @NotNull ItemStack getResultItem(@NotNull RegistryAccess registryAccess) {
-        return new ItemStack(GuaniaoItems.PHOTOGRAPH.get());
-    }
-
-    @Override
     public @NotNull RecipeSerializer<?> getSerializer() {
-        return GuaniaoRecipeSerializers.FILM_TO_PHOTOGRAPH.get();
+        return SERIALIZER;
     }
 
-    private ItemStack findFilm(CraftingContainer container) {
-        if (container.getWidth() != 3 || container.getHeight() != 3) {
+    private ItemStack findFilm(CraftingInput input) {
+        if (input.width() != 3 || input.height() != 3) {
             return ItemStack.EMPTY;
         }
 
         ItemStack film = ItemStack.EMPTY;
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            ItemStack stack = container.getItem(slot);
+        for (int slot = 0; slot < input.size(); slot++) {
+            ItemStack stack = input.getItem(slot);
             if (slot == 4) {
                 if (!stack.is(GuaniaoItems.FILM.get()) || !PhotographData.hasImage(stack)) {
                     return ItemStack.EMPTY;

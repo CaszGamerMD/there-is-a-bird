@@ -1,34 +1,36 @@
 package EdDYON.guaniao.content.dropping;
 
 import EdDYON.guaniao.registry.GuaniaoRecipeSerializers;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.CraftingContainer;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 public class BirdDroppingFoodRecipe extends CustomRecipe {
-    public BirdDroppingFoodRecipe(ResourceLocation id, CraftingBookCategory category) {
-        super(id, category);
+    public static final BirdDroppingFoodRecipe INSTANCE = new BirdDroppingFoodRecipe();
+    public static final RecipeSerializer<BirdDroppingFoodRecipe> SERIALIZER =
+            new RecipeSerializer<>(MapCodec.unit(INSTANCE), StreamCodec.unit(INSTANCE));
+
+    public BirdDroppingFoodRecipe() { }
+
+    @Override
+    public boolean matches(CraftingInput input, @NotNull Level level) {
+        return !this.assemble(input).isEmpty();
     }
 
     @Override
-    public boolean matches(CraftingContainer container, @NotNull Level level) {
-        return !this.assemble(container, level.registryAccess()).isEmpty();
-    }
-
-    @Override
-    public @NotNull ItemStack assemble(CraftingContainer container, @NotNull RegistryAccess registryAccess) {
+    public @NotNull ItemStack assemble(CraftingInput input) {
         ItemStack food = ItemStack.EMPTY;
         ItemStack dropping = ItemStack.EMPTY;
         int occupiedSlots = 0;
 
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            ItemStack stack = container.getItem(slot);
+        for (int slot = 0; slot < input.size(); slot++) {
+            ItemStack stack = input.getItem(slot);
             if (stack.isEmpty()) {
                 continue;
             }
@@ -56,17 +58,7 @@ public class BirdDroppingFoodRecipe extends CustomRecipe {
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return width * height >= 2;
-    }
-
-    @Override
-    public @NotNull ItemStack getResultItem(@NotNull RegistryAccess registryAccess) {
-        return ItemStack.EMPTY;
-    }
-
-    @Override
     public @NotNull RecipeSerializer<?> getSerializer() {
-        return GuaniaoRecipeSerializers.BIRD_DROPPING_FOOD.get();
+        return SERIALIZER;
     }
 }

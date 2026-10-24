@@ -26,6 +26,12 @@ persisted = {
     "content/food/BaggedFriesBlockEntity.java": (
         "FRY_MASK_TAG", "LAXATIVE_TAG",
     ),
+    "content/nest/CrowNestBlockEntity.java": (
+        "TREASURES_TAG", "NATURAL_NEST_TAG", "CROW_CLAIMS_TAG", "CLAIM_CROW_TAG",
+        "CLAIM_TIME_TAG", "RUMMAGED_MASK_TAG", "CURRENT_SEARCH_SLOT_TAG",
+        "SEARCH_TICKS_TAG", "SEARCH_TOTAL_TICKS_TAG", "LOOT_LAYOUT_SEED_TAG",
+        "LOOT_FOOTPRINTS_TAG", "LOOT_COLUMNS_TAG", "LOOT_ROWS_TAG",
+    ),
     "content/bath/BirdBathBlockEntity.java": (
         "CONTENT_TYPE_TAG", "CONTENT_LEVEL_TAG", "CLEANLINESS_TAG",
         "SPOILED_CONTENT_TYPE_TAG", "SPOIL_TICKS_TAG", "FROZEN_SUGAR_WATER_TAG",
@@ -56,9 +62,12 @@ for rel in relative_files:
                 "import net.minecraft.world.level.storage.ValueOutput;",
             )))
         expected = expected.replace("import net.minecraft.network.Connection;\n", "")
+        if rel.startswith("content/nest/"):
+            expected = expected.replace("import net.minecraft.nbt.ListTag;\n", "")
         old_start = "    @Override\n    protected void saveAdditional(CompoundTag tag) {"
         new_start = "    @Override\n    protected void saveAdditional(ValueOutput output) {"
-        end = "    @Override\n    public void registerControllers("
+        end = ("    @Override\n    public AABB getRenderBoundingBox()" if rel.startswith("content/nest/")
+               else "    @Override\n    public void registerControllers(")
         old_region = expected[expected.index(old_start):expected.index(end)]
         new_region = migrated[migrated.index(new_start):migrated.index(end)]
         expected = expected.replace(old_region, new_region, 1)
@@ -94,6 +103,22 @@ for rel in relative_files:
                     raise SystemExit("Bagged fries gameplay/save-field regression: " + before)
             if "input.getInt(FRY_MASK_TAG).isPresent()" not in new_region:
                 raise SystemExit("Fries saved empty mask must not fall back to a full bag")
+        elif rel.startswith("content/nest/"):
+            for invariant in (
+                "ContainerHelper.saveAllItems(output.child(TREASURES_TAG), this.treasures)",
+                "ContainerHelper.loadAllItems(input.childOrEmpty(TREASURES_TAG), this.treasures)",
+                "output.childrenList(CROW_CLAIMS_TAG)",
+                "input.childrenListOrEmpty(CROW_CLAIMS_TAG)",
+                "claim.putIntArray(CLAIM_CROW_TAG, uuidToIntArray(entry.getKey()))",
+                "claim.getIntArray(CLAIM_CROW_TAG)",
+                "this.rummagedMask = input.getIntOr(RUMMAGED_MASK_TAG, 0)",
+                "this.currentSearchSlot = input.getIntOr(CURRENT_SEARCH_SLOT_TAG, -1)",
+                "this.sanitizeStoredLoot(this.treasures.get(slot))",
+                "this.clearLootPosition(slot)",
+                "this.resetCurrentSearch()",
+            ):
+                if invariant not in new_region:
+                    raise SystemExit("Crow nest inventory/progress regression: " + invariant)
         else:
             if "output.putIntArray(CURRENT_USER_TAG" not in new_region:
                 raise SystemExit("Bird bath occupancy UUID was lost or saved in incompatible format")

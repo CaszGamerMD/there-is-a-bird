@@ -1,7 +1,7 @@
 package EdDYON.guaniao.content.bird.woodcock;
 
 import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class WoodcockDefinition {
     public static final String ENTITY_ID = "woodcock";
@@ -20,14 +20,14 @@ public final class WoodcockDefinition {
     public static final int CORE_TERRITORY_RADIUS = 12;
     public static final int NORMAL_TERRITORY_RADIUS = 24;
 
-    public static final ResourceLocation MODEL = resource("geo/woodcock.geo.json");
-    public static final ResourceLocation TEXTURE = resource("textures/entity/woodcock.png");
-    public static final ResourceLocation ANIMATION = resource("animations/woodcock.animation.json");
+    public static final Identifier MODEL = resource("geo/woodcock.geo.json");
+    public static final Identifier TEXTURE = resource("textures/entity/woodcock.png");
+    public static final Identifier ANIMATION = resource("animations/woodcock.animation.json");
 
     private WoodcockDefinition() {
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation(GuaniaoMod.MOD_ID, path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, path);
     }
 }

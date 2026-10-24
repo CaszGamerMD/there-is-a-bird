@@ -50,6 +50,11 @@ jobs:
         run: python3 tools/check-bird-setup-parity.py
       - name: Verify 98 original advancements, loot tables and tags survive 26.2 paths
         run: python3 tools/check-26-2-datapack-paths.py
+      - name: Verify packaged 26.2 advancement display icons
+        run: |
+          chmod +x gradlew
+          ./gradlew processResources --no-daemon
+          python3 tools/check-26-2-advancement-codecs.py
       - name: Verify camera tooltip parity and Fabric client bootstrap
         run: python3 tools/check-camera-tooltip-port.py
       - name: Verify all 21 original recipes survive the 26.2 datapack schema

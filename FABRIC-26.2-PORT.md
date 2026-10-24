@@ -158,3 +158,66 @@ Regression scripts used by CI:
 `tools/check-lifecycle-port.py`,
 `tools/check-geckolib-blockentities.py`.
 The full Java compile and real-world functional tests remain release blockers.
+
+
+## Server events, persistent block entities and native spawn registration
+
+This checkpoint ports another set of original, behavior-sensitive Forge handlers:
+
+- The existing wild-bird population tracker now clears tracked birds when Fabric
+  unloads entities and unloads each level. The original thresholds and scan
+  budgets remain unchanged.
+- Cassowary avoidance now attaches the same avoidance goal to zombies,
+  skeletons and spiders on load, clears targets at the original 20-tick cadence,
+  and forgets tracked hostiles on unload. Minecraft 26.2 requires the public
+  `getGoalSelector()` accessor.
+- Original bird conference, fluffy line and high-eye advancement conditions
+  run from Fabric end-server ticks with the same staggered 40/10-tick checks.
+- Bird flyby encounters (five authored habitat types), colony habitat scan
+  cleanup, and the polluted-cake prank/cleanup callbacks now use Fabric hooks;
+  spawn weights, durations and scan budgets are source-parity checked.
+- All 19 original bird attribute provider methods have dedicated Fabric
+  registrations. The original 19 species spawn-position checks, species
+  predicates, ground-vs-leaves placement modes, heightmaps and
+  `CHUNK_GENERATION` exclusions have been mapped into Fabric mob builders.
+  **The complete bird entity code and real-world spawning remain unverified.**
+- Vanilla creative Ingredients retains Earthworm and Spawn Eggs retains the
+  original 19 bird egg entries in their original order. The four bird-dropping
+  composter values use Fabric's `CompostableRegistry`, leaving the original
+  farmland-fertilizing odds alone. All four Forge mod-bus responsibilities are
+  now ported and its subscriber retired.
+
+### Persistent 26.2 block entities
+
+Bagged Fries and Bird Baths now use `ValueInput` / `ValueOutput` for their
+Minecraft 26.2 save hooks and the correct `HolderLookup.Provider`-aware
+`getUpdateTag`. The original NBT field names are unchanged:
+
+- Bagged Fries keeps `FryMask`, `Laxative` and its block-state fallback.
+  An explicitly saved zero mask remains empty rather than being restored full.
+- Bird Baths keep the type, water/food level, cleanliness, spoil state, frozen
+  sugar-water state, environmental tick offset, current occupancy and recently
+  occupied timers. `CurrentUser` remains the original four-integer UUID NBT
+  array, including prior save compatibility.
+- Neither block's other gameplay implementation or animation rendering was
+  changed during persistence migration.
+
+The author-origin preservation checks for both sources now permit *only*
+those persistence methods and GeckoLib package conversions to differ.
+Compile-only tests now exercise Minecraft 26.2 Value I/O and legacy UUID
+int-array access. Other old block-entity serializers (especially the
+inventories in Crow Nests and Frame Workbenches) still need migration.
+
+### CI and release status
+
+Audits validate original entity/attribute/spawn-table ordering, 19 species
+heightmaps, creative tab contents, compost odds, population caps, flyby and
+cake behavior, plus stable resources and unchanged audio/images/models.
+The `verifyRegistriesPort` task compiles isolated real 26.2/Fabric APIs,
+including new block-entity persistence and spawn placement probes. The full
+Gradle compile still fails while gameplay, UI, networking, rendering, entity
+serialization, loot and world generation remain on pre-26.2/Forge APIs.
+
+**No playable mod build, release or asset-containing distributable exists.**
+The draft PR is intentionally unmerged and original author asset licensing
+restrictions remain in force.

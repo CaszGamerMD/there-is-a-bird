@@ -102,7 +102,7 @@ callbacks = (
     "BirdConfigLifecycleEvents", "BirdServerTickManager", "EarthwormRainEvents",
     "CrowNestLifecycleEvents", "PhotoLegacyMigrationEvents", "PhotoTransferEvents",
     "BirdRuntimeConfigEvents", "BirdHeadPerchEvents",
-    "BirdPopulationTracker", "CassowaryThreatEvents")
+    "BirdPopulationTracker", "CassowaryThreatEvents", "PollutedCakeEvents")
 for callback in callbacks:
     if f"{callback}.registerCallbacks();" not in boot:
         raise SystemExit(f"Missing Fabric bootstrap event wiring: {callback}")

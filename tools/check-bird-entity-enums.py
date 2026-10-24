@@ -48,7 +48,7 @@ for path in sorted(base.rglob("*Entity.java")):
         expected = expected.replace(
             "import javax.annotation.Nullable;",
             "import org.jetbrains.annotations.Nullable;")
-        client_side_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java"]
+        client_side_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","LongTailedTitEntity.java","MacawEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
         if path.name in client_side_ported:
             expected = re.sub(r"\.isClientSide\b(?!\s*\()", ".isClientSide()", expected)
         assert current == expected, f"{path.name}: unrelated gameplay edit"

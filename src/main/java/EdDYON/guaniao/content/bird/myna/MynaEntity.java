@@ -204,7 +204,7 @@ public class MynaEntity extends SparrowEntity implements BirdSleepWakeable {
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
 
@@ -394,7 +394,7 @@ public class MynaEntity extends SparrowEntity implements BirdSleepWakeable {
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (this.isBirdSleeping() && soundPosition != null) {
@@ -408,7 +408,7 @@ public class MynaEntity extends SparrowEntity implements BirdSleepWakeable {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             Vec3 sourcePosition = source.getEntity() == null ? this.position() : source.getEntity().position();
             this.wakeFromLoudSound(sourcePosition);
         }

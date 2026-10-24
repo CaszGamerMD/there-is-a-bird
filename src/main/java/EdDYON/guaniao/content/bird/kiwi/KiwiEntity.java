@@ -211,7 +211,7 @@ public class KiwiEntity extends PathfinderMob
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.birdBrain.tick();
@@ -251,7 +251,7 @@ public class KiwiEntity extends PathfinderMob
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             if (source.getEntity() instanceof KiwiEntity rival && this.isFightingWith(rival)) {
                 this.fightMorale = Math.max(0.0F,
                         this.fightMorale - (0.12F + this.getRandom().nextFloat() * 0.08F));
@@ -474,7 +474,7 @@ public class KiwiEntity extends PathfinderMob
 
     @Override
     public void onLoudSound(Vec3 soundPosition, float volume) {
-        if (this.level().isClientSide || soundPosition == null) {
+        if (this.level().isClientSide() || soundPosition == null) {
             return;
         }
         this.lastHeardSound = soundPosition;
@@ -485,7 +485,7 @@ public class KiwiEntity extends PathfinderMob
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (this.isBirdSleeping()) {

@@ -246,7 +246,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
     }
 
     public boolean canStartSpecialCall() {
-        return !this.level().isClientSide && this.isTame() && this.isAlive() && !this.isSilent()
+        return !this.level().isClientSide() && this.isTame() && this.isAlive() && !this.isSilent()
                 && this.hurtTime == 0 && !this.isSleepingState() && !this.isInWaterOrBubble()
                 && this.getBehaviorState() != BudgerigarBehaviorState.EATING
                 && !this.isBirdEmergencyOverrideActive() && !this.isSpecialPerformanceActive();
@@ -306,7 +306,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             this.tickClientHeadRoll();
             return;
         }
@@ -332,7 +332,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
 
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
-        if (!this.level().isClientSide && this.isSpecialPerformanceActive()) this.stopSpecialCall();
+        if (!this.level().isClientSide() && this.isSpecialPerformanceActive()) this.stopSpecialCall();
         ItemStack stack = player.getItemInHand(hand);
         // Wild birds use progressive trust. Once tamed the shared parrot feeding
         // path takes over, so flock trust, animations and particles stay in charge.
@@ -343,7 +343,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
     }
 
     private InteractionResult handleProgressiveFeeding(Player player, ItemStack stack) {
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return InteractionResult.sidedSuccess(true);
         }
         if (BudgerigarControl.isEating(this)) {
@@ -400,7 +400,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
     public boolean hurt(DamageSource source, float amount) {
         float healthBefore = this.getHealth();
         boolean hurt = super.hurt(source, amount);
-        if (!hurt || this.level().isClientSide) {
+        if (!hurt || this.level().isClientSide()) {
             return hurt;
         }
         this.stopSpecialCall();
@@ -430,7 +430,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
 
     /** Raises a mood for a while. The client animation controller reads the synced value. */
     public void feel(UmbrellaCockatooEmotion emotion, int ticks) {
-        if (this.level().isClientSide || emotion == null || emotion == UmbrellaCockatooEmotion.RELAXED) {
+        if (this.level().isClientSide() || emotion == null || emotion == UmbrellaCockatooEmotion.RELAXED) {
             return;
         }
         int clamped = Math.max(10, ticks);
@@ -503,7 +503,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
 
     public float getHeadRoll() {
         if (this.isSpecialPerformanceActive()) return 0;
-        return this.level().isClientSide ? this.clientHeadRoll : this.entityData.get(HEAD_ROLL);
+        return this.level().isClientSide() ? this.clientHeadRoll : this.entityData.get(HEAD_ROLL);
     }
 
     private void tickClientHeadRoll() {
@@ -516,7 +516,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
 
     /** Picks a side and holds it. Deliberately slow: no mechanical left-right twitching. */
     public void beginHeadTilt() {
-        if (this.level().isClientSide || this.headTiltHoldTicks > 0 || this.headTiltCooldown > 0) {
+        if (this.level().isClientSide() || this.headTiltHoldTicks > 0 || this.headTiltCooldown > 0) {
             return;
         }
         int magnitude = 12 + this.getRandom().nextInt(14);
@@ -611,7 +611,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
 
     @Override
     public void onLoudSound(Vec3 soundPosition, float volume) {
-        if (this.level().isClientSide || soundPosition == null) {
+        if (this.level().isClientSide() || soundPosition == null) {
             return;
         }
         boolean wasSleeping = this.isBirdSleeping() || BudgerigarControl.isSleepingOrRoosting(this);
@@ -787,7 +787,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
     }
 
     private void positionOnOwner(Player owner) {
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.entityData.set(PERCH_SLOT, PERCH_SLOT_HEAD);
         }
         Vec3 perch = this.ownerPerchPosition(owner);
@@ -824,7 +824,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
 
     /** The shared placement handler validates support, reach and permissions before this call. */
     public boolean placeFromOwnerHead(Player owner, BlockPos support, Vec3 feet) {
-        if (this.level().isClientSide || !this.isAlive() || !this.isOwnedBy(owner)
+        if (this.level().isClientSide() || !this.isAlive() || !this.isOwnedBy(owner)
                 || this.getVehicle() != owner) return false;
         this.stopSpecialCall();
         this.stopRiding();
@@ -1067,7 +1067,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
     }
 
     private boolean canVocalize() {
-        return !this.level().isClientSide && this.isAlive() && !this.isRemoved() && !this.isSilent()
+        return !this.level().isClientSide() && this.isAlive() && !this.isRemoved() && !this.isSilent()
                 && !this.isBirdSleeping() && !BudgerigarControl.isSleepingOrRoosting(this);
     }
 

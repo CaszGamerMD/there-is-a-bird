@@ -96,7 +96,7 @@ public class MacawEntity extends BudgerigarEntity {
     @Override
     public void aiStep() {
         super.aiStep();
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.tickHighPerchPreference();
             this.tickMimicry();
         }

@@ -511,3 +511,11 @@ return paths and exact branches. The whole-file parity scripts allow
 only this mechanical call change alongside previous GeckoLib/26.2
 adaptations. The remaining nine classes with this old API will be
 converted in the follow-up batch.
+
+### All bird client/server guard field queries converted (2026-10-24)
+
+Converted the remaining nine entities (KiwiEntity.java, LongTailedTitEntity.java, MacawEntity.java, MynaEntity.java, NightHeronEntity.java, SeagullEntity.java, SparrowEntity.java, UmbrellaCockatooEntity.java, WoodcockEntity.java) to the
+native `Level.isClientSide()` method, without changing branching
+behavior. All **18** classes with old side-check fields are now ported
+and covered by the complete GeckoLib and non-Gecko source-parity gates.
+The two other original entity subclasses had no old field reads.

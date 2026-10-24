@@ -403,7 +403,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         if (this.forcedIdleAnimationTicks > 0) {
             --this.forcedIdleAnimationTicks;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.birdBrain.tick();
             if (this.usesSparrowSettlementHome()) {
                 this.ensureHomePos();
@@ -411,16 +411,16 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             this.tickStaleFlightRecovery();
             this.tickWaterEscape();
         }
-        if (!this.level().isClientSide && this.pendingScareTicks > 0) {
+        if (!this.level().isClientSide() && this.pendingScareTicks > 0) {
             --this.pendingScareTicks;
             if (this.pendingScareTicks <= 0) {
                 this.releasePendingScare();
             }
         }
-        if (!this.level().isClientSide && this.isControlledFlightActive()) {
+        if (!this.level().isClientSide() && this.isControlledFlightActive()) {
             this.tickControlledFlight();
         }
-        if (!this.level().isClientSide && this.onGround() && !this.isInWaterOrBubble()
+        if (!this.level().isClientSide() && this.onGround() && !this.isInWaterOrBubble()
                 && !this.blocksSparrowDecorativeBehavior()
                 && (!this.isTame() || this.isBirdCommandMode(BirdCommandMode.FREE))) {
             if (this.getNavigation().isDone() && this.getRandom().nextInt(160) == 0) {
@@ -438,7 +438,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         if (!this.onGround() || this.isControlledFlightActive()) {
             this.fallDistance = 0.0f;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.tickBehaviorStateFallback();
             this.tickGroundMovementFacing();
         }
@@ -453,13 +453,13 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         ItemStack stack = player.getItemInHand(hand);
         if (isCleanTamingItem(stack)) {
             if (this.isDistrusted(player)) {
-                if (!this.level().isClientSide) {
+                if (!this.level().isClientSide()) {
                     this.startEscapeFlight(player.position());
                 }
-                return InteractionResult.sidedSuccess(this.level().isClientSide);
+                return InteractionResult.sidedSuccess(this.level().isClientSide());
             }
             this.familiarTicks = Math.max(this.familiarTicks, 3600);
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
                 }
@@ -487,7 +487,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
                     this.level().broadcastEntityEvent(this, (byte)6);
                 }
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
         return super.mobInteract(player, hand);
     }

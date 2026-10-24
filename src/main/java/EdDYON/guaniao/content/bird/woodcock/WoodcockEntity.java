@@ -253,7 +253,7 @@ public class WoodcockEntity extends SparrowEntity
     public void aiStep() {
         super.aiStep();
         this.alignFlightFacingToTravel();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (this.territoryCenter == null) {
@@ -674,7 +674,7 @@ public class WoodcockEntity extends SparrowEntity
         boolean calmingPlayerAlert = (state == WoodcockBehaviorState.ALERT
                 || state == WoodcockBehaviorState.FREEZE)
                 && !player.isSprinting()
-                && (this.level().isClientSide || this.currentThreat() == player);
+                && (this.level().isClientSide() || this.currentThreat() == player);
         boolean canHandFeed = state == WoodcockBehaviorState.IDLE
                 || state == WoodcockBehaviorState.SPECIAL_IDLE
                 || state == WoodcockBehaviorState.STILL
@@ -685,7 +685,7 @@ public class WoodcockEntity extends SparrowEntity
                 || this.isInWaterOrBubble() || this.hurtTime > 0) {
             return InteractionResult.PASS;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.cancelSpontaneousStillness();
             this.getNavigation().stop();
             this.setDeltaMovement(this.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));
@@ -697,7 +697,7 @@ public class WoodcockEntity extends SparrowEntity
                 stack.shrink(1);
             }
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return InteractionResult.sidedSuccess(this.level().isClientSide());
     }
 
     private void alignFlightFacingToTravel() {
@@ -705,7 +705,7 @@ public class WoodcockEntity extends SparrowEntity
             return;
         }
         Vec3 movement;
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             Vec3 actualMovement = new Vec3(
                     this.getX() - this.xo,
                     this.getY() - this.yo,
@@ -853,7 +853,7 @@ public class WoodcockEntity extends SparrowEntity
 
     @Override
     public void onLoudSound(Vec3 soundPosition, float volume) {
-        if (this.level().isClientSide || soundPosition == null) {
+        if (this.level().isClientSide() || soundPosition == null) {
             return;
         }
         this.cancelSpontaneousStillness();
@@ -872,7 +872,7 @@ public class WoodcockEntity extends SparrowEntity
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.cancelSpontaneousStillness();
@@ -888,7 +888,7 @@ public class WoodcockEntity extends SparrowEntity
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.cancelSpontaneousStillness();
             Vec3 sourcePosition = source.getEntity() == null ? this.position() : source.getEntity().position();
             this.wakeFromLoudSound(sourcePosition);

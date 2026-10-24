@@ -305,7 +305,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         if (this.isControlledFlightActive()) {
             this.fallDistance = 0.0f;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.birdBrain.tick();
             this.tickStaleFlightRecovery();
             this.tickFlightStateGuard();
@@ -359,7 +359,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
 
     public boolean hurt(DamageSource damageSource, float amount) {
         boolean hurt = super.hurt(damageSource, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.clearEatingFish();
             Entity attacker = damageSource.getEntity();
             Vec3 sourcePos = attacker != null ? attacker.position() : this.position();
@@ -508,7 +508,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide || !this.isBirdSleeping()) {
+        if (this.level().isClientSide() || !this.isBirdSleeping()) {
             return;
         }
         Vec3 sourcePos = soundPosition == null ? this.position() : soundPosition;
@@ -556,7 +556,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
     @Override public BirdCommandMode getBirdCommandMode() { return BirdCommandMode.byId(this.entityData.get(COMMAND_MODE)); }
     @Override public void setBirdCommandMode(BirdCommandMode mode) {
         this.entityData.set(COMMAND_MODE, mode.ordinal());
-        if (!this.level().isClientSide && this.fishTask != null) {
+        if (!this.level().isClientSide() && this.fishTask != null) {
             this.setOfferTicks(0);
             this.getNavigation().stop();
             this.flybyFlightTicks = 0;
@@ -604,7 +604,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
             return stack.isEmpty() || food || stack.getItem() instanceof FishingRodItem
                     ? InteractionResult.PASS : super.mobInteract(player, hand);
         }
-        if (this.level().isClientSide) return InteractionResult.SUCCESS;
+        if (this.level().isClientSide()) return InteractionResult.SUCCESS;
         long now = this.level().getGameTime();
         if (this.lastPetInteractionTick == now) return InteractionResult.CONSUME;
         this.lastPetInteractionTick = now;
@@ -1021,7 +1021,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
     }
 
     void eatThrownFish(ItemEntity itemEntity) {
-        if (this.level().isClientSide || this.hasHeldFishForRendering() || !this.canEatThrownFish()
+        if (this.level().isClientSide() || this.hasHeldFishForRendering() || !this.canEatThrownFish()
                 || itemEntity.getPersistentData().getBoolean(NightHeronFishTask.DELIVERED_MARKER)) return;
         ItemStack stack = itemEntity.getItem();
         if (!NightHeronEntity.isDroppedFishCandidate(stack)) {
@@ -1174,7 +1174,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
     }
 
     boolean catchFish(AbstractFish fish, HeldFishPurpose purpose) {
-        if (this.level().isClientSide || this.capturingFish || !this.canCaptureFish(fish, purpose)) return false;
+        if (this.level().isClientSide() || this.capturingFish || !this.canCaptureFish(fish, purpose)) return false;
         this.capturingFish = true;
         try {
             if (MinecraftForge.EVENT_BUS.post(new NightHeronFishCaptureEvent(this, fish, purpose))

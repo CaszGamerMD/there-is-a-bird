@@ -376,7 +376,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.entityData.set(NAVIGATION_FLIGHT_ACTIVE, BirdNavigationMoveControl.flightActiveAfterTravel(this));
@@ -418,7 +418,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
         if (!isCleanTamingFood(stack)) {
             return super.mobInteract(player, hand);
         }
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return InteractionResult.sidedSuccess(true);
         }
         if (!player.getAbilities().instabuild) {
@@ -503,7 +503,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.theftTarget = null;
             Vec3 sourcePos = source.getEntity() == null ? this.position() : source.getEntity().position();
             this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 240);
@@ -597,7 +597,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
                 || ((this.onGround() || this.isNearGroundForAnimation())
                 && (animationMoving
                 || this.getDeltaMovement().horizontalDistanceSqr() > WALK_ANIMATION_MOTION_THRESHOLD
-                || (!this.level().isClientSide && !this.getNavigation().isDone()))));
+                || (!this.level().isClientSide() && !this.getNavigation().isDone()))));
     }
 
     private RawAnimation flightAnimation() {
@@ -645,7 +645,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide || !this.isBirdSleeping()) {
+        if (this.level().isClientSide() || !this.isBirdSleeping()) {
             return;
         }
         this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 240);

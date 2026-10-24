@@ -104,7 +104,7 @@ public class LongTailedTitEntity extends SparrowEntity {
         if (this.threatScanCooldown > 0) {
             --this.threatScanCooldown;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.tickFlockFlightResponse();
             this.tickLargeBirdResponse();
         }
@@ -120,7 +120,7 @@ public class LongTailedTitEntity extends SparrowEntity {
         } else {
             result = super.mobInteract(player, hand);
         }
-        if (trustFood && !this.level().isClientSide && result.consumesAction()) {
+        if (trustFood && !this.level().isClientSide() && result.consumesAction()) {
             this.shareTrustWithFlock();
             this.playSound(GuaniaoSoundEvents.LONG_TAILED_TIT_AMBIENT.get(), 0.34F, 0.96F + this.getRandom().nextFloat() * 0.16F);
         }
@@ -128,7 +128,7 @@ public class LongTailedTitEntity extends SparrowEntity {
     }
 
     private InteractionResult feedExtraTrustFood(Player player, ItemStack stack) {
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
@@ -153,7 +153,7 @@ public class LongTailedTitEntity extends SparrowEntity {
                 this.level().broadcastEntityEvent(this, (byte) 6);
             }
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return InteractionResult.sidedSuccess(this.level().isClientSide());
     }
 
     private void shareTrustWithFlock() {

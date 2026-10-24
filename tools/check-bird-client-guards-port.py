@@ -5,7 +5,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-NAMES = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java"]
+NAMES = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","LongTailedTitEntity.java","MacawEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
 BIRD_ROOT = ROOT / "src/main/java/EdDYON/guaniao/content/bird"
 OLD_FIELD = re.compile(r"\.isClientSide\b(?!\s*\()")
 for name in NAMES:
@@ -23,4 +23,4 @@ for name in NAMES:
     # The full-source parity test permits *only* this mechanical substitution
     # plus the previously reviewed 26.2 API changes.
     print("PASS:", name, "original client/server branches kept:", count)
-assert len(NAMES) == 9
+assert len(NAMES) == 18

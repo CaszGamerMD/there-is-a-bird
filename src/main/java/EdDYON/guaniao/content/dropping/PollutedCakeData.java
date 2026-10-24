@@ -12,7 +12,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
+import net.minecraft.util.ARGB;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,8 +26,8 @@ public final class PollutedCakeData extends SavedData {
     private static final int PARTICLE_INTERVAL_TICKS = 10;
     private static final int MAX_POSITIONS_PER_PASS = 128;
     private static final int MAX_CHUNKS_PER_PASS = 32;
-    private static final DustParticleOptions DIRTY_BROWN_DUST = new DustParticleOptions(new Vector3f(0.28F, 0.18F, 0.07F), 0.80F);
-    private static final DustParticleOptions SICK_GREEN_DUST = new DustParticleOptions(new Vector3f(0.20F, 0.40F, 0.08F), 0.70F);
+    private static final DustParticleOptions DIRTY_BROWN_DUST = new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.28F, 0.18F, 0.07F), 0.80F);
+    private static final DustParticleOptions SICK_GREEN_DUST = new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.20F, 0.40F, 0.08F), 0.70F);
 
     private final Map<Long, Set<Long>> positionsByChunk = new HashMap<>();
     private Iterator<Map.Entry<Long, Set<Long>>> chunkIterator;

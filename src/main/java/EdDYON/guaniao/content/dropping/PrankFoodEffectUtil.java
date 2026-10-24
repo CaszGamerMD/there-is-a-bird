@@ -16,9 +16,9 @@ public final class PrankFoodEffectUtil {
     }
 
     public static void apply(LivingEntity entity) {
-        entity.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 160, 0));
+        entity.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 160, 0));
         entity.addEffect(new MobEffectInstance(MobEffects.HUNGER, 160, 0));
-        entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 0));
+        entity.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, 0));
 
         if (!(entity.level() instanceof ServerLevel level)) {
             return;

@@ -348,3 +348,16 @@ and the modern precision flag. A compile-only API probe and main-branch
 source comparison protect this compatibility change. The block interaction
 must still be observed in a loaded client/server world; these changes alone
 do not create a runnable test JAR.
+
+## Bird-dropping effect and particle compatibility checkpoint (2026-10-23)
+
+The original prank-food effect durations, amplifiers and sounds are unchanged;
+old `CONFUSION`, `MOVEMENT_SLOWDOWN` and `MOVEMENT_SPEED` identifiers
+now use Minecraft 26.2's `NAUSEA`, `SLOWNESS` and `SPEED` effects.
+Four authored dust particle colors in the dropping reactions and polluted-cake
+saved-data visuals are passed through 26.2's packed ARGB constructor with
+full opacity. All original red/green/blue components, scales, particle counts,
+random chances, application timings and gameplay methods remain identical.
+Original-source parity checks and an isolated Java 26.2 API probe cover these
+substitutions. Full-project compilation and actual client/server gameplay are
+still required before a private test build can be considered working.

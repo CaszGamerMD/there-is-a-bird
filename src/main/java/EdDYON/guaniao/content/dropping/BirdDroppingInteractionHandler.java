@@ -23,7 +23,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
+import net.minecraft.util.ARGB;
 
 import java.util.List;
 
@@ -31,8 +31,8 @@ public final class BirdDroppingInteractionHandler {
     private static final double GROUND_FOOD_SEARCH_RADIUS = 0.62D;
     private static final double SEAGULL_DOG_BARK_RADIUS = 10.0D;
     private static final float FOX_DROP_HELD_ITEM_CHANCE = 0.15F;
-    private static final DustParticleOptions DIRTY_BROWN_DUST = new DustParticleOptions(new Vector3f(0.25F, 0.16F, 0.06F), 0.92F);
-    private static final DustParticleOptions SICK_GREEN_DUST = new DustParticleOptions(new Vector3f(0.18F, 0.42F, 0.08F), 0.78F);
+    private static final DustParticleOptions DIRTY_BROWN_DUST = new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.25F, 0.16F, 0.06F), 0.92F);
+    private static final DustParticleOptions SICK_GREEN_DUST = new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.18F, 0.42F, 0.08F), 0.78F);
 
     private BirdDroppingInteractionHandler() {
     }
@@ -132,7 +132,7 @@ public final class BirdDroppingInteractionHandler {
 
     private static void reactWolf(ServerLevel level, BirdDroppingProjectileEntity projectile, Wolf wolf) {
         wetSplat(level, wolf.position().add(0.0D, wolf.getBbHeight() * 0.72D, 0.0D), 7);
-        wolf.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 0));
+        wolf.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 30, 0));
         wolf.playSound(SoundEvents.WOLF_WHINE, 0.8F, 0.85F + level.random.nextFloat() * 0.25F);
 
         LivingEntity owner = wolf.getOwner();
@@ -148,7 +148,7 @@ public final class BirdDroppingInteractionHandler {
     private static void reactCat(ServerLevel level, BirdDroppingProjectileEntity projectile, Cat cat) {
         wetSplat(level, cat.position().add(0.0D, cat.getBbHeight() * 0.72D, 0.0D), 7);
         cat.playSound(SoundEvents.CAT_HISS, 0.9F, 0.9F + level.random.nextFloat() * 0.25F);
-        cat.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 55, 0));
+        cat.addEffect(new MobEffectInstance(MobEffects.SPEED, 55, 0));
         shoveAway(cat, projectile.position(), 0.42D, 0.18D);
     }
 
@@ -171,20 +171,20 @@ public final class BirdDroppingInteractionHandler {
 
     private static void reactZombie(ServerLevel level, Zombie zombie) {
         wetSplat(level, zombie.position().add(0.0D, zombie.getBbHeight() * 0.72D, 0.0D), 5);
-        zombie.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 70, 0));
+        zombie.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 70, 0));
         zombie.playSound(SoundEvents.ZOMBIE_HURT, 0.55F, 0.8F + level.random.nextFloat() * 0.25F);
     }
 
     private static void reactSkeleton(ServerLevel level, AbstractSkeleton skeleton) {
         wetSplat(level, skeleton.position().add(0.0D, skeleton.getBbHeight() * 0.72D, 0.0D), 5);
-        skeleton.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0));
+        skeleton.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, 0));
         skeleton.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 70, 0));
         skeleton.playSound(SoundEvents.SKELETON_HURT, 0.55F, 0.75F + level.random.nextFloat() * 0.25F);
     }
 
     private static void reactSpider(ServerLevel level, Spider spider) {
         wetSplat(level, spider.position().add(0.0D, spider.getBbHeight() * 0.45D, 0.0D), 6);
-        spider.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 0));
+        spider.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 80, 0));
         spider.playSound(SoundEvents.SPIDER_HURT, 0.55F, 0.85F + level.random.nextFloat() * 0.25F);
     }
 

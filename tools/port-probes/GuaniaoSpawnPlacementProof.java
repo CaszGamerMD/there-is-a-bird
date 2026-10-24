@@ -3,7 +3,7 @@ package EdDYON.guaniao.fabric;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.SpawnPlacementType;
+import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.level.levelgen.Heightmap;
 
@@ -17,7 +17,7 @@ public final class GuaniaoSpawnPlacementProof {
     public static EntityType<Pig> createTestEntity() {
         return FabricEntityType.Builder.<Pig>createMob(Pig::new, MobCategory.CREATURE,
                 builder -> builder.spawnPlacement(
-                        SpawnPlacementType.ON_GROUND,
+                        SpawnPlacementTypes.ON_GROUND,
                         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                         (type, level, reason, pos, random) ->
                                 reason != net.minecraft.world.entity.MobSpawnType.CHUNK_GENERATION))

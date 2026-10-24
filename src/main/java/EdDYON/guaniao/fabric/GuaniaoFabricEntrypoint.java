@@ -3,6 +3,7 @@ package EdDYON.guaniao.fabric;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.event.BirdConfigLifecycleEvents;
 import EdDYON.guaniao.event.BirdPopulationTracker;
+import EdDYON.guaniao.event.BirdAdvancementEvents;
 import EdDYON.guaniao.event.CassowaryThreatEvents;
 import EdDYON.guaniao.event.BirdServerTickManager;
 import EdDYON.guaniao.event.BirdRuntimeConfigEvents;
@@ -54,6 +55,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         // transient nest and photo state at exactly the corresponding hooks.
         BirdServerTickManager.registerCallbacks();
         BirdPopulationTracker.registerCallbacks();
+        BirdAdvancementEvents.registerCallbacks();
         CassowaryThreatEvents.registerCallbacks();
         EarthwormRainEvents.registerCallbacks();
         CrowNestLifecycleEvents.registerCallbacks();

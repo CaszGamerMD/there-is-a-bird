@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 /** Maintains temporary, persistent flight loss without freezing ground movement. */
@@ -47,7 +48,7 @@ public final class BirdFlightLock {
 
     private static void keepGrounded(LivingEntity bird) {
         bird.setNoGravity(false);
-        if (bird.isInWaterOrBubble()) {
+        if (bird.isInWater() || bird.level().getBlockState(bird.blockPosition()).is(Blocks.BUBBLE_COLUMN)) {
             return;
         }
         Vec3 movement = bird.getDeltaMovement();

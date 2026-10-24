@@ -64,6 +64,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
         include 'EdDYON/guaniao/fabric/FabricRegistryQueue.java'
         include 'EdDYON/guaniao/fabric/GuaniaoRegistryIds.java'
         include 'EdDYON/guaniao/registry/GuaniaoBlockTags.java'
+        include 'EdDYON/guaniao/client/skybird/SkyBirdSpecies.java'
         include 'EdDYON/guaniao/config/BirdSpecies.java'
         include 'EdDYON/guaniao/content/bath/BirdBathVariant.java'
         include 'EdDYON/guaniao/content/bird/FullColorSpawnEggItem.java'

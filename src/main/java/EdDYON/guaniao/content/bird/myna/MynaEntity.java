@@ -20,7 +20,7 @@ import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;

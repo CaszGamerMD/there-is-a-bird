@@ -21,7 +21,7 @@ import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
 import EdDYON.guaniao.content.bird.species.WoodcockProfile;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import java.util.EnumSet;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;

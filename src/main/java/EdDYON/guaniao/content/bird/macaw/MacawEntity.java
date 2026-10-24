@@ -46,7 +46,7 @@ import com.geckolib.animation.state.AnimationTest;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class MacawEntity extends BudgerigarEntity {

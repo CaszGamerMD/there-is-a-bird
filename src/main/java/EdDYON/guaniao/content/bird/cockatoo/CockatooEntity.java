@@ -36,7 +36,7 @@ import com.geckolib.animation.state.AnimationTest;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class CockatooEntity extends BudgerigarEntity {
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.idle");

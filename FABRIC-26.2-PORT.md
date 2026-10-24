@@ -492,3 +492,12 @@ field accessor names, default values, registration order and inherited
 registration chaining. The other three subclasses inherit their
 parent's converted initialization without adding fields. This is
 an API migration, not a behavior change or a playable-jar milestone.
+
+## 26.2 nullable annotation compatibility (2026-10-24)
+
+Replaced the unavailable `javax.annotation.Nullable` import with
+`org.jetbrains.annotations.Nullable` in 11 bird entity classes; all
+original `@Nullable` sites and their semantics are preserved.
+Whole-file source parity and a dedicated count check guard this
+mechanical import migration. It removes one retired dependency symbol
+without changing entity state or behavior.

@@ -80,6 +80,11 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
         expected = expected.replace("super.defineSynchedData();", "super.defineSynchedData(builder);")
         expected = expected.replace("this.entityData.define(", "builder.define(")
         expected = expected.replace("entityData.define(", "builder.define(")
+    # 26.2 dependency supplies JetBrains nullability annotations rather
+    # than the old javax.annotation.Nullable package.
+    expected = expected.replace(
+        "import javax.annotation.Nullable;",
+        "import org.jetbrains.annotations.Nullable;")
     if relative.endswith("/hummingbird/HummingbirdEntity.java"):
         expected = expected.replace(
             "import software.bernie.geckolib.core.animation.*;",

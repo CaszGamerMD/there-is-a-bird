@@ -44,6 +44,9 @@ for path in sorted(base.rglob("*Entity.java")):
             expected = expected.replace("super.defineSynchedData();", "super.defineSynchedData(builder);")
             expected = expected.replace("this.entityData.define(", "builder.define(")
             expected = expected.replace("entityData.define(", "builder.define(")
+        expected = expected.replace(
+            "import javax.annotation.Nullable;",
+            "import org.jetbrains.annotations.Nullable;")
         assert current == expected, f"{path.name}: unrelated gameplay edit"
     seen += 1
 assert seen == len(NAMES), f"Expected {len(NAMES)} ported files, saw {seen}"

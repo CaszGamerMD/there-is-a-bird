@@ -19,8 +19,12 @@ import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.MinecraftServer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
@@ -42,13 +46,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdFlybySpawnEvents {
     private static final TagKey<Biome> NIGHT_HERON_HABITAT = biomeTag("night_heron_habitat");
     private static final TagKey<Biome> SPARROW_HABITAT = biomeTag("sparrow_habitat");
@@ -64,9 +62,8 @@ public final class BirdFlybySpawnEvents {
     private BirdFlybySpawnEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player) || player.isSpectator()) {
+    public static void onPlayerTick(ServerPlayer player) {
+        if (player.isSpectator()) {
             return;
         }
         ServerLevel level = player.serverLevel();
@@ -100,18 +97,27 @@ public final class BirdFlybySpawnEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        UUID playerId = event.getEntity().getUUID();
+    public static void onPlayerLoggedOut(ServerPlayer player) {
+        UUID playerId = player.getUUID();
         PLAYER_COOLDOWNS.remove(playerId);
         SeagullEntity.clearTheftTargetsFor(playerId);
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            DIMENSION_ATTEMPTS.remove(level);
+    public static void onLevelUnload(ServerLevel level) {
+        DIMENSION_ATTEMPTS.remove(level);
+    }
+
+    public static void onServerTick(MinecraftServer server) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            onPlayerTick(player);
         }
+    }
+
+    public static void registerCallbacks() {
+        ServerTickEvents.END_SERVER_TICK.register(BirdFlybySpawnEvents::onServerTick);
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                onPlayerLoggedOut(handler.getPlayer()));
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static boolean trySpawnFlyby(ServerLevel level, ServerPlayer player, RandomSource random) {
@@ -509,7 +515,7 @@ public final class BirdFlybySpawnEvents {
     }
 
     private static TagKey<Biome> biomeTag(String id) {
-        return TagKey.create(Registries.BIOME, new ResourceLocation(GuaniaoMod.MOD_ID, id));
+        return TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, id));
     }
 
     private enum BirdKind {

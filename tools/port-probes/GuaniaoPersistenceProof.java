@@ -19,8 +19,9 @@ public final class GuaniaoPersistenceProof extends BlockEntity {
     private boolean prank;
     private java.util.UUID lastVisitor;
 
+    // Compile-only: null block entity type must never be instantiated.
     public GuaniaoPersistenceProof() {
-        super(BlockEntityType.CHEST, BlockPos.ZERO, Blocks.CHEST.defaultBlockState());
+        super(null, BlockPos.ZERO, Blocks.CHEST.defaultBlockState());
     }
 
     @Override

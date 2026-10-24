@@ -49,11 +49,19 @@ for token in ("ServerLevelEvents.UNLOAD.register", "clearLoadedNests(level)"):
 
 old_rain, rain = assert_ported("event/EarthwormRainEvents.java")
 for token in (
-        "now % 200L != 0L", "now + 800L", "level.random.nextFloat() >= 0.35F",
-        "getBoolean(GameRules.RULE_DOMOBSPAWNING)", "BirdScanBudget.tryAcquire(level, 1)",
+        "now % 200L != 0L", "now + 800L", "BirdScanBudget.tryAcquire(level, 1)",
         "level.isRaining()", "Math.abs(surface.getY() - player.getY()) > 12.0D"):
     if token not in old_rain or token not in rain:
         raise SystemExit(f"Rain earthworm behavior changed/lost: {token}")
+# API renames are allowed only when the authored thresholds and game-rule
+# semantics remain the same (Minecraft 26.2 exposes a typed gamerule).
+for legacy, modern in (
+        ("level.random.nextFloat() >= 0.35F",
+         "level.getRandom().nextFloat() >= 0.35F"),
+        ("getBoolean(GameRules.RULE_DOMOBSPAWNING)",
+         "get(GameRules.SPAWN_MOBS)")):
+    if legacy not in old_rain or modern not in rain:
+        raise SystemExit(f"Rain earthworm API migration lost its behavior: {legacy} -> {modern}")
 for token in ("ServerTickEvents.END_LEVEL_TICK.register", "ServerLevelEvents.UNLOAD.register", "COOLDOWNS.remove(level)"):
     if token not in rain:
         raise SystemExit(f"Rain earthworm lifecycle hook missing: {token}")

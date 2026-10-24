@@ -41,9 +41,9 @@ public class PigeonEntity extends AbstractColumbidEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(VARIANT, ColumbidVariant.GRAY_PIGEON.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(VARIANT, ColumbidVariant.GRAY_PIGEON.ordinal());
     }
 
     @Override

@@ -294,17 +294,17 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEHAVIOR_STATE, CrowBehaviorState.IDLE.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(FLYING_ANIMATION_ACTIVE, false);
-        this.entityData.define(NAVIGATION_FLIGHT_ACTIVE, false);
-        this.entityData.define(FLIGHT_ANIMATION_SEQUENCE, 0);
-        this.entityData.define(HELD_FOOD, ItemStack.EMPTY);
-        this.entityData.define(HELD_FOOD_POSE_SEED, 0);
-        this.entityData.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEHAVIOR_STATE, CrowBehaviorState.IDLE.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(FLYING_ANIMATION_ACTIVE, false);
+        builder.define(NAVIGATION_FLIGHT_ACTIVE, false);
+        builder.define(FLIGHT_ANIMATION_SEQUENCE, 0);
+        builder.define(HELD_FOOD, ItemStack.EMPTY);
+        builder.define(HELD_FOOD_POSE_SEED, 0);
+        builder.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
     }
 
     @Override

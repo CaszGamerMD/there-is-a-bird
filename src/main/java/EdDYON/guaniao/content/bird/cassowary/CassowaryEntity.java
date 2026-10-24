@@ -248,15 +248,15 @@ public class CassowaryEntity extends PathfinderMob
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEHAVIOR_STATE, CassowaryBehaviorState.CALM.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
-        this.entityData.define(GAZE_TARGET_ID, -1);
-        this.entityData.define(GAZE_YAW, 0.0F);
-        this.entityData.define(GAZE_PITCH, 0.0F);
-        this.entityData.define(GAZE_WEIGHT, 0.0F);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEHAVIOR_STATE, CassowaryBehaviorState.CALM.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
+        builder.define(GAZE_TARGET_ID, -1);
+        builder.define(GAZE_YAW, 0.0F);
+        builder.define(GAZE_PITCH, 0.0F);
+        builder.define(GAZE_WEIGHT, 0.0F);
     }
 
     @Override

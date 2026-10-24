@@ -470,3 +470,15 @@ The whole-file GeckoLib bird parity gate derives the exact interface-to-hook
 conversion from the original Forge source, and a separate real-API
 compile probe verifies the 26.2 override signature. This does not
 by itself complete entity compilation, navigation, or bird simulation.
+
+## 26.2 synchronized bird state builder migration (first batch, 2026-10-24)
+
+The eight classes BudgerigarEntity.java, CassowaryEntity.java, CockatielEntity.java, AbstractColumbidEntity.java, PigeonEntity.java, SpottedDoveEntity.java, CrowEntity.java, HummingbirdEntity.java now initialize synchronized
+entity state through `SynchedEntityData.Builder` instead of the removed
+`entityData.define` override. All 40
+original field registrations retain their accessor, value, order and
+superclass-before-subclass ordering. The checker compares each entire
+initialization method against the original Forge source after **only**
+the signature and builder call substitutions. An isolated 26.2 Java
+compilation probe verifies the method signatures. Other entities remain
+unconverted; no playable mod is implied.

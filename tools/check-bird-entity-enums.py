@@ -33,10 +33,17 @@ for path in sorted(base.rglob("*Entity.java")):
             assert old not in current, f"{path.name}: retired type {old} remains"
     # The existing GeckoLib parity test covers every migrated Gecko bird.
     # For subclass-only entities with no GeckoLib, protect their entire source.
+    synced_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java"]
     if "software.bernie.geckolib" not in original:
         expected = original
         for old, new in RENAMES:
             expected = expected.replace(old, new)
+        if path.name in synced_ported:
+            expected = expected.replace("protected void defineSynchedData()",
+                "protected void defineSynchedData(SynchedEntityData.Builder builder)")
+            expected = expected.replace("super.defineSynchedData();", "super.defineSynchedData(builder);")
+            expected = expected.replace("this.entityData.define(", "builder.define(")
+            expected = expected.replace("entityData.define(", "builder.define(")
         assert current == expected, f"{path.name}: unrelated gameplay edit"
     seen += 1
 assert seen == len(NAMES), f"Expected {len(NAMES)} ported files, saw {seen}"

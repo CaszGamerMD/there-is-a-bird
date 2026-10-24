@@ -70,6 +70,16 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
         expected, hook_count = flying_override.subn(_flight_hook, expected, count=1)
         if hook_count != 1:
             raise SystemExit(f"{relative}: FlyingAnimal conversion lost isFlying")
+    # 26.2 SynchedEntityData.Builder keeps each original accessor/default value,
+    # and calls the superclass initializer before defining subclass fields.
+    synced_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java"]
+    if p.name in synced_ported:
+        expected = expected.replace(
+            "protected void defineSynchedData()",
+            "protected void defineSynchedData(SynchedEntityData.Builder builder)")
+        expected = expected.replace("super.defineSynchedData();", "super.defineSynchedData(builder);")
+        expected = expected.replace("this.entityData.define(", "builder.define(")
+        expected = expected.replace("entityData.define(", "builder.define(")
     if relative.endswith("/hummingbird/HummingbirdEntity.java"):
         expected = expected.replace(
             "import software.bernie.geckolib.core.animation.*;",

@@ -99,13 +99,13 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
                                    BlockPos pos, RandomSource random) {
         return level.getRawBrightness(pos, 0) > 8 && Mob.checkMobSpawnRules(type, level, reason, pos, random);
     }
-    @Override protected void defineSynchedData() {
-        super.defineSynchedData();
-        entityData.define(ACTIVITY, Activity.HOVER.ordinal()); entityData.define(COMMAND, 0);
-        entityData.define(MALE, false); entityData.define(NECTAR, 0F); entityData.define(BANK, 0F);
-        entityData.define(FORWARD, 0F); entityData.define(BACKWARD, 0F); entityData.define(LATERAL, 0F);
-        entityData.define(IDLE_DETAIL, 0);
-        entityData.define(CARRY, ItemStack.EMPTY);
+    @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ACTIVITY, Activity.HOVER.ordinal()); builder.define(COMMAND, 0);
+        builder.define(MALE, false); builder.define(NECTAR, 0F); builder.define(BANK, 0F);
+        builder.define(FORWARD, 0F); builder.define(BACKWARD, 0F); builder.define(LATERAL, 0F);
+        builder.define(IDLE_DETAIL, 0);
+        builder.define(CARRY, ItemStack.EMPTY);
     }
     @Override protected BodyRotationControl createBodyControl() {
         return new BodyRotationControl(this) {

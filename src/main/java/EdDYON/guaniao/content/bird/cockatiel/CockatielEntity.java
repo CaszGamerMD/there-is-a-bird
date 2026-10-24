@@ -78,9 +78,9 @@ public class CockatielEntity extends BudgerigarEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(CREST_STATE, CockatielCrestState.RELAXED.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CREST_STATE, CockatielCrestState.RELAXED.ordinal());
     }
 
     @Override

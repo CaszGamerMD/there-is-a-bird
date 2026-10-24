@@ -36,6 +36,8 @@ jobs:
         run: python3 tools/check-frame-workbench-port.py
       - name: Verify bird entity spawn and pathfinding class migrations
         run: python3 tools/check-bird-entity-enums.py
+      - name: Verify bird synced-data initial values and inheritance order
+        run: python3 tools/check-bird-synced-data-port.py
       - name: Verify nine original bird flight marker migrations
         run: python3 tools/check-bird-flight-marker-port.py
       - name: Verify bird AI preserved through GeckoLib 5 API substitutions

@@ -9,6 +9,7 @@ import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.item.Item;
+import net.fabricmc.fabric.api.registry.CompostableRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.world.entity.Mob;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
@@ -66,6 +67,10 @@ public final class GuaniaoRegistrationProof {
     public static void proofVanillaCreativeTabCallbacks() {
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.SPAWN_EGGS)
                 .register(entries -> entries.accept(Items.EGG));
+    }
+
+    public static void proofCompostableChanceRegistry() {
+        CompostableRegistry.INSTANCE.add(Items.BONE, 0.6F);
     }
 
     public static void proofBirdAttributes() {

@@ -1,6 +1,7 @@
 package EdDYON.guaniao.fabric;
 
 import EdDYON.guaniao.config.BirdConfigManager;
+import EdDYON.guaniao.content.dropping.BirdDroppingUtil;
 import EdDYON.guaniao.event.BirdConfigLifecycleEvents;
 import EdDYON.guaniao.event.BirdPopulationTracker;
 import EdDYON.guaniao.event.BirdAdvancementEvents;
@@ -46,6 +47,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         GuaniaoEntityTypes.ENTITY_TYPES.registerAll();
         GuaniaoEntityAttributes.registerAll();
         GuaniaoItems.ITEMS.registerAll();
+        BirdDroppingUtil.registerCompostables();
         GuaniaoRecipeSerializers.RECIPE_SERIALIZERS.registerAll();
         GuaniaoFeatures.FEATURES.registerAll();
         GuaniaoCreativeTabs.CREATIVE_MODE_TABS.registerAll();

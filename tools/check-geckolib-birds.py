@@ -35,7 +35,7 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
     expected = expected.replace(".getController()", ".controller()")
     expected = expected.replace(".transitionLength(", ".setTransitionTicks(")
     # Ported 26.2 bird enum package/type names; no changes to comparisons or values.
-    enum_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","CockatooEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java"]
+    enum_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","CockatooEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","LongTailedTitEntity.java","MacawEntity.java"]
     if p.name in enum_ported:
         expected = expected.replace("MobSpawnType", "EntitySpawnReason")
         expected = expected.replace("BlockPathTypes", "PathType")

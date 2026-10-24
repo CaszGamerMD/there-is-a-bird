@@ -67,7 +67,7 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
@@ -92,9 +92,9 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import com.geckolib.animatable.GeoEntity;
@@ -260,9 +260,9 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAni
                 super.tick();
             }
         };
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0F);
-        this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0F);
-        this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.LEAVES, 0.0F);
+        this.setPathfindingMalus(PathType.DANGER_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.DAMAGE_FIRE, 16.0F);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -275,8 +275,8 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAni
     }
 
     public static boolean canSpawn(EntityType<KestrelEntity> type, ServerLevelAccessor level,
-                                   MobSpawnType spawnType, BlockPos pos, RandomSource random) {
-        if (spawnType == MobSpawnType.CHUNK_GENERATION || !isSpawnColumnReady(level, pos)) {
+                                   EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
+        if (spawnType == EntitySpawnReason.CHUNK_GENERATION || !isSpawnColumnReady(level, pos)) {
             return false;
         }
         BlockState below = level.getBlockState(pos.below());
@@ -364,7 +364,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAni
 
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty,
-                                        MobSpawnType spawnType, @Nullable SpawnGroupData spawnData,
+                                        EntitySpawnReason spawnType, @Nullable SpawnGroupData spawnData,
                                         @Nullable CompoundTag tag) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, spawnData, tag);
         if (tag == null || !tag.contains(BirdModelScale.NBT_KEY, 5)) {

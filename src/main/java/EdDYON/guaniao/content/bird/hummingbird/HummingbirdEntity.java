@@ -96,7 +96,7 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 4).add(Attributes.MOVEMENT_SPEED, 0.15)
                 .add(Attributes.FLYING_SPEED, 0.30).add(Attributes.FOLLOW_RANGE, 32);
     }
-    public static boolean canSpawn(EntityType<HummingbirdEntity> type, ServerLevelAccessor level, MobSpawnType reason,
+    public static boolean canSpawn(EntityType<HummingbirdEntity> type, ServerLevelAccessor level, EntitySpawnReason reason,
                                    BlockPos pos, RandomSource random) {
         return level.getRawBrightness(pos, 0) > 8 && Mob.checkMobSpawnRules(type, level, reason, pos, random);
     }

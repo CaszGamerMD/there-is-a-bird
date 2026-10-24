@@ -36,7 +36,7 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -148,9 +148,9 @@ public class KiwiEntity extends PathfinderMob
 
     public KiwiEntity(EntityType<? extends KiwiEntity> entityType, Level level) {
         super(entityType, level);
-        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.BlockPathTypes.WATER, 4.0F);
-        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.BlockPathTypes.DANGER_FIRE, 16.0F);
-        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.BlockPathTypes.DAMAGE_FIRE, 16.0F);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, 4.0F);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.DANGER_FIRE, 16.0F);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.DAMAGE_FIRE, 16.0F);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -161,7 +161,7 @@ public class KiwiEntity extends PathfinderMob
     }
 
     public static boolean canSpawn(EntityType<KiwiEntity> entityType, ServerLevelAccessor level,
-                                   MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+                                   EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)
@@ -294,7 +294,7 @@ public class KiwiEntity extends PathfinderMob
 
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty,
-                                        MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag tag) {
+                                        EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag tag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, tag);
         if (tag == null || !tag.contains(BirdModelScale.NBT_KEY, 5)) {
             this.setIndividualModelScale(BirdModelScale.randomIndividualScale(this.getRandom(), this.modelScaleProfile()));

@@ -32,7 +32,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.BreedGoal;
 import net.minecraft.world.entity.player.Player;
@@ -76,7 +76,7 @@ public class LongTailedTitEntity extends SparrowEntity {
         super(entityType, level);
     }
 
-    public static boolean canLongTailedTitSpawn(EntityType<LongTailedTitEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canLongTailedTitSpawn(EntityType<LongTailedTitEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean forestFloor = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)

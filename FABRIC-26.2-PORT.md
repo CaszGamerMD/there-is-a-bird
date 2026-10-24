@@ -396,3 +396,10 @@ pigeon and spotted-dove entity sources. The field/method bodies and authored
 enum constants are unmodified. Extended GeckoLib source-parity rules and
 added isolated Java API compile tests; further bird species remain in progress.
 This is not yet a playable mod or a complete bird AI conversion.
+
+### Second bird entity enum batch (2026-10-24)
+
+Converted CrowEntity, HummingbirdEntity, KestrelEntity, KingfisherEntity, KiwiEntity, LongTailedTitEntity, MacawEntity source types to
+the same 26.2 native spawn/path enums, preserving their authored branches,
+enums, constant values and flight/foraging choices. Existing GeckoLib and
+whole-file no-Gecko parity tests now cover all 14 migrated classes.

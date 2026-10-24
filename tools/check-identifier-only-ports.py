@@ -8,6 +8,7 @@ files = (
     "src/main/java/EdDYON/guaniao/content/bird/BirdTags.java",
     "src/main/java/EdDYON/guaniao/client/skybird/SkyBirdEcology.java",
     "src/main/java/EdDYON/guaniao/client/guide/HandbookData.java",
+    "src/main/java/EdDYON/guaniao/content/cage/BirdCageVariant.java",
 )
 for path in files:
     original = subprocess.check_output(["git", "show", "origin/main:" + path], cwd=root, text=True)

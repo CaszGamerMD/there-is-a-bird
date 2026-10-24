@@ -2,6 +2,7 @@
 """Gradual 26.2 bird enum relocation; preserve every original spawn/path condition."""
 from pathlib import Path
 import subprocess
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 NAMES = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","CockatooEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","LongTailedTitEntity.java","MacawEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
@@ -47,6 +48,9 @@ for path in sorted(base.rglob("*Entity.java")):
         expected = expected.replace(
             "import javax.annotation.Nullable;",
             "import org.jetbrains.annotations.Nullable;")
+        client_side_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java"]
+        if path.name in client_side_ported:
+            expected = re.sub(r"\.isClientSide\b(?!\s*\()", ".isClientSide()", expected)
         assert current == expected, f"{path.name}: unrelated gameplay edit"
     seen += 1
 assert seen == len(NAMES), f"Expected {len(NAMES)} ported files, saw {seen}"

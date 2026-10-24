@@ -89,7 +89,7 @@ public class CockatielEntity extends BudgerigarEntity {
         if (this.macawAvoidanceCooldown > 0) {
             --this.macawAvoidanceCooldown;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.tickCrestState();
             this.tickMacawAvoidance();
         }

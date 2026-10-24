@@ -321,12 +321,12 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
     @Override
     public void aiStep() {
         super.aiStep();
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.entityData.set(NAVIGATION_FLIGHT_ACTIVE, BirdNavigationMoveControl.flightActiveAfterTravel(this));
         }
         if (this.isPassenger()) {
             this.getNavigation().stop();
-            if (this.level().isClientSide) {
+            if (this.level().isClientSide()) {
                 this.tickClientAnimationCounters();
             } else {
                 this.tickCounters();
@@ -334,7 +334,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
             }
             return;
         }
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             this.tickClientAnimationCounters();
             return;
         }
@@ -359,14 +359,14 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
         }
         ItemStack stack = player.getItemInHand(hand);
         if (BudgerigarEntity.isCocoa(stack)) {
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 this.setBehaviorStateFor(BudgerigarBehaviorState.CURIOUS, 30);
                 this.playInteractionSound();
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
         if (this.isEdibleFoodForThisBird(stack)) {
-            if (this.level().isClientSide) {
+            if (this.level().isClientSide()) {
                 return InteractionResult.sidedSuccess(true);
             }
             if (this.isEating()) {
@@ -415,7 +415,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 200);
             this.clearEating();
             Entity attacker = source.getEntity();
@@ -528,7 +528,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
         if (selected != BirdCommandMode.FREE && selected != BirdCommandMode.FOLLOW) {
             this.ownerReturnFlight = false;
         }
-        if (!this.level().isClientSide && previous != selected
+        if (!this.level().isClientSide() && previous != selected
                 && (selected == BirdCommandMode.STAY && (!this.landingFlight || wasReturning)
                 || selected == BirdCommandMode.ROOST && wasReturning)
                 && this.isTame() && !this.isPassenger() && this.flightTicks > 0
@@ -675,7 +675,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide || !this.isSleepingOrRoosting()) {
+        if (this.level().isClientSide() || !this.isSleepingOrRoosting()) {
             return;
         }
         this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 240);
@@ -760,7 +760,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
 
     private boolean canReturnToOwner(LivingEntity owner) {
         BirdCommandMode mode = this.getBirdCommandMode();
-        return !this.level().isClientSide && this.isTame() && !this.isNoAi()
+        return !this.level().isClientSide() && this.isTame() && !this.isNoAi()
                 && owner != null && owner == this.getOwner() && owner.isAlive() && !owner.isSpectator()
                 && owner.level() == this.level()
                 && (mode == BirdCommandMode.FREE || mode == BirdCommandMode.FOLLOW)
@@ -1476,7 +1476,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
 
     /** An owner perch or validated placement ends the previous flight instead of pausing it. */
     public void stopFlightForOwnerPerch() {
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.finishFlight();

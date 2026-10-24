@@ -451,7 +451,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
         super.aiStep();
         Player perchedOwner = this.getPerchedOwner();
         if (perchedOwner != null) {
-            if (this.level().isClientSide) {
+            if (this.level().isClientSide()) {
                 return;
             }
             this.updateOwnerAttackTarget(perchedOwner);
@@ -468,7 +468,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
                 return;
             }
         }
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             this.tickVisualBank();
             return;
         }
@@ -1503,7 +1503,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
 
     /** Called after the common server interaction has validated the support, reach and permissions. */
     public boolean placeFromOwnerHead(Player owner, BlockPos support, Vec3 feet) {
-        if (this.level().isClientSide || !this.isAlive() || !this.isOwnedBy(owner) || this.getVehicle() != owner) return false;
+        if (this.level().isClientSide() || !this.isAlive() || !this.isOwnedBy(owner) || this.getVehicle() != owner) return false;
         this.stopRiding();
         if (this.isPassenger() || this.getVehicle() != null) return false;
         this.setBirdCommandMode(BirdCommandMode.STAY);
@@ -1565,15 +1565,15 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
         if (command.consumesAction()) return command;
         ItemStack stack = player.getItemInHand(hand);
         if (this.isTame() && this.isOwnedBy(player) && stack.is(Items.SPYGLASS)) {
-            if (!this.level().isClientSide && this.scoutCooldown <= 0) {
+            if (!this.level().isClientSide() && this.scoutCooldown <= 0) {
                 this.hoverAnchor = player.position().add(0.0D, 10.0D, 0.0D);
                 this.changeState(KestrelBehaviorState.SCOUT, this.randomBetween(200, 400));
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
         if (this.isTame() && this.isOwnedBy(player) && isValidFetchItem(stack)
                 && !BirdFoodSafety.matchesClean(BirdTags.KESTREL_FOODS, stack)) {
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 this.learnedFetchItem = BuiltInRegistries.ITEM.getKey(stack.getItem());
                 this.learningTicks = 40;
                 this.entityData.set(LEARNING_ITEM, true);
@@ -1581,12 +1581,12 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
                         this.getX(), this.getY() + this.getBbHeight() + 0.2D, this.getZ(),
                         4, 0.15D, 0.10D, 0.15D, 0.02D);
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
         if (!BirdFoodSafety.matchesClean(BirdTags.KESTREL_FOODS, stack)) {
             return super.mobInteract(player, hand);
         }
-        if (this.level().isClientSide) return InteractionResult.sidedSuccess(true);
+        if (this.level().isClientSide()) return InteractionResult.sidedSuccess(true);
         if (!player.getAbilities().instabuild) stack.shrink(1);
         this.getNavigation().stop();
         if (this.isTame()) {
@@ -1640,7 +1640,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             LivingEntity carriedPrey = this.getCarriedPrey();
             if (carriedPrey != null) {
                 this.releaseCarriedPrey(carriedPrey);
@@ -1673,7 +1673,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
 
     private void dropCarriedItem() {
         ItemStack carried = this.getCarriedItem();
-        if (!carried.isEmpty() && !this.level().isClientSide) {
+        if (!carried.isEmpty() && !this.level().isClientSide()) {
             this.spawnAtLocation(carried.copy());
             this.setCarriedItem(ItemStack.EMPTY);
         }
@@ -1723,7 +1723,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
     public void setBirdCommandMode(BirdCommandMode mode) {
         BirdCommandMode safe = mode == null ? BirdCommandMode.FREE : mode;
         this.entityData.set(COMMAND_MODE, safe.ordinal());
-        if (!this.level().isClientSide && safe == BirdCommandMode.ROOST && this.homePos == null) {
+        if (!this.level().isClientSide() && safe == BirdCommandMode.ROOST && this.homePos == null) {
             this.homePos = this.blockPosition().immutable();
         }
     }

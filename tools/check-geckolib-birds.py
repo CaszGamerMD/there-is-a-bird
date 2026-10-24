@@ -6,6 +6,7 @@ and animation decision outside the explicitly listed GeckoLib API mappings.
 """
 from pathlib import Path
 import subprocess
+import re
 
 root = Path(__file__).resolve().parents[1]
 subtree = Path("src/main/java/EdDYON/guaniao/content/bird")
@@ -85,6 +86,9 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
     expected = expected.replace(
         "import javax.annotation.Nullable;",
         "import org.jetbrains.annotations.Nullable;")
+    client_side_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java"]
+    if p.name in client_side_ported:
+        expected = re.sub(r"\.isClientSide\b(?!\s*\()", ".isClientSide()", expected)
     if relative.endswith("/hummingbird/HummingbirdEntity.java"):
         expected = expected.replace(
             "import software.bernie.geckolib.core.animation.*;",

@@ -282,7 +282,7 @@ public class CassowaryEntity extends PathfinderMob
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             this.tickClientGaze();
             return;
         }
@@ -946,7 +946,7 @@ public class CassowaryEntity extends PathfinderMob
         }
         this.entityData.set(BEHAVIOR_STATE, state.ordinal());
         this.behaviorTicks = 0;
-        if (!this.level().isClientSide && state == CassowaryBehaviorState.WARNING) {
+        if (!this.level().isClientSide() && state == CassowaryBehaviorState.WARNING) {
             this.playSound(GuaniaoSoundEvents.CASSOWARY_WARNING.get(),
                     1.15F, 0.94F + this.getRandom().nextFloat() * 0.12F);
         }
@@ -1096,7 +1096,7 @@ public class CassowaryEntity extends PathfinderMob
         if (!BirdFoodSafety.matchesClean(BirdTags.CASSOWARY_FOODS, stack)) {
             return super.mobInteract(player, hand);
         }
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return InteractionResult.sidedSuccess(true);
         }
         if (!player.getAbilities().instabuild) {
@@ -1118,7 +1118,7 @@ public class CassowaryEntity extends PathfinderMob
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.triggerAnim("action", "hurt");
             if (source.getEntity() instanceof LivingEntity attacker) {
                 this.rememberThreat(attacker);

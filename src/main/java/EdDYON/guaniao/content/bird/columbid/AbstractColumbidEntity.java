@@ -366,7 +366,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.tickDancing();
@@ -445,7 +445,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         if (!this.isSeedFoodForThisBird(stack)) {
             return super.mobInteract(player, hand);
         }
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return InteractionResult.sidedSuccess(true);
         }
         ItemStack offeredStack = stack.copy();
@@ -489,7 +489,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     @Override
     public boolean hurt(DamageSource damageSource, float amount) {
         boolean hurt = super.hurt(damageSource, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 200);
             Entity source = damageSource.getEntity();
             if (BirdConfigManager.aprilFoolsMode() && source instanceof Player) {

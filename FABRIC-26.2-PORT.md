@@ -501,3 +501,13 @@ original `@Nullable` sites and their semantics are preserved.
 Whole-file source parity and a dedicated count check guard this
 mechanical import migration. It removes one retired dependency symbol
 without changing entity state or behavior.
+
+## Bird client/server side-check migration (first batch, 2026-10-24)
+
+The first nine bird classes now use `level.isClientSide()` instead
+of reading the removed `level.isClientSide` field. 55
+original side-checks retain their boolean conditions, negations,
+return paths and exact branches. The whole-file parity scripts allow
+only this mechanical call change alongside previous GeckoLib/26.2
+adaptations. The remaining nine classes with this old API will be
+converted in the follow-up batch.

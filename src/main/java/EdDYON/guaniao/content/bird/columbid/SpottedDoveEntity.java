@@ -61,7 +61,7 @@ public class SpottedDoveEntity extends AbstractColumbidEntity {
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (this.weatherWarningCooldown > 0) {

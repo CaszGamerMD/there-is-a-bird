@@ -135,7 +135,7 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         previousWingStrokeTime = wingStrokeTime;
         previousVisualBank = visualBank;
         super.tick();
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             // Client motion packets are intermittent. Send the authoritative pose target,
             // then interpolate it locally instead of repeatedly restarting fly/hover clips.
             double yaw = getYRot() * Mth.DEG_TO_RAD;
@@ -289,7 +289,7 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
     public void setGuidePreviewAnimation(@Nullable String name) { preview = name; }
     @Override public BirdCommandMode getBirdCommandMode() { return BirdCommandMode.byId(entityData.get(COMMAND)); }
     @Override public void setBirdCommandMode(BirdCommandMode mode) {
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             entityData.set(COMMAND, mode.ordinal());
             behavior.commandChanged();
         }
@@ -306,15 +306,15 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
             return command;
         }
         if (isTame() && isOwnedBy(player) && player.isShiftKeyDown() && stack.is(net.minecraft.tags.ItemTags.FLOWERS)) {
-            if (!level().isClientSide) {
+            if (!level().isClientSide()) {
                 behavior.bindGarden((ServerLevel)level(), player.blockPosition());
                 playInteractionSound();
             }
-            return InteractionResult.sidedSuccess(level().isClientSide);
+            return InteractionResult.sidedSuccess(level().isClientSide());
         }
         if (!BirdFoodSafety.matchesClean(FOODS, stack)) return InteractionResult.PASS;
         if (isTame() && !isOwnedBy(player)) return InteractionResult.PASS;
-        if (!level().isClientSide && level().getGameTime() >= nextFeedTick) {
+        if (!level().isClientSide() && level().getGameTime() >= nextFeedTick) {
             nextFeedTick = level().getGameTime() + 10;
             if (!isTame()) {
                 if (!player.getUUID().equals(tamingCandidate)) { tamingCandidate = player.getUUID(); tamingProgress = 0; }
@@ -329,11 +329,11 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
             if (!player.getAbilities().instabuild) stack.shrink(1);
             playInteractionSound();
         }
-        return InteractionResult.sidedSuccess(level().isClientSide);
+        return InteractionResult.sidedSuccess(level().isClientSide());
     }
     @Override public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !level().isClientSide && isAlive()) behavior.panic(source.getEntity());
+        if (hurt && !level().isClientSide() && isAlive()) behavior.panic(source.getEntity());
         return hurt;
     }
     @Override public void rideTick() {
@@ -379,7 +379,7 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         if (!getHeldGardenItem().isEmpty()) { spawnAtLocation(getHeldGardenItem().copy()); setHeldGardenItem(ItemStack.EMPTY); }
     }
     @Override public void remove(RemovalReason reason) {
-        if (!level().isClientSide) behavior.release();
+        if (!level().isClientSide()) behavior.release();
         super.remove(reason);
     }
     @Override public void addAdditionalSaveData(CompoundTag tag) {

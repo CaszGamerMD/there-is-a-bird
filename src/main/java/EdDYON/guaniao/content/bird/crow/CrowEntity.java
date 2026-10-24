@@ -406,7 +406,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.entityData.set(NAVIGATION_FLIGHT_ACTIVE, BirdNavigationMoveControl.flightActiveAfterTravel(this));
@@ -428,7 +428,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
         }
         ItemStack stack = player.getItemInHand(hand);
         if (!stack.isEmpty() && isCrowFood(stack)) {
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 boolean wasTame = this.isTame();
                 boolean feedingRememberedAggressor = this.isRememberingPlayer(player);
                 ItemStack eaten = stack.copy();
@@ -459,7 +459,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
                 }
                 this.heal(1.0F);
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
         return super.mobInteract(player, hand);
     }
@@ -492,7 +492,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             if (!this.dropHeldItem()) {
                 this.clearEating();
             }
@@ -678,7 +678,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide || !this.isBirdSleeping()) {
+        if (this.level().isClientSide() || !this.isBirdSleeping()) {
             return;
         }
         this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 240);
@@ -2208,7 +2208,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
 
         private boolean canCarryToNest() {
             ItemStack carried = this.crow.getHeldFoodForRendering();
-            return !this.crow.level().isClientSide
+            return !this.crow.level().isClientSide()
                     && (!this.crow.isTame() || this.crow.isBirdCommandMode(BirdCommandMode.FREE))
                     && BirdConfigManager.crowsStoreTreasures()
                     && this.crow.isCarryingHeldItem()

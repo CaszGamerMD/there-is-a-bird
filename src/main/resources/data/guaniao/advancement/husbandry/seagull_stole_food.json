@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "item": "guaniao:seagull_spawn_egg"
+      "id": "guaniao:seagull_spawn_egg"
     },
     "title": {
       "translate": "advancements.guaniao.husbandry.seagull_stole_food.title"

@@ -446,3 +446,14 @@ event delivery only. Repopulation still calls legacy Forge spawn hooks and
 old weighted-spawn APIs, which must be replaced with an equivalent Fabric
 mechanism before full build/runtime verification. No spawning behavior is
 claimed playable yet.
+
+### Native repopulation spawn/gamerule symbols (2026-10-24)
+
+The same repopulation site predicates now use `EntitySpawnReason.NATURAL`
+instead of `MobSpawnType.NATURAL` and Minecraft 26.2's
+`GameRules.SPAWN_MOBS` access instead of the removed
+`RULE_DOMOBSPAWNING`/boolean getter combination. The existing
+`GuaniaoSpawnRulesProof` independently compiles that gamerule API.
+All original probability, cap, height, group and spawn-reason decisions
+remain untouched, as checked against `origin/main`.
+The Forge potential-spawn and finalize-spawn integration remains unported.

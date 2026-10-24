@@ -15,7 +15,11 @@ old_work = old[old.index(head):old.index(tail_old)]
 new_work = new[new.index(head):new.index(tail_new)]
 assert old_work == new_work, "Repopulation interval, chance, scan or cap calculation changed"
 start = "    private static boolean isCrowded("
-assert old[old.index(start):] == new[new.index(start):], "Bird natural spawning/cap logic was modified"
+expected_body = old[old.index(start):].replace("MobSpawnType", "EntitySpawnReason")
+expected_body = expected_body.replace(
+    "getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)",
+    "getGameRules().get(GameRules.SPAWN_MOBS)")
+assert expected_body == new[new.index(start):], "Bird natural spawning/cap logic was modified"
 assert "ServerTickEvents.END_LEVEL_TICK.register(BirdRepopulationEvents::onLevelTick);" in new
 assert "ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));" in new
 assert "ATTEMPTS.remove(level);" in new

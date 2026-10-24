@@ -18,10 +18,10 @@ import net.minecraft.util.random.WeightedRandomList;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.SpawnPlacements;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.block.Blocks;
@@ -154,15 +154,15 @@ public final class BirdRepopulationEvents {
                     level.getBiome(pos).value().getMobSettings().getMobs(MobCategory.CREATURE));
             if (atPosition.unwrap().stream().noneMatch(entry -> entry.type == data.type)) continue;
             if (!NaturalSpawner.isSpawnPositionOk(SpawnPlacements.getPlacementType(data.type), level, pos, data.type)
-                    || !SpawnPlacements.checkSpawnRules(data.type, level, MobSpawnType.NATURAL, pos, level.random)
+                    || !SpawnPlacements.checkSpawnRules(data.type, level, EntitySpawnReason.NATURAL, pos, level.random)
                     || !level.noCollision(data.type.getAABB(x + 0.5D, pos.getY(), z + 0.5D))) continue;
 
             Entity entity = data.type.create(level);
             if (!(entity instanceof Mob mob)) continue;
             mob.moveTo(x + 0.5D, pos.getY(), z + 0.5D, level.random.nextFloat() * 360.0F, 0.0F);
-            if (!ForgeEventFactory.checkSpawnPosition(mob, level, MobSpawnType.NATURAL)) continue;
+            if (!ForgeEventFactory.checkSpawnPosition(mob, level, EntitySpawnReason.NATURAL)) continue;
             group = ForgeEventFactory.onFinalizeSpawn(mob, level, level.getCurrentDifficultyAt(pos),
-                    MobSpawnType.NATURAL, group, null);
+                    EntitySpawnReason.NATURAL, group, null);
             if (level.addFreshEntity(mob)) {
                 ++spawned;
                 if (spawned >= ForgeEventFactory.getMaxSpawnPackSize(mob) || mob.isMaxGroupSizeReached(spawned)) break;
@@ -172,7 +172,7 @@ public final class BirdRepopulationEvents {
     }
 
     private static boolean isEnabled(ServerLevel level) {
-        return level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)
+        return level.getGameRules().get(GameRules.SPAWN_MOBS)
                 && BirdConfigManager.naturalSpawnMultiplier() > 0.0D
                 && BirdConfigManager.maxBirdsNearby() > 0;
     }

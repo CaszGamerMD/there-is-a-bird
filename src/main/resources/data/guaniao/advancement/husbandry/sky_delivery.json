@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "item": "guaniao:bird_dropping_1"
+      "id": "guaniao:bird_dropping_1"
     },
     "title": {
       "translate": "advancements.guaniao.sky_delivery.title"

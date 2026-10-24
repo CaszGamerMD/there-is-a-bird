@@ -111,7 +111,7 @@ public final class BaggedFriesBlockEntity extends BlockEntity implements GeoBloc
         if (!level.isClientSide() || !this.laxative || this.fryMask == 0) {
             return;
         }
-        RandomSource random = level.random;
+        RandomSource random = level.getRandom();
         if (random.nextInt(AMBIENT_PARTICLE_CHANCE) != 0) {
             return;
         }

@@ -29,6 +29,13 @@ for phrase in (
     "ItemEntityAgeAccessor"):
     if phrase not in new:
         raise SystemExit("26.2 lifetime conversion missing: " + phrase)
+for phrase in (
+    "level.players().stream().anyMatch",
+    "player.isAlive()",
+    "player.distanceToSqr(source)",
+    "PLAYER_ACTIVITY_RADIUS * PLAYER_ACTIVITY_RADIUS"):
+    if phrase not in new:
+        raise SystemExit("Original 64-block nearby living-player criterion changed: " + phrase)
 if "itemEntity.lifespan" in new:
     raise SystemExit("Removed Forge lifespan field still used.")
 mixins = json.loads((root / "src/main/resources/guaniao.mixins.json").read_text("utf-8"))

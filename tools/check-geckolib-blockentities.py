@@ -63,6 +63,17 @@ for rel in relative_files:
             expected = expected.replace(
                 "    @Override\n    public AABB getRenderBoundingBox()",
                 "    public AABB getRenderBoundingBox()")
+    if rel.startswith("content/food/"):
+        # Minecraft 26.2 stores dust RGB in a packed integer rather than Vector3f.
+        # Channel values and particle scales remain those authored for 1.20.1.
+        expected = expected.replace("import org.joml.Vector3f;", "import net.minecraft.util.ARGB;")
+        expected = expected.replace(
+            "new DustParticleOptions(new Vector3f(0.28F, 0.18F, 0.07F), 0.80F);",
+            "new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.28F, 0.18F, 0.07F), 0.80F);")
+        expected = expected.replace(
+            "new DustParticleOptions(new Vector3f(0.20F, 0.40F, 0.08F), 0.70F);",
+            "new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.20F, 0.40F, 0.08F), 0.70F);")
+        expected = expected.replace(".isClientSide", ".isClientSide()")
     if rel in persisted:
         # Only the imports and method region for save, load and packet syncing
         # may change; particle, animation and entity behavior remains identical.

@@ -6,14 +6,10 @@
     " P "
   ],
   "key": {
-    "P": {
-      "item": "minecraft:paper"
-    },
-    "F": {
-      "item": "guaniao:cooked_fries"
-    }
+    "P": "minecraft:paper",
+    "F": "guaniao:cooked_fries"
   },
   "result": {
-    "item": "guaniao:bagged_fries"
+    "id": "guaniao:bagged_fries"
   }
 }

@@ -2,12 +2,10 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "minecraft:bread"
-    }
+    "minecraft:bread"
   ],
   "result": {
-    "item": "guaniao:breadcrumbs",
+    "id": "guaniao:breadcrumbs",
     "count": 8
   }
 }

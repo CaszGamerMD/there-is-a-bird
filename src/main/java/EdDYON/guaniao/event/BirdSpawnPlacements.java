@@ -3,13 +3,13 @@ package EdDYON.guaniao.event;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.entity.SpawnPlacementType;
+import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.NaturalSpawner;
 
 final class BirdSpawnPlacements {
-    static final SpawnPlacements.Type ON_GROUND_OR_LEAVES = SpawnPlacements.Type.create(
-            "GUANIAO_ON_GROUND_OR_LEAVES", BirdSpawnPlacements::canSpawnOnGroundOrLeaves);
+    static final SpawnPlacementType ON_GROUND_OR_LEAVES = BirdSpawnPlacements::canSpawnOnGroundOrLeaves;
 
     private BirdSpawnPlacements() {
     }
@@ -18,7 +18,7 @@ final class BirdSpawnPlacements {
         if (type == null || !level.getWorldBorder().isWithinBounds(pos) || level.isOutsideBuildHeight(pos)) {
             return false;
         }
-        if (NaturalSpawner.isSpawnPositionOk(SpawnPlacements.Type.ON_GROUND, level, pos, type)) {
+        if (SpawnPlacementTypes.ON_GROUND.isSpawnPositionOk(level, pos, type)) {
             return true;
         }
 

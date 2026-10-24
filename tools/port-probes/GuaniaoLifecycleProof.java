@@ -1,6 +1,7 @@
 package EdDYON.guaniao.fabric;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -23,6 +24,7 @@ public final class GuaniaoLifecycleProof {
 
     public static void probe() {
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> { });
+        ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> { });
         ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> { });
         ServerLevelEvents.UNLOAD.register((server, level) -> { });
         ServerTickEvents.END_SERVER_TICK.register(server -> { });
@@ -47,5 +49,6 @@ public final class GuaniaoLifecycleProof {
             }
         }
         player.getInventory().getContainerSize();
+        player.canEat(false);
     }
 }

@@ -12,7 +12,7 @@ public final class GuaniaoRecipeSerializers {
     public static final FabricRegistryQueue.Ref<RecipeSerializer<FilmToPhotographRecipe>> FILM_TO_PHOTOGRAPH = RECIPE_SERIALIZERS.register("film_to_photograph",
             () -> FilmToPhotographRecipe.SERIALIZER);
     public static final FabricRegistryQueue.Ref<RecipeSerializer<PhotographFrameRecipe>> PHOTOGRAPH_FRAME = RECIPE_SERIALIZERS.register("photograph_frame",
-            PhotographFrameRecipe.Serializer::new);
+            () -> PhotographFrameRecipe.SERIALIZER);
     public static final FabricRegistryQueue.Ref<RecipeSerializer<BirdDroppingFoodRecipe>> BIRD_DROPPING_FOOD = RECIPE_SERIALIZERS.register("bird_dropping_food",
             () -> BirdDroppingFoodRecipe.SERIALIZER);
 

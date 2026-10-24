@@ -376,3 +376,14 @@ The independent 26.2 compile gate includes the matching `SavedDataType` /
 long-stream codec API proof. Existing-world and real-server tests are still
 required: the source parity/compilation checks do not prove DFU migration or
 loaded-game compatibility.
+
+## Feather-fan enchanted book tooltip signature checkpoint (2026-10-24)
+
+All three original glowing custom books — Burial Plume, Riven Plume and
+Hunting Return — now use Minecraft 26.2's `Item.TooltipContext`,
+`TooltipDisplay` and `Consumer<Component>` item tooltip hook. The
+`isFoil` return, existing localization keys, dark-gray italic style and
+independent item identities are unchanged. A source-equality parity test
+and isolated 26.2 override compilation probe guard against accidental
+edits. This does not yet port the enchantment registry/loot-distribution
+system itself or prove that the books work during gameplay.

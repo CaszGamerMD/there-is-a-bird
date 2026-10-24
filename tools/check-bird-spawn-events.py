@@ -67,4 +67,14 @@ boot = (root / "src/main/java/EdDYON/guaniao/fabric/GuaniaoFabricEntrypoint.java
 for name in ("BirdFlybySpawnEvents", "BirdColonySpawnRules", "PollutedCakeEvents"):
     if f"{name}.registerCallbacks();" not in boot:
         raise SystemExit(f"Missing Fabric bootstrap hook: {name}")
+old_worms, worms = old("EarthwormRainEvents.java"), new("EarthwormRainEvents.java")
+for token in ("now % 200L != 0L", "0.35F", "attempt < 8", "nextInt(33) - 16",
+              "now + 800L", "BirdScanBudget.tryAcquire(level, 1)"):
+    if token not in old_worms or token not in worms:
+        raise SystemExit("Earthworm rain timing, chance, density or cooldown changed: " + token)
+if "level.getGameRules().get(GameRules.SPAWN_MOBS)" not in worms or "level.getRandom()" not in worms:
+    raise SystemExit("Rain earthworms must use Minecraft 26.2 gamerule and random APIs")
+if "EarthwormRainEvents.registerCallbacks();" not in boot:
+    raise SystemExit("Rain earthworm spawns are not registered on the server")
+
 print("SPAWN/Cake OK: five flyby habitats, flock timing, colony budget, chunk cleanup and prank effect preserved.")

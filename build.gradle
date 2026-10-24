@@ -23,6 +23,17 @@ dependencies {
 processResources {
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') { expand version: project.version }
+    // 26.2 now decodes advancement display icons as ItemStackTemplate (id, not item).
+    // Restrict this to the icon object so no item predicates or other authored data change.
+    doLast {
+        fileTree(destinationDir).matching {
+            include 'data/guaniao/advancement/husbandry/*.json'
+        }.each { file ->
+            def existing = file.getText('UTF-8')
+            def migrated = existing.replaceFirst(/("icon"\s*:\s*\{\s*)"item"(\s*:)/, '\$1"id"\$2')
+            if (migrated != existing) file.setText(migrated, 'UTF-8')
+        }
+    }
 }
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'

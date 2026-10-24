@@ -5,7 +5,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-NAMES = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java"]
+NAMES = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
 BIRD_ROOT = ROOT / "src/main/java/EdDYON/guaniao/content/bird"
 
 def method_body(src):
@@ -37,4 +37,4 @@ for name in NAMES:
     assert "super.defineSynchedData(builder);" in method_body(new)
     print("PASS:", name, "all original sync data defaults preserved")
 
-assert len(NAMES) == 8
+assert len(NAMES) == 17

@@ -200,12 +200,12 @@ public class KiwiEntity extends PathfinderMob
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEHAVIOR_STATE, KiwiBehaviorState.AWAKE.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
-        this.entityData.define(CONFLICT_STATE, KiwiConflictState.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEHAVIOR_STATE, KiwiBehaviorState.AWAKE.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
+        builder.define(CONFLICT_STATE, KiwiConflictState.NONE.ordinal());
     }
 
     @Override

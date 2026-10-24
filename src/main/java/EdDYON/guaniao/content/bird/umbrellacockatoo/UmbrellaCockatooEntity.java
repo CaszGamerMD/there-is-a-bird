@@ -220,12 +220,12 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(EMOTION, UmbrellaCockatooEmotion.RELAXED.ordinal());
-        this.entityData.define(HEAD_ROLL, 0.0F);
-        this.entityData.define(PERCH_SLOT, PERCH_SLOT_NONE);
-        this.entityData.define(SPECIAL_CALL_START, -1L);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(EMOTION, UmbrellaCockatooEmotion.RELAXED.ordinal());
+        builder.define(HEAD_ROLL, 0.0F);
+        builder.define(PERCH_SLOT, PERCH_SLOT_NONE);
+        builder.define(SPECIAL_CALL_START, -1L);
     }
 
     public long getSpecialCallStartTick() {

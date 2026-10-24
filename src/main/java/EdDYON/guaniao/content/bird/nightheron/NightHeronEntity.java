@@ -215,17 +215,17 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         this.setPathfindingMalus(PathType.WATER_BORDER, 0.0f);
     }
 
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
-        this.entityData.define(FISH_PURPOSE, HeldFishPurpose.NONE.id());
-        this.entityData.define(OFFER_TICKS, 0);
-        this.entityData.define(BEHAVIOR_STATE, NightHeronBehaviorState.IDLE.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(HELD_FISH, ItemStack.EMPTY);
-        this.entityData.define(HELD_FISH_POSE_SEED, 0);
-        this.entityData.define(EATING_TICKS, 0);
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
+        builder.define(FISH_PURPOSE, HeldFishPurpose.NONE.id());
+        builder.define(OFFER_TICKS, 0);
+        builder.define(BEHAVIOR_STATE, NightHeronBehaviorState.IDLE.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(HELD_FISH, ItemStack.EMPTY);
+        builder.define(HELD_FISH_POSE_SEED, 0);
+        builder.define(EATING_TICKS, 0);
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
     }
 
     @Override

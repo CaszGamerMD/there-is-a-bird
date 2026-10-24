@@ -33,7 +33,7 @@ for path in sorted(base.rglob("*Entity.java")):
             assert old not in current, f"{path.name}: retired type {old} remains"
     # The existing GeckoLib parity test covers every migrated Gecko bird.
     # For subclass-only entities with no GeckoLib, protect their entire source.
-    synced_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java"]
+    synced_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
     if "software.bernie.geckolib" not in original:
         expected = original
         for old, new in RENAMES:

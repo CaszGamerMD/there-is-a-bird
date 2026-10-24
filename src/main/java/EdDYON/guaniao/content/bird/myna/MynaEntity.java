@@ -196,9 +196,9 @@ public class MynaEntity extends SparrowEntity implements BirdSleepWakeable {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(ACTION_STATE, MynaActionState.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ACTION_STATE, MynaActionState.NONE.ordinal());
     }
 
     @Override

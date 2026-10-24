@@ -72,7 +72,7 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
             raise SystemExit(f"{relative}: FlyingAnimal conversion lost isFlying")
     # 26.2 SynchedEntityData.Builder keeps each original accessor/default value,
     # and calls the superclass initializer before defining subclass fields.
-    synced_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java"]
+    synced_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
     if p.name in synced_ported:
         expected = expected.replace(
             "protected void defineSynchedData()",

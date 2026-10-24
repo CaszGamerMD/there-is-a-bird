@@ -482,3 +482,13 @@ initialization method against the original Forge source after **only**
 the signature and builder call substitutions. An isolated 26.2 Java
 compilation probe verifies the method signatures. Other entities remain
 unconverted; no playable mod is implied.
+
+### All synchronized bird states migrated (2026-10-24)
+
+Converted the remaining nine class overrides (KestrelEntity.java, KingfisherEntity.java, KiwiEntity.java, MynaEntity.java, NightHeronEntity.java, SeagullEntity.java, SparrowEntity.java, UmbrellaCockatooEntity.java, WoodcockEntity.java) to
+`SynchedEntityData.Builder`. Across all **17** bird classes declaring
+synchronized fields, the source parity script checks the original
+field accessor names, default values, registration order and inherited
+registration chaining. The other three subclasses inherit their
+parent's converted initialization without adding fields. This is
+an API migration, not a behavior change or a playable-jar milestone.

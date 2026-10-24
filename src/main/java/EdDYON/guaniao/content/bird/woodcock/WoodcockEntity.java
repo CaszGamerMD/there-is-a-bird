@@ -229,10 +229,10 @@ public class WoodcockEntity extends SparrowEntity
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(ACTION_STATE, WoodcockBehaviorState.IDLE.ordinal());
-        this.entityData.define(SPONTANEOUS_STILL, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ACTION_STATE, WoodcockBehaviorState.IDLE.ordinal());
+        builder.define(SPONTANEOUS_STILL, false);
     }
 
     @Override

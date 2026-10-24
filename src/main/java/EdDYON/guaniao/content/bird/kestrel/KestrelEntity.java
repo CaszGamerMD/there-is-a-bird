@@ -347,18 +347,18 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(BEHAVIOR_STATE, KestrelBehaviorState.PERCHED.ordinal());
-        this.entityData.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
-        this.entityData.define(CARRIED_ITEM, ItemStack.EMPTY);
-        this.entityData.define(LEARNING_ITEM, false);
-        this.entityData.define(WING_MODE, WING_GLIDE);
-        this.entityData.define(GRIP_X, 0.0F);
-        this.entityData.define(GRIP_Y, 0.0F);
-        this.entityData.define(GRIP_Z, 0.0F);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(BEHAVIOR_STATE, KestrelBehaviorState.PERCHED.ordinal());
+        builder.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
+        builder.define(CARRIED_ITEM, ItemStack.EMPTY);
+        builder.define(LEARNING_ITEM, false);
+        builder.define(WING_MODE, WING_GLIDE);
+        builder.define(GRIP_X, 0.0F);
+        builder.define(GRIP_Y, 0.0F);
+        builder.define(GRIP_Z, 0.0F);
     }
 
     @Override

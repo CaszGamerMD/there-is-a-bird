@@ -290,16 +290,16 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(SLEEPING, false);
-        this.entityData.define(EATING, false);
-        this.entityData.define(FLYING_ANIMATION_ACTIVE, false);
-        this.entityData.define(NAVIGATION_FLIGHT_ACTIVE, false);
-        this.entityData.define(HELD_FOOD, ItemStack.EMPTY);
-        this.entityData.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(SLEEPING, false);
+        builder.define(EATING, false);
+        builder.define(FLYING_ANIMATION_ACTIVE, false);
+        builder.define(NAVIGATION_FLIGHT_ACTIVE, false);
+        builder.define(HELD_FOOD, ItemStack.EMPTY);
+        builder.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
     }
 
     @Override

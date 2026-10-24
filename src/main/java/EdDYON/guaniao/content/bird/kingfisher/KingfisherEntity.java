@@ -194,14 +194,14 @@ public final class KingfisherEntity extends Animal
         return KingfisherHabitat.canSpawn(level, reason, pos);
     }
 
-    @Override protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(ACTIVITY, Activity.OBSERVE.ordinal());
-        this.entityData.define(HELD_FISH, ItemStack.EMPTY);
-        this.entityData.define(SCALE, 1.0F);
-        this.entityData.define(FLIGHT_PITCH, 0.0F);
-        this.entityData.define(HOVER_MODE, 0);
-        this.entityData.define(PERCHED, false);
+    @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ACTIVITY, Activity.OBSERVE.ordinal());
+        builder.define(HELD_FISH, ItemStack.EMPTY);
+        builder.define(SCALE, 1.0F);
+        builder.define(FLIGHT_PITCH, 0.0F);
+        builder.define(HOVER_MODE, 0);
+        builder.define(PERCHED, false);
     }
 
     @Override protected void registerGoals() { /* One owner for quick flight and dive movement. */ }

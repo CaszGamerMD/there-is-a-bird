@@ -1,6 +1,5 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.BirdScanBudget;
@@ -11,6 +10,7 @@ import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.block.Blocks;
@@ -21,15 +21,11 @@ import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.DoorBlock;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Optional large flocks are limited to deterministic, habitat-specific colony
  * cells. Ordinary spawning is intentionally left unchanged outside those cells.
  */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdColonySpawnRules {
     private static final int COLONY_CELL_SIZE = 64;
     private static final int COLONY_CELL_DIVISOR = 12;
@@ -197,11 +193,12 @@ public final class BirdColonySpawnRules {
         return snapshot.ruralColumbidScore;
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            HABITAT_CACHE.remove(level);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        HABITAT_CACHE.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static int scanSettlementScore(ServerLevel level, BlockPos origin) {

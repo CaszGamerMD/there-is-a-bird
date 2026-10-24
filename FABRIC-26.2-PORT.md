@@ -249,3 +249,26 @@ rather than the 1.20.1 `CompoundTag` override and obsolete packet callbacks.
 data via vanilla DataFixerUpper, private photograph menu/network sync, and
 crow nest/client live update verification all require full client and dedicated
 server tests. These commits do not produce a working mod or distributable JAR.
+
+### Follow-up: 26.2 compiler-diagnostic compatibility
+
+- `CrowNestBlockEntity` moves the nest index registration from the removed
+  `BlockEntity.onLoad()` hook to `setLevel(Level)`; `setRemoved()` still removes
+  the index. All client/server side checks use `Level.isClientSide()`. Stack
+  merging uses `ItemStack.isSameItemSameComponents` rather than the old
+  NBT-specific matcher. The custom render bounding box remains available, but
+  no longer claims a vanilla override.
+- `FrameWorkbenchBlockEntity` retains both private-slot dirty notifications
+  via `SimpleContainer.setChanged()` overrides, replacing the removed
+  `addListener` API. Input/result changes each still increment the snapshot
+  and mark the workbench dirty; side checks use the current getter.
+- `BaggedFriesBlockEntity` keeps its original brown/green dust RGB components
+  and scales while passing packed colors using the native 26.2
+  `ARGB.colorFromFloat` format. Original particle cadence and count are
+  untouched; `Level.isClientSide()` replaces the old exposed field.
+- Migration parity scripts pin these compatibility substitutions exactly and
+  continue rejecting unrelated gameplay edits.
+
+These adaptations require in-world validation, especially nest level
+assignment/unload and frame-workbench inventory notifications. Isolated
+compilation of a separate API probe does not certify full gameplay.

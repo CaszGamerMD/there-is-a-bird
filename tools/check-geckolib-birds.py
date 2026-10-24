@@ -34,6 +34,15 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
     expected = expected.replace("AnimationState<", "AnimationTest<")
     expected = expected.replace(".getController()", ".controller()")
     expected = expected.replace(".transitionLength(", ".setTransitionTicks(")
+    # Ported 26.2 bird enum package/type names; no changes to comparisons or values.
+    enum_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","CockatooEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java"]
+    if p.name in enum_ported:
+        expected = expected.replace("MobSpawnType", "EntitySpawnReason")
+        expected = expected.replace("BlockPathTypes", "PathType")
+        expected = expected.replace("net.minecraft.world.entity.animal.AbstractFish",
+                                    "net.minecraft.world.entity.animal.fish.AbstractFish")
+        expected = expected.replace("net.minecraft.world.level.chunk.ChunkStatus",
+                                    "net.minecraft.world.level.chunk.status.ChunkStatus")
     if relative.endswith("/hummingbird/HummingbirdEntity.java"):
         expected = expected.replace(
             "import software.bernie.geckolib.core.animation.*;",

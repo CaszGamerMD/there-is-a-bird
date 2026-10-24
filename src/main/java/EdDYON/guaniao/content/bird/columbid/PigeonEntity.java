@@ -14,7 +14,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.item.Item;
@@ -36,7 +36,7 @@ public class PigeonEntity extends AbstractColumbidEntity {
                 PigeonDefinition.FOLLOW_RANGE);
     }
 
-    public static boolean canSpawn(EntityType<PigeonEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canSpawn(EntityType<PigeonEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         return canColumbidSpawn(level, pos, random, true);
     }
 
@@ -52,7 +52,7 @@ public class PigeonEntity extends AbstractColumbidEntity {
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, compoundTag);
         if (compoundTag == null || !compoundTag.contains("PigeonVariant", 3)) {
             this.setPigeonVariant(this.getRandom().nextBoolean() ? ColumbidVariant.GRAY_PIGEON : ColumbidVariant.WHITE_PIGEON);

@@ -72,7 +72,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.AgeableMob;
@@ -97,7 +97,7 @@ import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
 import com.geckolib.animatable.GeoEntity;
 import com.geckolib.animatable.GeoAnimatable;
@@ -198,10 +198,10 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     public BudgerigarEntity(EntityType<? extends BudgerigarEntity> entityType, Level level) {
         super(entityType, level);
         this.moveControl = new BirdNavigationMoveControl(this, 10, true);
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0F);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0F);
-        this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.LEAVES, 0.0F);
+        this.setPathfindingMalus(PathType.WATER, -1.0F);
+        this.setPathfindingMalus(PathType.DANGER_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.DAMAGE_FIRE, 16.0F);
         this.musicScanCooldown = 10 + this.getRandom().nextInt(20);
     }
 
@@ -213,7 +213,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
                 .add(Attributes.FOLLOW_RANGE, BudgerigarDefinition.FOLLOW_RANGE);
     }
 
-    public static boolean canSpawn(EntityType<BudgerigarEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canSpawn(EntityType<BudgerigarEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)
@@ -307,7 +307,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, net.minecraft.world.DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, net.minecraft.world.DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, compoundTag);
         this.setSkinVariant(this.getRandom().nextInt(BudgerigarDefinition.TEXTURE_VARIANTS.length));
         if (compoundTag == null || !compoundTag.contains(BirdModelScale.NBT_KEY, 5)) {

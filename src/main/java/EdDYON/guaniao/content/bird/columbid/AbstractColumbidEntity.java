@@ -76,7 +76,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -106,7 +106,7 @@ import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
 import com.geckolib.animatable.GeoEntity;
 import com.geckolib.animatable.GeoAnimatable;
@@ -207,10 +207,10 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     protected AbstractColumbidEntity(EntityType<? extends AbstractColumbidEntity> entityType, Level level, BirdSpeciesProfile profile) {
         super(entityType, level);
         this.birdBrain = new BirdBrain(this, profile);
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0F);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0F);
-        this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.LEAVES, 0.0F);
+        this.setPathfindingMalus(PathType.WATER, -1.0F);
+        this.setPathfindingMalus(PathType.DANGER_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.DAMAGE_FIRE, 16.0F);
     }
 
     public static AttributeSupplier.Builder createColumbidAttributes(double maxHealth, double walkSpeed, double flyingSpeed, double followRange) {
@@ -353,7 +353,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, compoundTag);
         if (compoundTag == null || !compoundTag.contains(BirdModelScale.NBT_KEY, 5)) {
             this.randomizeModelScale();

@@ -27,7 +27,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -183,7 +183,7 @@ public class CockatielEntity extends BudgerigarEntity {
                 .add(Attributes.FOLLOW_RANGE, CockatielDefinition.FOLLOW_RANGE);
     }
 
-    public static boolean canCockatielSpawn(EntityType<CockatielEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canCockatielSpawn(EntityType<CockatielEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean dryOpenGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)

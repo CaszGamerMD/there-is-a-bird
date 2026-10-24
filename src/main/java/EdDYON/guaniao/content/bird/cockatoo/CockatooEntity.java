@@ -23,7 +23,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -63,7 +63,7 @@ public class CockatooEntity extends BudgerigarEntity {
     }
 
     public static boolean canCockatooSpawn(EntityType<CockatooEntity> type, ServerLevelAccessor level,
-                                           MobSpawnType reason, BlockPos pos, RandomSource random) {
+                                           EntitySpawnReason reason, BlockPos pos, RandomSource random) {
         // The placement predicate can also run at a world-generation region edge.
         if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) return false;
         BlockState below = level.getBlockState(pos.below());

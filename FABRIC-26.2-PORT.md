@@ -387,3 +387,12 @@ independent item identities are unchanged. A source-equality parity test
 and isolated 26.2 override compilation probe guard against accidental
 edits. This does not yet port the enchantment registry/loot-distribution
 system itself or prove that the books work during gameplay.
+
+## Bird entity enum migrations, first batch (2026-10-24)
+
+Ported native 26.2 `EntitySpawnReason` and `PathType` classes in the
+original budgerigar, cassowary, cockatiel, cockatoo, columbid,
+pigeon and spotted-dove entity sources. The field/method bodies and authored
+enum constants are unmodified. Extended GeckoLib source-parity rules and
+added isolated Java API compile tests; further bird species remain in progress.
+This is not yet a playable mod or a complete bird AI conversion.

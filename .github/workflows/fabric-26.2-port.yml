@@ -87,3 +87,16 @@ jobs:
           ./gradlew compileJava --no-daemon --stacktrace
       - name: Verify port and package
         run: ./gradlew build --no-daemon
+      # Only collect an actual fully compiled/mod-remapped test JAR. No public
+      # release is created and a partial or uncompiled migration is never
+      # advertised as playable.
+      - name: Upload successful private Fabric test JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: guaniao-fabric-26.2-private-test
+          path: |
+            build/libs/*.jar
+            !build/libs/*-sources.jar
+            !build/libs/*-dev.jar
+          if-no-files-found: error
+          retention-days: 7

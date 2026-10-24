@@ -12,7 +12,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
@@ -26,13 +26,13 @@ public final class EarthwormRainEvents {
         if (now % 200L != 0L) return;
         Map<Long, Long> cells = COOLDOWNS.computeIfAbsent(level, ignored -> new HashMap<>());
         cells.values().removeIf(until -> until <= now);
-        if (!level.isRaining() || !level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)
-                || level.players().isEmpty() || level.random.nextFloat() >= 0.35F) return;
+        if (!level.isRaining() || !level.getGameRules().get(GameRules.SPAWN_MOBS)
+                || level.players().isEmpty() || level.getRandom().nextFloat() >= 0.35F) return;
         ServerPlayer player = level.players().get((int) ((now / 200L) % level.players().size()));
         if (player.isSpectator() || !BirdScanBudget.tryAcquire(level, 1)) return;
         for (int attempt = 0; attempt < 8; attempt++) {
-            int x = player.getBlockX() + level.random.nextInt(33) - 16;
-            int z = player.getBlockZ() + level.random.nextInt(33) - 16;
+            int x = player.getBlockX() + level.getRandom().nextInt(33) - 16;
+            int z = player.getBlockZ() + level.getRandom().nextInt(33) - 16;
             BlockPos column = new BlockPos(x, player.getBlockY(), z);
             if (!level.hasChunkAt(column)) continue;
             long cell = ChunkPos.asLong(Math.floorDiv(x, 32), Math.floorDiv(z, 32));

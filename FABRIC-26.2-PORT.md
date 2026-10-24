@@ -221,3 +221,31 @@ serialization, loot and world generation remain on pre-26.2/Forge APIs.
 **No playable mod build, release or asset-containing distributable exists.**
 The draft PR is intentionally unmerged and original author asset licensing
 restrictions remain in force.
+
+## Crow nest and private frame workbench persistence checkpoint (2026-10-23)
+
+Two more block entities now use Minecraft 26.2's `ValueInput` / `ValueOutput`
+rather than the 1.20.1 `CompoundTag` override and obsolete packet callbacks.
+
+- **Crow nest:** the original nested `Treasures.Items` layout is written/read via
+  26.2 `ContainerHelper`; natural nest flag, crow UUID/time claim list, rummaged
+  bitmask, active search slot/timers, loot layout seed and all three layout arrays
+  keep their original keys and sanitization rules. Crow UUIDs remain four-int
+  arrays; the 26.2 client packet uses the original same full update tag.
+- **Frame workbench:** private `Works` entries retain original keys for owner,
+  input, result, pending, reserved source, remaining ticks, revision and seed.
+  Empty stacks are encoded with `ItemStack.OPTIONAL_CODEC`. Owner UUIDs are
+  four-int arrays as before. Invalid unfinished jobs still refund the reserved
+  original instead of materializing completed photos. The chunk update tag
+  remains deliberately **empty** to avoid leaking private photographs to
+  non-owners; owner-only menu sync still requires the separate menu/network port.
+- CI now checks the migrated frame workbench's gameplay source remains identical
+  outside the explicit I/O region, and checks crow nest code against the original
+  with only GeckoLib and persistence migrations permitted. A 26.2 Java API proof
+  compiles the nested `ValueInput`/`ValueOutput`, `ContainerHelper` and
+  `ItemStack.OPTIONAL_CODEC` signatures independent of unported classes.
+
+**Still blocked:** full compilation, runtime migration of old 1.20.1 item-stack
+data via vanilla DataFixerUpper, private photograph menu/network sync, and
+crow nest/client live update verification all require full client and dedicated
+server tests. These commits do not produce a working mod or distributable JAR.

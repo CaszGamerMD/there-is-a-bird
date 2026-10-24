@@ -37,7 +37,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -67,7 +66,7 @@ import com.geckolib.animation.object.PlayState;
  * Crested myna using the shared small-bird flight foundation with its own
  * server-authoritative decorative and sleep states.
  */
-public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleepWakeable {
+public class MynaEntity extends SparrowEntity implements BirdSleepWakeable {
     private static final EntityDataAccessor<Integer> ACTION_STATE =
             SynchedEntityData.defineId(MynaEntity.class, EntityDataSerializers.INT);
 
@@ -379,6 +378,10 @@ public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleep
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         return this.isBirdFlightActive() || (!this.onGround() && !this.isInWaterOrBubble());
     }

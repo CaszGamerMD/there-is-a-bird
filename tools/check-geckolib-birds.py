@@ -47,6 +47,29 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
     # including Kestrel's serialized learned-item name and Crow's texture path.
     if p.name in ("CrowEntity.java", "KestrelEntity.java"):
         expected = expected.replace("ResourceLocation", "Identifier")
+    # 26.2 removed FlyingAnimal; preserve its omnidirectional flight semantics
+    # by overriding the new Entity method while leaving isFlying() body intact.
+    if "import net.minecraft.world.entity.animal.FlyingAnimal;" in expected:
+        expected = expected.replace("import net.minecraft.world.entity.animal.FlyingAnimal;\n", "")
+        if "implements FlyingAnimal," in expected:
+            expected = expected.replace("implements FlyingAnimal,", "implements", 1)
+        else:
+            expected = expected.replace(", FlyingAnimal", "", 1)
+        flying_override = __import__("re").compile(
+            r"(^[ \t]*)@Override[ \t]*(?:\n[ \t]*)?public boolean isFlying\(\)",
+            __import__("re").M)
+        def _flight_hook(match):
+            pad = match.group(1)
+            return (
+                pad + "@Override\n"
+                + pad + "protected boolean omnidirectionalAirMover() {\n"
+                + pad + "    return true;\n"
+                + pad + "}\n\n"
+                + pad + "public boolean isFlying()"
+            )
+        expected, hook_count = flying_override.subn(_flight_hook, expected, count=1)
+        if hook_count != 1:
+            raise SystemExit(f"{relative}: FlyingAnimal conversion lost isFlying")
     if relative.endswith("/hummingbird/HummingbirdEntity.java"):
         expected = expected.replace(
             "import software.bernie.geckolib.core.animation.*;",

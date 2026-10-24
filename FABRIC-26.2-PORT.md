@@ -457,3 +457,16 @@ instead of `MobSpawnType.NATURAL` and Minecraft 26.2's
 All original probability, cap, height, group and spawn-reason decisions
 remain untouched, as checked against `origin/main`.
 The Forge potential-spawn and finalize-spawn integration remains unported.
+
+## 26.2 FlyingAnimal removal and air movement (2026-10-24)
+
+Minecraft 26.2 removes the `FlyingAnimal` interface and uses the
+protected `Entity.omnidirectionalAirMover()` hook. All nine original
+classes that implemented `FlyingAnimal` now override the native hook
+to return `true`, preserving the original flight-movement marker.
+Their existing `isFlying()` methods and every flight/animation decision
+remain unchanged (the method is no longer an interface override).
+The whole-file GeckoLib bird parity gate derives the exact interface-to-hook
+conversion from the original Forge source, and a separate real-API
+compile probe verifies the 26.2 override signature. This does not
+by itself complete entity compilation, navigation, or bird simulation.

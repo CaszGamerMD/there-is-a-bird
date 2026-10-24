@@ -80,7 +80,6 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
@@ -108,7 +107,7 @@ import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
 
 /** A solitary diurnal falcon with its own perch, hover, dive and recovery loop. */
-public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAnimal,
+public class KestrelEntity extends TamableAnimal implements GeoEntity,
         ScalableBirdModel, BirdFlightAware, CommandableBird, BirdMutationHolder {
     private static final EntityDataAccessor<Float> MODEL_SCALE =
             SynchedEntityData.defineId(KestrelEntity.class, EntityDataSerializers.FLOAT);
@@ -1761,6 +1760,10 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity, FlyingAni
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         return !this.isPassenger()
                 && (this.isBirdFlightActive() || (!this.onGround() && !this.isInWaterOrBubble()));

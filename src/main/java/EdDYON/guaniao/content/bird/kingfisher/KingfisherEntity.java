@@ -56,7 +56,6 @@ import net.minecraft.world.entity.ai.control.BodyRotationControl;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -77,7 +76,7 @@ import com.geckolib.util.GeckoLibUtil;
 
 /** A wild shore hunter: trust changes its tolerance, never its ownership. */
 public final class KingfisherEntity extends Animal
-        implements GeoEntity, FlyingAnimal, BirdFlightAware, BirdSleepWakeable, ScalableBirdModel {
+        implements GeoEntity, BirdFlightAware, BirdSleepWakeable, ScalableBirdModel {
     public enum Activity { OBSERVE, TRAVEL, DIVE, EMERGE, RETURN, EAT, SLEEP, FLEE, HOVER, ALERT, SHAKE, DEFECATE, SKIM, FISH_APPROACH, FISH_CRUISE }
     private enum PerchSearchStatus { FOUND, DEFERRED, NO_VALID_PERCH }
     private record PerchCandidate(BlockPos support, double score) { }
@@ -1581,7 +1580,12 @@ public final class KingfisherEntity extends Animal
         }
         this.guidePreview = animation;
     }
-    @Override public boolean isFlying() { return this.shouldPlayFlyAnimation(); }
+    @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
+    public boolean isFlying() { return this.shouldPlayFlyAnimation(); }
     @Override public BirdFlightProfile birdFlightProfile() { return BirdFlightProfile.SPARROW; }
     @Override public boolean isBirdFlightActive() { return this.shouldPlayFlyAnimation(); }
     @Override public boolean isBirdLanding() { return this.landingPerch != null && this.landingPoint != null

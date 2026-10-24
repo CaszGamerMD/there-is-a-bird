@@ -83,7 +83,6 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -109,7 +108,7 @@ import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
 
-public class BudgerigarEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdSleepWakeable, BirdMutationHolder {
+public class BudgerigarEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdSleepWakeable, BirdMutationHolder {
     private static final EntityDataAccessor<Boolean> NAVIGATION_FLIGHT_ACTIVE = SynchedEntityData.defineId(BudgerigarEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(BudgerigarEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SKIN_VARIANT = SynchedEntityData.defineId(BudgerigarEntity.class, EntityDataSerializers.INT);
@@ -652,6 +651,10 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         return this.shouldPlayFlyAnimation();
     }

@@ -88,7 +88,6 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.util.LandRandomPos;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -118,7 +117,7 @@ import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
 
-public abstract class AbstractColumbidEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdMutationHolder {
+public abstract class AbstractColumbidEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdMutationHolder {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MODEL_SCALE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> COMMAND_MODE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.INT);
@@ -541,6 +540,10 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         return this.shouldPlayFlyAnimation();
     }

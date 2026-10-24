@@ -81,7 +81,6 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -104,7 +103,7 @@ import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
 
-public class SeagullEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware, CommandableBird, FlockCompatibleBird, BirdSleepWakeable, BirdMutationHolder {
+public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware, CommandableBird, FlockCompatibleBird, BirdSleepWakeable, BirdMutationHolder {
     private static final Map<UUID, Set<UUID>> ACTIVE_THEFT_TARGETS = new HashMap<>();
 
     public static void clearTheftTargetsFor(UUID playerId) {
@@ -480,6 +479,10 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, FlyingAni
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         return this.shouldPlayFlyAnimation();
     }

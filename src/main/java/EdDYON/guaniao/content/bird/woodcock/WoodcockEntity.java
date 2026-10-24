@@ -43,7 +43,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -76,7 +75,7 @@ import com.geckolib.animation.object.PlayState;
  * ordinary walk cycle inherited from the shared navigation foundation.
  */
 public class WoodcockEntity extends SparrowEntity
-        implements FlyingAnimal, BirdSleepWakeable, BirdLoudSoundListener {
+        implements BirdSleepWakeable, BirdLoudSoundListener {
     private static final EntityDataAccessor<Integer> ACTION_STATE =
             SynchedEntityData.defineId(WoodcockEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> SPONTANEOUS_STILL =
@@ -834,6 +833,10 @@ public class WoodcockEntity extends SparrowEntity
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         GuidePreviewAnimation preview = this.getGuidePreviewAnimation();
         if (preview != GuidePreviewAnimation.NONE) {

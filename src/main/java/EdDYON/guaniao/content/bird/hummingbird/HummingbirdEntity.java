@@ -34,7 +34,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.BodyRotationControl;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -51,7 +50,7 @@ import com.geckolib.util.GeckoLibUtil;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
-public final class HummingbirdEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, CommandableBird {
+public final class HummingbirdEntity extends TamableAnimal implements GeoEntity, CommandableBird {
     // Lowest authored standing foot corners after waist/leg/cube bind rotations, in blocks.
     public static final double HEAD_PERCH_SOLE_Y = 0.002158524900375658D / 16.0D;
     public static final double HEAD_PERCH_SOLE_FORWARD = 0.5828997379737713D / 16.0D;
@@ -188,7 +187,12 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         setNoGravity(false);
         super.travel(Vec3.ZERO);
     }
-    @Override public boolean isFlying() { return isAirborne(); }
+    @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
+    public boolean isFlying() { return isAirborne(); }
     public boolean isAirborne() {
         if (preview != null) return !preview.equals("idle") && !preview.equals("sleep");
         return switch (activity()) {

@@ -1,6 +1,9 @@
 package EdDYON.guaniao.fabric;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -49,6 +52,34 @@ public final class GuaniaoPersistenceProof extends BlockEntity {
                         ((long)parts[0] << 32) | (parts[1] & 0xffffffffL),
                         ((long)parts[2] << 32) | (parts[3] & 0xffffffffL)))
                 .orElse(null);
+    }
+
+    /**
+     * Compile-only proof of the exact 26.2 APIs used by crow nests and private
+     * frame-workbench jobs; 1.20.1 NBT retains nested arrays/lists by key.
+     */
+    private static void verifyNestedInventoriesAndPrivateJobs(ValueOutput output, ValueInput input) {
+        NonNullList<ItemStack> nestItems = NonNullList.withSize(6, ItemStack.EMPTY);
+        ContainerHelper.saveAllItems(output.child("Treasures"), nestItems);
+        ContainerHelper.loadAllItems(input.childOrEmpty("Treasures"), nestItems);
+
+        ValueOutput.ValueOutputList claims = output.childrenList("CrowClaims");
+        ValueOutput crowClaim = claims.addChild();
+        crowClaim.putIntArray("Crow", new int[]{1, 2, 3, 4});
+        crowClaim.putLong("ClaimTime", 42L);
+        for (ValueInput claim : input.childrenListOrEmpty("CrowClaims")) {
+            claim.getIntArray("Crow").filter(parts -> parts.length == 4);
+            claim.getLongOr("ClaimTime", 0L);
+        }
+
+        ValueOutput.ValueOutputList workList = output.childrenList("Works");
+        ValueOutput job = workList.addChild();
+        job.store("Input", ItemStack.OPTIONAL_CODEC, ItemStack.EMPTY);
+        job.putIntArray("Owner", new int[]{1, 2, 3, 4});
+        for (ValueInput savedJob : input.childrenListOrEmpty("Works")) {
+            savedJob.read("Input", ItemStack.OPTIONAL_CODEC).orElse(ItemStack.EMPTY);
+            savedJob.getIntArray("Owner");
+        }
     }
 
     @Override

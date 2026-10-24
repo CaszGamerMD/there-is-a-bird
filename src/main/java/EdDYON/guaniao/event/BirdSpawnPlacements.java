@@ -8,8 +8,8 @@ import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.NaturalSpawner;
 
-final class BirdSpawnPlacements {
-    static final SpawnPlacementType ON_GROUND_OR_LEAVES = BirdSpawnPlacements::canSpawnOnGroundOrLeaves;
+public final class BirdSpawnPlacements {
+    public static final SpawnPlacementType ON_GROUND_OR_LEAVES = BirdSpawnPlacements::canSpawnOnGroundOrLeaves;
 
     private BirdSpawnPlacements() {
     }

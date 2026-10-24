@@ -4,8 +4,10 @@ import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -146,47 +148,34 @@ public final class BaggedFriesBlockEntity extends BlockEntity implements GeoBloc
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt(FRY_MASK_TAG, this.fryMask);
-        tag.putBoolean(LAXATIVE_TAG, this.laxative);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.putInt(FRY_MASK_TAG, this.fryMask);
+        output.putBoolean(LAXATIVE_TAG, this.laxative);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if (tag.contains(FRY_MASK_TAG)) {
-            this.fryMask = tag.getInt(FRY_MASK_TAG) & FULL_MASK;
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        if (input.getInt(FRY_MASK_TAG).isPresent()) {
+            this.fryMask = input.getIntOr(FRY_MASK_TAG, 0) & FULL_MASK;
         } else if (this.getBlockState().hasProperty(BaggedFriesBlock.FRIES)) {
             int count = this.getBlockState().getValue(BaggedFriesBlock.FRIES);
             this.fryMask = count <= 0 ? 0 : (1 << Math.min(count, BaggedFriesBlock.TOTAL_FRIES)) - 1;
         } else {
             this.fryMask = FULL_MASK;
         }
-        this.laxative = tag.getBoolean(LAXATIVE_TAG);
+        this.laxative = input.getBooleanOr(LAXATIVE_TAG, false);
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return this.saveWithoutMetadata();
-    }
-
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        this.load(tag);
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return this.saveWithoutMetadata(registries);
     }
 
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
-        CompoundTag tag = packet.getTag();
-        if (tag != null) {
-            this.load(tag);
-        }
     }
 
     @Override

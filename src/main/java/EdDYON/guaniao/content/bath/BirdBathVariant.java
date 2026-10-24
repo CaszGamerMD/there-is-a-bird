@@ -1,7 +1,7 @@
 package EdDYON.guaniao.content.bath;
 
 import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -21,17 +21,17 @@ public enum BirdBathVariant {
             Block.box(1.0D, 0.0D, 1.0D, 15.0D, 24.0D, 15.0D));
 
     private final String id;
-    private final ResourceLocation model;
-    private final ResourceLocation texture;
-    private final ResourceLocation animation;
+    private final Identifier model;
+    private final Identifier texture;
+    private final Identifier animation;
     private final SoundType soundType;
     private final VoxelShape shape;
 
     BirdBathVariant(String id, String modelPath, String texturePath, String animationPath, SoundType soundType, VoxelShape shape) {
         this.id = id;
-        this.model = new ResourceLocation(GuaniaoMod.MOD_ID, modelPath);
-        this.texture = new ResourceLocation(GuaniaoMod.MOD_ID, texturePath);
-        this.animation = new ResourceLocation(GuaniaoMod.MOD_ID, animationPath);
+        this.model = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, modelPath);
+        this.texture = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, texturePath);
+        this.animation = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, animationPath);
         this.soundType = soundType;
         this.shape = shape;
     }
@@ -40,15 +40,15 @@ public enum BirdBathVariant {
         return this.id;
     }
 
-    public ResourceLocation model() {
+    public Identifier model() {
         return this.model;
     }
 
-    public ResourceLocation texture() {
+    public Identifier texture() {
         return this.texture;
     }
 
-    public ResourceLocation animation() {
+    public Identifier animation() {
         return this.animation;
     }
 

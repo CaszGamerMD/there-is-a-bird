@@ -48,6 +48,8 @@ jobs:
         run: python3 tools/check-bird-spawn-placements.py
       - name: Verify original mod setup, bird compost and farmland chances
         run: python3 tools/check-bird-setup-parity.py
+      - name: Verify original diet tags, sky-bird ecology, and handbook IDs
+        run: python3 tools/check-identifier-only-ports.py
       - name: Verify sky-bird sprites, flock sizes and animation timing parity
         run: python3 tools/check-skybird-port.py
       - name: Verify migrated sound and particle APIs compile on 26.2

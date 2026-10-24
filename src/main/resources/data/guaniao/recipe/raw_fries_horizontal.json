@@ -5,11 +5,9 @@
     "PP"
   ],
   "key": {
-    "P": {
-      "item": "minecraft:potato"
-    }
+    "P": "minecraft:potato"
   },
   "result": {
-    "item": "guaniao:raw_fries"
+    "id": "guaniao:raw_fries"
   }
 }

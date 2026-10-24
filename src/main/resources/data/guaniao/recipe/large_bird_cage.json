@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "SSS",
+    "SCS",
+    "SSS"
+  ],
+  "key": {
+    "S": "minecraft:stick",
+    "C": "guaniao:medium_bird_cage"
+  },
+  "result": {
+    "id": "guaniao:large_bird_cage"
+  }
+}

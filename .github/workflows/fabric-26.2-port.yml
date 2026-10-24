@@ -48,6 +48,8 @@ jobs:
         run: python3 tools/check-bird-spawn-placements.py
       - name: Verify original mod setup, bird compost and farmland chances
         run: python3 tools/check-bird-setup-parity.py
+      - name: Verify five GeckoLib 5 static model asset paths and API adaptation
+        run: python3 tools/check-geckolib-static-models.py
       - name: Verify 17 original species definition constants and geometry/texture IDs
         run: python3 tools/check-bird-definition-identifiers.py
       - name: Verify original night heron AI and bird bath lookup through 26.2 type relocations

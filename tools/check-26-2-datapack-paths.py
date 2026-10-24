@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Check that original advancements, loot tables and tags survive modern folder renames byte-for-byte."""
+"""Verify original resources survive singular 26.2 paths and icon codec changes only."""
 from pathlib import Path
+import re
 import subprocess
 
 root = Path(__file__).resolve().parents[1]
@@ -28,8 +29,16 @@ for original_path in original_paths:
         if old.exists() or not new.is_file():
             raise SystemExit(f"Missing modern resource path or duplicate legacy path: {new_path}")
         source = subprocess.check_output(["git", "show", "origin/main:" + original_path], cwd=root)
-        if new.read_bytes() != source:
-            raise SystemExit(f"Authored datapack data was changed during path migration: {new_path}")
+        # Advancement display icons use ItemStackTemplate in 26.2, so a
+        # targeted item -> id key migration is the only allowed data edit.
+        # processResources also performs this normalization on the packaged
+        # resource, including any still-authored 1.20-format advancement.
+        allowed = source
+        if "/advancements/husbandry/" in original_path:
+            allowed = re.sub(rb'("icon"\s*:\s*\{\s*)"item"(\s*:)',
+                             rb'\g<1>"id"\g<2>', source, count=1)
+        if new.read_bytes() not in (source, allowed):
+            raise SystemExit(f"Authored datapack data was changed outside the 26.2 icon conversion: {new_path}")
         checked += 1
         break
 if checked != 98:

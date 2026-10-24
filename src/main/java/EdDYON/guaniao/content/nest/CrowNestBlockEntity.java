@@ -81,16 +81,18 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     @Override
-    public void onLoad() {
-        super.onLoad();
-        if (this.level != null && !this.level.isClientSide) {
-            LOADED_NESTS.computeIfAbsent(this.level, ignored -> new HashSet<>()).add(this);
+    public void setLevel(Level level) {
+        // BlockEntity.onLoad no longer exists in 26.2. Index the nest when
+        // Minecraft assigns the level; setRemoved still unregisters it.
+        super.setLevel(level);
+        if (level != null && !level.isClientSide()) {
+            LOADED_NESTS.computeIfAbsent(level, ignored -> new HashSet<>()).add(this);
         }
     }
 
     @Override
     public void setRemoved() {
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             Set<CrowNestBlockEntity> nests = LOADED_NESTS.get(this.level);
             if (nests != null) {
                 nests.remove(this);
@@ -273,7 +275,7 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     /** Removes a full revealed stack. Callers must hand it to the player themselves. */
     public ItemStack takeDiscoveredTreasure(int slot) {
-        if (this.level == null || this.level.isClientSide || !this.isSlotRummaged(slot) || slot == this.currentSearchSlot) {
+        if (this.level == null || this.level.isClientSide() || !this.isSlotRummaged(slot) || slot == this.currentSearchSlot) {
             return ItemStack.EMPTY;
         }
         ItemStack result = ContainerHelper.takeItem(this.treasures, slot);
@@ -292,7 +294,7 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     public boolean takeOneEgg() {
-        if (this.level == null || this.level.isClientSide) {
+        if (this.level == null || this.level.isClientSide()) {
             return false;
         }
         BlockState state = this.getBlockState();
@@ -310,7 +312,7 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     public void dropAllContents() {
-        if (this.level == null || this.level.isClientSide) {
+        if (this.level == null || this.level.isClientSide()) {
             return;
         }
         Containers.dropContents(this.level, this.worldPosition, this.treasures);
@@ -521,7 +523,7 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     private void pruneExpiredCrowClaims() {
-        if (this.level == null || this.level.isClientSide) {
+        if (this.level == null || this.level.isClientSide()) {
             return;
         }
         long expiryTime = this.level.getGameTime() - CROW_CLAIM_EXPIRY_TICKS;
@@ -625,7 +627,6 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
     public AABB getRenderBoundingBox() {
         return new AABB(this.worldPosition).inflate(0.25D, 0.25D, 0.25D);
     }
@@ -871,12 +872,12 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     private static boolean canMerge(ItemStack stored, ItemStack incoming) {
         return !stored.isEmpty()
                 && stored.getCount() < stored.getMaxStackSize()
-                && ItemStack.isSameItemSameTags(stored, incoming);
+                && ItemStack.isSameItemSameComponents(stored, incoming);
     }
 
     private void sync() {
         this.setChanged();
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             BlockState state = this.getBlockState();
             this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
         }

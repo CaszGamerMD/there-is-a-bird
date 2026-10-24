@@ -1,12 +1,12 @@
 package EdDYON.guaniao.client.skybird;
 
 import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 
 public enum SkyBirdSpecies {
     GOOSE(
-            new ResourceLocation(GuaniaoMod.MOD_ID, "textures/sky_birds/goose_flying.png"),
+            Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "textures/sky_birds/goose_flying.png"),
             FlightStyle.CROSSING,
             AnimationStyle.CONTINUOUS_FLAP,
             4,
@@ -20,7 +20,7 @@ public enum SkyBirdSpecies {
             0
     ),
     EAGLE(
-            new ResourceLocation(GuaniaoMod.MOD_ID, "textures/sky_birds/eagle_flying.png"),
+            Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "textures/sky_birds/eagle_flying.png"),
             FlightStyle.ORBIT,
             AnimationStyle.GLIDE_WITH_OCCASIONAL_FLAP,
             4,
@@ -34,7 +34,7 @@ public enum SkyBirdSpecies {
             160
     ),
     SEAGULL(
-            new ResourceLocation(GuaniaoMod.MOD_ID, "textures/sky_birds/seagull_flying.png"),
+            Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "textures/sky_birds/seagull_flying.png"),
             FlightStyle.COASTAL_GLIDE,
             AnimationStyle.GLIDE_WITH_OCCASIONAL_FLAP,
             4,
@@ -48,7 +48,7 @@ public enum SkyBirdSpecies {
             100
     ),
     SWALLOW(
-            new ResourceLocation(GuaniaoMod.MOD_ID, "textures/sky_birds/swallow_flying.png"),
+            Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "textures/sky_birds/swallow_flying.png"),
             FlightStyle.AERIAL_DART,
             AnimationStyle.BURST_FLAP_WITH_SHORT_GLIDE,
             4,
@@ -62,7 +62,7 @@ public enum SkyBirdSpecies {
             54
     ),
     CRANE(
-            new ResourceLocation(GuaniaoMod.MOD_ID, "textures/sky_birds/crane_flying.png"),
+            Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "textures/sky_birds/crane_flying.png"),
             FlightStyle.GRACEFUL_MIGRATION,
             AnimationStyle.COORDINATED_SLOW_FLAP,
             4,
@@ -76,7 +76,7 @@ public enum SkyBirdSpecies {
             0
     ),
     VULTURE(
-            new ResourceLocation(GuaniaoMod.MOD_ID, "textures/sky_birds/vulture_flying.png"),
+            Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "textures/sky_birds/vulture_flying.png"),
             FlightStyle.THERMAL_SOAR,
             AnimationStyle.GLIDE_WITH_OCCASIONAL_FLAP,
             4,
@@ -90,7 +90,7 @@ public enum SkyBirdSpecies {
             460
     ),
     STARLING(
-            new ResourceLocation(GuaniaoMod.MOD_ID, "textures/sky_birds/starling_flying.png"),
+            Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "textures/sky_birds/starling_flying.png"),
             FlightStyle.MURMURATION,
             AnimationStyle.BURST_FLAP_WITH_SHORT_GLIDE,
             4,
@@ -107,7 +107,7 @@ public enum SkyBirdSpecies {
     /** Every sky-bird texture is a horizontal strip of square 32 px frames. */
     public static final int FRAME_PIXELS = 32;
 
-    private final ResourceLocation texture;
+    private final Identifier texture;
     private final FlightStyle flightStyle;
     private final AnimationStyle animationStyle;
     private final int frameCount;
@@ -120,7 +120,7 @@ public enum SkyBirdSpecies {
     private final int minFlapCycle;
     private final int maxFlapCycle;
 
-    SkyBirdSpecies(ResourceLocation texture, FlightStyle flightStyle, AnimationStyle animationStyle,
+    SkyBirdSpecies(Identifier texture, FlightStyle flightStyle, AnimationStyle animationStyle,
                    int frameCount, int frameInterval,
                    float renderSize, int minFlockSize, int maxFlockSize,
                    double minSpeed, double maxSpeed, int minFlapCycle, int maxFlapCycle) {
@@ -138,7 +138,7 @@ public enum SkyBirdSpecies {
         this.maxFlapCycle = maxFlapCycle;
     }
 
-    public ResourceLocation texture() {
+    public Identifier texture() {
         return this.texture;
     }
 

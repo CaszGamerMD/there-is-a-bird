@@ -1,27 +1,24 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.bird.mutation.BirdMutation;
 import EdDYON.guaniao.content.bird.mutation.BirdMutationHolder;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.event.entity.living.LivingDropsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 
 /**
- * Rewards for the rarest mutations. Golden birds drop gold ingots when defeated —
- * the rarer pure-gold form is worth more, and looting has a chance to add one extra.
+ * Original golden-bird death reward, now invoked from the Fabric death-loot mixin.
+ * Never add to the normal loot list: other bird species intentionally drop none.
  */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdMutationEvents {
-    private BirdMutationEvents() {
-    }
+    private BirdMutationEvents() { }
 
-    @SubscribeEvent
-    public static void onLivingDrops(LivingDropsEvent event) {
-        Entity entity = event.getEntity();
+    public static void dropMutationGold(LivingEntity entity, ServerLevel level, DamageSource source) {
         if (!(entity instanceof BirdMutationHolder holder)) {
             return;
         }
@@ -29,13 +26,19 @@ public final class BirdMutationEvents {
         if (!mutation.isGold()) {
             return;
         }
+
         int count = mutation == BirdMutation.GOLDEN_PURE ? 3 : 1;
-        if (event.getLootingLevel() > 0 && entity.level().random.nextFloat() < 0.5F * event.getLootingLevel()) {
+        int lootingLevel = 0;
+        if (source.getEntity() instanceof LivingEntity killer) {
+            var looting = level.registryAccess()
+                    .lookupOrThrow(Registries.ENCHANTMENT)
+                    .getOrThrow(Enchantments.LOOTING);
+            lootingLevel = EnchantmentHelper.getItemEnchantmentLevel(looting, killer.getWeaponItem());
+        }
+        if (lootingLevel > 0 && level.getRandom().nextFloat() < 0.5F * lootingLevel) {
             count++;
         }
-        // Spawned directly, not via getDrops(): the "birds never drop loot"
-        // handler runs at LOWEST priority and clears the drops list, which
-        // would swallow this reward if it lived in the list.
-        entity.spawnAtLocation(new ItemStack(Items.GOLD_INGOT, count));
+
+        entity.spawnAtLocation(level, new ItemStack(Items.GOLD_INGOT, count));
     }
 }

@@ -48,7 +48,7 @@ public final class FrameWorkbenchBlockEntity extends BlockEntity {
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, FrameWorkbenchBlockEntity bench) {
-        if (level.isClientSide || bench.dismantled || bench.isRemoved()
+        if (level.isClientSide() || bench.dismantled || bench.isRemoved()
                 || bench.lastTick == level.getGameTime()) return;
         bench.lastTick = level.getGameTime();
         boolean changed = false;
@@ -72,7 +72,7 @@ public final class FrameWorkbenchBlockEntity extends BlockEntity {
 
     /** Break cancels unfinished work: the reserved original is the only refund. */
     public void dismantle() {
-        if (dismantled || level == null || level.isClientSide) return;
+        if (dismantled || level == null || level.isClientSide()) return;
         dismantled = true;
         for (Work work : works.values()) {
             ItemStack refund = work.busy() ? work.reservedSource : ItemStack.EMPTY;
@@ -172,8 +172,8 @@ public final class FrameWorkbenchBlockEntity extends BlockEntity {
     }
 
     static final class Work {
-        final SimpleContainer input = new SimpleContainer(1);
-        final SimpleContainer result = new SimpleContainer(1);
+        final SimpleContainer input;
+        final SimpleContainer result;
         ItemStack reservedSource = ItemStack.EMPTY;
         ItemStack pending = ItemStack.EMPTY;
         int remaining;
@@ -184,8 +184,25 @@ public final class FrameWorkbenchBlockEntity extends BlockEntity {
         FrameWorkbenchMenu menu;
 
         Work(FrameWorkbenchBlockEntity bench) {
-            input.addListener(ignored -> { snapshotVersion++; bench.setChanged(); });
-            result.addListener(ignored -> { snapshotVersion++; bench.setChanged(); });
+            // Minecraft 26.2 SimpleContainer no longer accepts change listeners.
+            // The override fires on the same setChanged() calls that notified
+            // our previous listener, without changing item flow or timing.
+            input = new SimpleContainer(1) {
+                @Override
+                public void setChanged() {
+                    super.setChanged();
+                    snapshotVersion++;
+                    bench.setChanged();
+                }
+            };
+            result = new SimpleContainer(1) {
+                @Override
+                public void setChanged() {
+                    super.setChanged();
+                    snapshotVersion++;
+                    bench.setChanged();
+                }
+            };
         }
 
         boolean busy() { return remaining > 0 && !pending.isEmpty(); }

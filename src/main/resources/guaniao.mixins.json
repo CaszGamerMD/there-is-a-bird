@@ -10,7 +10,8 @@
     "ServerEntityTrackingMixin",
     "VillagerTradePriceMixin",
     "WeightedPressurePlateBlockMixin",
-    "BirdDeathDropsMixin"
+    "BirdDeathDropsMixin",
+    "ItemEntityAgeAccessor"
   ],
   "client": [],
   "server": [],

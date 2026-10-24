@@ -1,36 +1,45 @@
 package EdDYON.guaniao.content.bird.flight;
 
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.Codec;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /** Maintains temporary, persistent flight loss without freezing ground movement. */
 public final class BirdFlightLock {
-    private static final String TAG_DISABLED_UNTIL = "GuaniaoFlightDisabledUntil";
+    // Persist the same absolute game tick used by the original Forge data field.
+    private static final AttachmentType<Long> DISABLED_UNTIL =
+            AttachmentRegistry.create(Identifier.fromNamespaceAndPath("guaniao", "flight_disabled_until"),
+                    builder -> builder.persistent(Codec.LONG));
 
     private BirdFlightLock() {
     }
 
+    /** Force attachment registration before worlds and bird entities load. */
+    public static void registerAttachments() {
+        // Class initialization registers the attachment.
+    }
+
     public static boolean isFlightDisabled(LivingEntity bird) {
-        return bird.getPersistentData().getLong(TAG_DISABLED_UNTIL) > bird.level().getGameTime();
+        return bird.getAttachedOrElse(DISABLED_UNTIL, 0L) > bird.level().getGameTime();
     }
 
     public static void disableFlight(LivingEntity bird, int durationTicks) {
         long now = bird.level().getGameTime();
         long disabledUntil = now + Math.max(0, durationTicks);
-        CompoundTag data = bird.getPersistentData();
-        data.putLong(TAG_DISABLED_UNTIL, Math.max(data.getLong(TAG_DISABLED_UNTIL), disabledUntil));
+        bird.setAttached(DISABLED_UNTIL, Math.max(bird.getAttachedOrElse(DISABLED_UNTIL, 0L), disabledUntil));
         keepGrounded(bird);
     }
 
     public static void tickBird(LivingEntity bird) {
-        CompoundTag data = bird.getPersistentData();
-        long disabledUntil = data.getLong(TAG_DISABLED_UNTIL);
+        long disabledUntil = bird.getAttachedOrElse(DISABLED_UNTIL, 0L);
         if (disabledUntil <= 0L) {
             return;
         }
         if (bird.level().getGameTime() >= disabledUntil) {
-            data.remove(TAG_DISABLED_UNTIL);
+            bird.removeAttached(DISABLED_UNTIL);
             return;
         }
         keepGrounded(bird);

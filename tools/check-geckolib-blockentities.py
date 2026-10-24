@@ -34,13 +34,16 @@ for rel in relative_files:
         # hooks remains identical to the original, including gameplay.
         expected = expected.replace(
             "import net.minecraft.nbt.CompoundTag;",
-            "import net.minecraft.core.HolderLookup;\\nimport net.minecraft.nbt.CompoundTag;\\n"
-            "import net.minecraft.world.level.storage.ValueInput;\\n"
-            "import net.minecraft.world.level.storage.ValueOutput;".replace("\\n", "\n"))
-        expected = expected.replace("import net.minecraft.network.Connection;\\n".replace("\\n", "\n"), "")
-        start = "    @Override\\n    protected void saveAdditional(CompoundTag tag) {".replace("\\n", "\n")
-        migrated_start = "    @Override\\n    protected void saveAdditional(ValueOutput output) {".replace("\\n", "\n")
-        end = "    @Override\\n    public void registerControllers(".replace("\\n", "\n")
+            "\n".join((
+                "import net.minecraft.core.HolderLookup;",
+                "import net.minecraft.nbt.CompoundTag;",
+                "import net.minecraft.world.level.storage.ValueInput;",
+                "import net.minecraft.world.level.storage.ValueOutput;",
+            )))
+        expected = expected.replace("import net.minecraft.network.Connection;\n", "")
+        start = "    @Override\n    protected void saveAdditional(CompoundTag tag) {"
+        migrated_start = "    @Override\n    protected void saveAdditional(ValueOutput output) {"
+        end = "    @Override\n    public void registerControllers("
         prior_region = expected[expected.index(start):expected.index(end)]
         updated_region = migrated[migrated.index(migrated_start):migrated.index(end)]
         expected = expected.replace(prior_region, updated_region, 1)

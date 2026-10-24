@@ -18,6 +18,23 @@ expected = original.replace(
     "import net.minecraft.world.level.storage.ValueOutput;",
 ).replace("import net.minecraft.nbt.ListTag;\n", "").replace("import net.minecraft.nbt.Tag;\n", "")
 
+# Non-serialization substitutions are pinned: 26.2 makes the client flag
+# private and drops SimpleContainer.addListener. Both slot callbacks must
+# still bump the private work snapshot and mark the bench dirty.
+original_ctor = "        Work(FrameWorkbenchBlockEntity bench) {\n            input.addListener(ignored -> { snapshotVersion++; bench.setChanged(); });\n            result.addListener(ignored -> { snapshotVersion++; bench.setChanged(); });\n        }"
+modern_ctor = "        Work(FrameWorkbenchBlockEntity bench) {\n            // Minecraft 26.2 SimpleContainer no longer accepts change listeners.\n            // The override fires on the same setChanged() calls that notified\n            // our previous listener, without changing item flow or timing.\n            input = new SimpleContainer(1) {\n                @Override\n                public void setChanged() {\n                    super.setChanged();\n                    snapshotVersion++;\n                    bench.setChanged();\n                }\n            };\n            result = new SimpleContainer(1) {\n                @Override\n                public void setChanged() {\n                    super.setChanged();\n                    snapshotVersion++;\n                    bench.setChanged();\n                }\n            };\n        }"
+if original_ctor not in expected or modern_ctor not in migrated:
+    raise SystemExit("Frame Workbench inventory change hooks diverged from compatibility patch")
+expected = expected.replace(".isClientSide", ".isClientSide()")
+expected = expected.replace(
+    "        final SimpleContainer input = new SimpleContainer(1);\n"
+    "        final SimpleContainer result = new SimpleContainer(1);",
+    "        final SimpleContainer input;\n"
+    "        final SimpleContainer result;")
+expected = expected.replace(original_ctor, modern_ctor)
+if modern_ctor.count("snapshotVersion++") != 2 or modern_ctor.count("bench.setChanged()") != 2:
+    raise SystemExit("Frame Workbench lost input or result inventory listeners")
+
 start = "    // Chunk updates go to every observer."
 end = "    static final class Work {"
 for label, source in (("original", expected), ("port", migrated)):

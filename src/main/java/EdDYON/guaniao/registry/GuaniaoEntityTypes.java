@@ -48,6 +48,7 @@ import EdDYON.guaniao.content.dropping.BirdDroppingSplatEntity;
 import EdDYON.guaniao.content.fan.FeatherFanProjectileEntity;
 import EdDYON.guaniao.fabric.FabricRegistryQueue;
 import EdDYON.guaniao.fabric.GuaniaoRegistryIds;
+import EdDYON.guaniao.fabric.GuaniaoNaturalSpawnRules;
 import EdDYON.guaniao.event.BirdSpawnPlacements;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityType;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -128,6 +129,7 @@ public final class GuaniaoEntityTypes {
                         builder -> builder.spawnPlacement(placementType, heightmap,
                                 (type, level, reason, pos, random) ->
                                         reason != EntitySpawnReason.CHUNK_GENERATION
+                                                && GuaniaoNaturalSpawnRules.allowsPlacement(type, level, reason, pos)
                                                 && originalPredicate.test(type, level, reason, pos, random)))
                         .sized(width, height)
                         .clientTrackingRange(BirdVisibility.TRACKING_RANGE_CHUNKS)

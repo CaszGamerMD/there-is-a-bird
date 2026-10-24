@@ -28,6 +28,37 @@ for rel in relative_files:
         if f"import {previous};" not in original:
             raise SystemExit(f"Original GeckoLib import unexpectedly absent: {rel}: {previous}")
         expected = expected.replace(previous, updated)
+    if rel == "content/food/BaggedFriesBlockEntity.java":
+        # Minecraft 26.2 replaced the old Forge CompoundTag persistence and
+        # client packet receive hooks. Verify that ALL code outside these
+        # hooks remains identical to the original, including gameplay.
+        expected = expected.replace(
+            "import net.minecraft.nbt.CompoundTag;",
+            "import net.minecraft.core.HolderLookup;\\nimport net.minecraft.nbt.CompoundTag;\\n"
+            "import net.minecraft.world.level.storage.ValueInput;\\n"
+            "import net.minecraft.world.level.storage.ValueOutput;".replace("\\n", "\n"))
+        expected = expected.replace("import net.minecraft.network.Connection;\\n".replace("\\n", "\n"), "")
+        start = "    @Override\\n    protected void saveAdditional(CompoundTag tag) {".replace("\\n", "\n")
+        migrated_start = "    @Override\\n    protected void saveAdditional(ValueOutput output) {".replace("\\n", "\n")
+        end = "    @Override\\n    public void registerControllers(".replace("\\n", "\n")
+        prior_region = expected[expected.index(start):expected.index(end)]
+        updated_region = migrated[migrated.index(migrated_start):migrated.index(end)]
+        expected = expected.replace(prior_region, updated_region, 1)
+        for old_token, new_token in (
+            ("tag.putInt(FRY_MASK_TAG, this.fryMask)", "output.putInt(FRY_MASK_TAG, this.fryMask)"),
+            ("tag.putBoolean(LAXATIVE_TAG, this.laxative)", "output.putBoolean(LAXATIVE_TAG, this.laxative)"),
+            ("this.fryMask = tag.getInt(FRY_MASK_TAG) & FULL_MASK", "this.fryMask = input.getIntOr(FRY_MASK_TAG, 0) & FULL_MASK"),
+            ("this.laxative = tag.getBoolean(LAXATIVE_TAG)", "this.laxative = input.getBooleanOr(LAXATIVE_TAG, false)"),
+        ):
+            if old_token not in prior_region or new_token not in updated_region:
+                raise SystemExit(f"Bagged fries persistent game state lost in 26.2 migration: {old_token}")
+        if ("count <= 0 ? 0 : (1 << Math.min(count, BaggedFriesBlock.TOTAL_FRIES)) - 1"
+                not in updated_region):
+            raise SystemExit("Bagged fries preexisting world block-state fallback changed")
+        if "input.getInt(FRY_MASK_TAG).isPresent()" not in updated_region:
+            raise SystemExit("Bagged fries explicit zero mask must survive reload without fallback")
+        if "getUpdateTag(HolderLookup.Provider registries)" not in updated_region:
+            raise SystemExit("Bagged fries client block update synchronization missing")
     if migrated != expected:
-        raise SystemExit(f"{rel}: the block entity logic was modified beyond its GeckoLib 5 imports")
-    print(f"GECKOLIB PARITY OK: {rel} unchanged except for four GeckoLib 5 imports")
+        raise SystemExit(f"{rel}: block entity gameplay differs outside explicitly migrated GeckoLib/persistence APIs")
+    print(f"GECKOLIB PARITY OK: {rel} original behavior retained, allowing 26.2 persistence in fries")

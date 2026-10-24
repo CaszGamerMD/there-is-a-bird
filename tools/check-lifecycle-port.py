@@ -101,7 +101,8 @@ if min(indices) < 0 or indices != sorted(indices):
 callbacks = (
     "BirdConfigLifecycleEvents", "BirdServerTickManager", "EarthwormRainEvents",
     "CrowNestLifecycleEvents", "PhotoLegacyMigrationEvents", "PhotoTransferEvents",
-    "BirdRuntimeConfigEvents", "BirdHeadPerchEvents")
+    "BirdRuntimeConfigEvents", "BirdHeadPerchEvents",
+    "BirdPopulationTracker", "CassowaryThreatEvents")
 for callback in callbacks:
     if f"{callback}.registerCallbacks();" not in boot:
         raise SystemExit(f"Missing Fabric bootstrap event wiring: {callback}")

@@ -423,3 +423,13 @@ the exact original save key; `Identifier.tryParse` continues returning
 `null` for malformed IDs and the original registry-existence check is kept.
 An isolated Java API proof and GeckoLib/AI source parity test guard the
 conversion. No crow texture or kestrel fetch targeting behavior was changed.
+
+## Bird dropping event registration cleanup (2026-10-24)
+
+The original `BirdDroppingEvents` has no Forge event-subscriber methods.
+Bird dropping updates are explicitly invoked by `BirdServerTickManager` on
+the same end-server-tick cadence. Removed its unused Forge bus annotation and
+import without changing any other line. The new source parity test verifies
+the tick call remains connected and no spawning chance, cooldown, variant,
+particles or behavior code changes. Entity persistence and fully migrated
+bird behavior are still outstanding.

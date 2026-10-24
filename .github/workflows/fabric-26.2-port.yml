@@ -60,6 +60,8 @@ jobs:
         run: python3 tools/check-bird-setup-parity.py
       - name: Verify 98 original advancements, loot tables and tags survive 26.2 paths
         run: python3 tools/check-26-2-datapack-paths.py
+      - name: Verify native tick-driven bird droppings without retired Forge subscriber
+        run: python3 tools/check-bird-dropping-subscription.py
       - name: Verify original feather and droppings lifetimes via native 26.2 item ages
         run: python3 tools/check-bird-ambient-drop-port.py
       - name: Verify original bird shearing, regrowth and persistent flight restriction

@@ -52,6 +52,8 @@ jobs:
         run: python3 tools/check-bird-entity-events.py
       - name: Verify original vanilla Creative tab contents
         run: python3 tools/check-bird-creative.py
+      - name: Verify bird repopulation cadence and loaded-world cleanup in Fabric
+        run: python3 tools/check-bird-repopulation-lifecycle.py
       - name: Verify flyby spawns, colony scores and polluted cake parity
         run: python3 tools/check-bird-spawn-events.py
       - name: Verify all 19 bird spawn placements and leaves predicates

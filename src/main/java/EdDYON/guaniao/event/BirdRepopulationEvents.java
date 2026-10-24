@@ -1,6 +1,5 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.BirdActivitySchedule;
@@ -31,13 +30,10 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.ForgeEventFactory;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 
 /** Replenishes loaded habitats without sharing the cow/sheep CREATURE cap. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdRepopulationEvents {
     private static final Map<ServerLevel, AttemptState> ATTEMPTS = new WeakHashMap<>();
     private static final int SCAN_RADIUS = 16;
@@ -53,10 +49,8 @@ public final class BirdRepopulationEvents {
 
     private BirdRepopulationEvents() { }
 
-    @SubscribeEvent
-    public static void onLevelTick(TickEvent.LevelTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !(event.level instanceof ServerLevel level)
-                || !isEnabled(level)) {
+    public static void onLevelTick(ServerLevel level) {
+        if (!isEnabled(level)) {
             return;
         }
         long now = level.getGameTime();
@@ -98,9 +92,14 @@ public final class BirdRepopulationEvents {
         state.nextAttempt = now + Math.min(interval, FAILED_ATTEMPT_RETRY_TICKS + level.random.nextInt(20));
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) ATTEMPTS.remove(level);
+    public static void onLevelUnload(ServerLevel level) {
+        ATTEMPTS.remove(level);
+    }
+
+    /** The authored rate limiter runs once per loaded level at its end tick. */
+    public static void registerCallbacks() {
+        ServerTickEvents.END_LEVEL_TICK.register(BirdRepopulationEvents::onLevelTick);
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static boolean isCrowded(int count, int limit) {

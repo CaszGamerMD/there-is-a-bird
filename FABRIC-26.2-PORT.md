@@ -433,3 +433,16 @@ import without changing any other line. The new source parity test verifies
 the tick call remains connected and no spawning chance, cooldown, variant,
 particles or behavior code changes. Entity persistence and fully migrated
 bird behavior are still outstanding.
+
+## Bird repopulation Fabric lifecycle (2026-10-24)
+
+The original loaded-habitat repopulation scheduler is now invoked by
+Fabric `END_LEVEL_TICK` and its per-world attempt state is removed by
+`ServerLevelEvents.UNLOAD`. Registered both at initialization. The entire
+spawn selection and population cap body, rate/interval arithmetic, random
+calls, player choice, loaded-chunk limits and regional retries remain
+byte-for-byte unchanged, enforced by an upstream parity script. This changes
+event delivery only. Repopulation still calls legacy Forge spawn hooks and
+old weighted-spawn APIs, which must be replaced with an equivalent Fabric
+mechanism before full build/runtime verification. No spawning behavior is
+claimed playable yet.

@@ -34,6 +34,10 @@ jobs:
         run: python3 tools/check-geckolib-blockentities.py
       - name: Verify bird AI preserved through GeckoLib 5 API substitutions
         run: python3 tools/check-geckolib-birds.py
+      - name: Verify all 19 original bird attribute profiles
+        run: python3 tools/check-bird-attributes.py
+      - name: Verify bird population, cassowary AI and advancement parity
+        run: python3 tools/check-bird-entity-events.py
       - name: Verify migrated sound and particle APIs compile on 26.2
         run: |
           chmod +x gradlew

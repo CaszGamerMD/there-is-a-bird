@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "item": "minecraft:iron_helmet"
+      "id": "minecraft:iron_helmet"
     },
     "title": {
       "translate": "advancements.guaniao.helmet_saved_the_day.title"

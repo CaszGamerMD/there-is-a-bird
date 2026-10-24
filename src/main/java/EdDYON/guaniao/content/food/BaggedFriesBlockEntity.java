@@ -14,7 +14,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.joml.Vector3f;
+import net.minecraft.util.ARGB;
 import com.geckolib.animatable.GeoBlockEntity;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
@@ -26,9 +26,9 @@ public final class BaggedFriesBlockEntity extends BlockEntity implements GeoBloc
     private static final int FULL_MASK = (1 << BaggedFriesBlock.TOTAL_FRIES) - 1;
     private static final int AMBIENT_PARTICLE_CHANCE = 8;
     private static final DustParticleOptions DIRTY_BROWN_DUST =
-            new DustParticleOptions(new Vector3f(0.28F, 0.18F, 0.07F), 0.80F);
+            new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.28F, 0.18F, 0.07F), 0.80F);
     private static final DustParticleOptions SICK_GREEN_DUST =
-            new DustParticleOptions(new Vector3f(0.20F, 0.40F, 0.08F), 0.70F);
+            new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.20F, 0.40F, 0.08F), 0.70F);
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private int fryMask = FULL_MASK;
@@ -101,14 +101,14 @@ public final class BaggedFriesBlockEntity extends BlockEntity implements GeoBloc
 
     public void syncToClient() {
         this.setChanged();
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             BlockState state = this.getBlockState();
             this.level.sendBlockUpdated(this.worldPosition, state, state, net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
         }
     }
 
     public void tick(Level level, BlockPos pos, BlockState state) {
-        if (!level.isClientSide || !this.laxative || this.fryMask == 0) {
+        if (!level.isClientSide() || !this.laxative || this.fryMask == 0) {
             return;
         }
         RandomSource random = level.random;

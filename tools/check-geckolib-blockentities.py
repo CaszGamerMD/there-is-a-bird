@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Assert migrated GeckoLib block entity implementations differ only in API imports.
+"""Check GeckoLib 5 block entities retain the original gameplay and persistent data.
 
-This is source-preservation validation, not proof of runtime animation parity.
+Four animated block-entity sources are compared with origin/main.
+Bird baths and bagged fries now use Minecraft 26.2's ValueInput/ValueOutput.
+All other code must still match the original after the documented API edits.
 """
-import subprocess
 from pathlib import Path
+import re
+import subprocess
 
 root = Path(__file__).resolve().parents[1]
 relative_files = (
@@ -19,19 +22,31 @@ old_to_new = {
     "software.bernie.geckolib.core.animation.AnimatableManager": "com.geckolib.animatable.manager.AnimatableManager",
     "software.bernie.geckolib.util.GeckoLibUtil": "com.geckolib.util.GeckoLibUtil",
 }
+persisted = {
+    "content/food/BaggedFriesBlockEntity.java": (
+        "FRY_MASK_TAG", "LAXATIVE_TAG",
+    ),
+    "content/bath/BirdBathBlockEntity.java": (
+        "CONTENT_TYPE_TAG", "CONTENT_LEVEL_TAG", "CLEANLINESS_TAG",
+        "SPOILED_CONTENT_TYPE_TAG", "SPOIL_TICKS_TAG", "FROZEN_SUGAR_WATER_TAG",
+        "ENVIRONMENTAL_TICK_OFFSET_TAG", "OCCUPIED_TICKS_TAG",
+        "RECENT_BIRD_USE_TICKS_TAG", "CURRENT_USER_TAG",
+    ),
+}
+
 for rel in relative_files:
     path = "src/main/java/EdDYON/guaniao/" + rel
-    original = subprocess.check_output(["git", "show", "origin/main:" + path], cwd=root, text=True)
+    original = subprocess.check_output(
+        ["git", "show", "origin/main:" + path], cwd=root, text=True)
     migrated = (root / path).read_text("utf-8")
     expected = original
     for previous, updated in old_to_new.items():
         if f"import {previous};" not in original:
             raise SystemExit(f"Original GeckoLib import unexpectedly absent: {rel}: {previous}")
         expected = expected.replace(previous, updated)
-    if rel == "content/food/BaggedFriesBlockEntity.java":
-        # Minecraft 26.2 replaced the old Forge CompoundTag persistence and
-        # client packet receive hooks. Verify that ALL code outside these
-        # hooks remains identical to the original, including gameplay.
+    if rel in persisted:
+        # Only the imports and method region for save, load and packet syncing
+        # may change; particle, animation and entity behavior remains identical.
         expected = expected.replace(
             "import net.minecraft.nbt.CompoundTag;",
             "\n".join((
@@ -41,27 +56,61 @@ for rel in relative_files:
                 "import net.minecraft.world.level.storage.ValueOutput;",
             )))
         expected = expected.replace("import net.minecraft.network.Connection;\n", "")
-        start = "    @Override\n    protected void saveAdditional(CompoundTag tag) {"
-        migrated_start = "    @Override\n    protected void saveAdditional(ValueOutput output) {"
+        old_start = "    @Override\n    protected void saveAdditional(CompoundTag tag) {"
+        new_start = "    @Override\n    protected void saveAdditional(ValueOutput output) {"
         end = "    @Override\n    public void registerControllers("
-        prior_region = expected[expected.index(start):expected.index(end)]
-        updated_region = migrated[migrated.index(migrated_start):migrated.index(end)]
-        expected = expected.replace(prior_region, updated_region, 1)
-        for old_token, new_token in (
-            ("tag.putInt(FRY_MASK_TAG, this.fryMask)", "output.putInt(FRY_MASK_TAG, this.fryMask)"),
-            ("tag.putBoolean(LAXATIVE_TAG, this.laxative)", "output.putBoolean(LAXATIVE_TAG, this.laxative)"),
-            ("this.fryMask = tag.getInt(FRY_MASK_TAG) & FULL_MASK", "this.fryMask = input.getIntOr(FRY_MASK_TAG, 0) & FULL_MASK"),
-            ("this.laxative = tag.getBoolean(LAXATIVE_TAG)", "this.laxative = input.getBooleanOr(LAXATIVE_TAG, false)"),
-        ):
-            if old_token not in prior_region or new_token not in updated_region:
-                raise SystemExit(f"Bagged fries persistent game state lost in 26.2 migration: {old_token}")
-        if ("count <= 0 ? 0 : (1 << Math.min(count, BaggedFriesBlock.TOTAL_FRIES)) - 1"
-                not in updated_region):
-            raise SystemExit("Bagged fries preexisting world block-state fallback changed")
-        if "input.getInt(FRY_MASK_TAG).isPresent()" not in updated_region:
-            raise SystemExit("Bagged fries explicit zero mask must survive reload without fallback")
-        if "getUpdateTag(HolderLookup.Provider registries)" not in updated_region:
-            raise SystemExit("Bagged fries client block update synchronization missing")
+        old_region = expected[expected.index(old_start):expected.index(end)]
+        new_region = migrated[migrated.index(new_start):migrated.index(end)]
+        expected = expected.replace(old_region, new_region, 1)
+
+        for key in persisted[rel]:
+            if key not in old_region or key not in new_region:
+                raise SystemExit(f"{rel}: persistent data field lost: {key}")
+        old_write_fields = set(re.findall(
+            r"tag\.put(?:Int|Boolean|Long|UUID)\((\w+)_TAG\b", old_region))
+        new_write_fields = set(re.findall(
+            r"output\.put(?:Int|Boolean|Long|IntArray)\((\w+)_TAG\b", new_region))
+        if old_write_fields != new_write_fields:
+            raise SystemExit(f"{rel}: write keys changed: {old_write_fields} -> {new_write_fields}")
+        if "loadAdditional(ValueInput input)" not in new_region:
+            raise SystemExit(f"{rel}: missing 26.2 block-entity loader")
+        if "getUpdateTag(HolderLookup.Provider registries)" not in new_region:
+            raise SystemExit(f"{rel}: client update on chunk load lost")
+        if "ClientboundBlockEntityDataPacket.create(this)" not in new_region:
+            raise SystemExit(f"{rel}: client live update packet lost")
+
+        if rel.startswith("content/food/"):
+            for before, after in (
+                ("tag.putInt(FRY_MASK_TAG, this.fryMask)",
+                 "output.putInt(FRY_MASK_TAG, this.fryMask)"),
+                ("tag.putBoolean(LAXATIVE_TAG, this.laxative)",
+                 "output.putBoolean(LAXATIVE_TAG, this.laxative)"),
+                ("this.fryMask = tag.getInt(FRY_MASK_TAG) & FULL_MASK",
+                 "this.fryMask = input.getIntOr(FRY_MASK_TAG, 0) & FULL_MASK"),
+                ("this.laxative = tag.getBoolean(LAXATIVE_TAG)",
+                 "this.laxative = input.getBooleanOr(LAXATIVE_TAG, false)"),
+            ):
+                if before not in old_region or after not in new_region:
+                    raise SystemExit("Bagged fries gameplay/save-field regression: " + before)
+            if "input.getInt(FRY_MASK_TAG).isPresent()" not in new_region:
+                raise SystemExit("Fries saved empty mask must not fall back to a full bag")
+        else:
+            if "output.putIntArray(CURRENT_USER_TAG" not in new_region:
+                raise SystemExit("Bird bath occupancy UUID was lost or saved in incompatible format")
+            if "input.getIntArray(CURRENT_USER_TAG)" not in new_region:
+                raise SystemExit("Bird bath cannot read its original UUID int-array tag")
+            for invariant in (
+                "this.contentType = BirdBathContentType.EMPTY;",
+                "this.contentLevel = 0;",
+                "this.spoiledContentType = BirdBathContentType.EMPTY;",
+                "this.frozenSugarWater = this.isFrozen() &&",
+                "this.currentUser = null;",
+                "Math.max(0, input.getIntOr(SPOIL_TICKS_TAG, 0))",
+                "Math.max(0, input.getIntOr(OCCUPIED_TICKS_TAG, 0))",
+            ):
+                if invariant not in new_region:
+                    raise SystemExit("Bird bath missing original validity/fallback behavior: " + invariant)
+
     if migrated != expected:
-        raise SystemExit(f"{rel}: block entity gameplay differs outside explicitly migrated GeckoLib/persistence APIs")
-    print(f"GECKOLIB PARITY OK: {rel} original behavior retained, allowing 26.2 persistence in fries")
+        raise SystemExit(f"{rel}: gameplay differs outside documented GeckoLib/persistence changes")
+    print(f"BLOCK ENTITY PARITY OK: {rel}")

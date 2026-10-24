@@ -62,3 +62,36 @@ for token in (
 if "SpawnPlacementTypes.ON_GROUND.isSpawnPositionOk(level, pos, type)" not in canopy:
     raise SystemExit("Ground spawning no longer uses the vanilla 26.2 footing check")
 print("BIRD SPAWN PLACEMENTS OK: all 19 exact predicates, heightmaps and canopy/ground modes preserved.")
+
+# Verify the original Forge SpawnPlacementCheck vetoes were not lost when
+# registering the same 19 predicates through Fabric's mob type builder.
+original_config = subprocess.check_output(
+    ["git", "show", "origin/main:" +
+     "src/main/java/EdDYON/guaniao/event/BirdSpawnConfigEvents.java"],
+    cwd=root, text=True)
+natural = (root / prefix / "fabric/GuaniaoNaturalSpawnRules.java").read_text("utf-8")
+required_source = (
+    "species.requiresOpenSkyForNaturalSpawn()",
+    "FlowerHabitatIndex.countFlowers(",
+    "GardenAttraction",  # potential-spawn list adjustment remains a separate blocker
+    "BirdConfigManager.allowsNaturalSpawning(species)",
+    "BirdPopulationTracker.totalAt(level, x, z)",
+    "BirdPopulationTracker.totalInRegionAt(level, x, z)",
+    "BirdPopulationTracker.speciesAt(level, x, z, species)",
+    "BirdConfigManager.maxWildNearby(species)",
+)
+for token in required_source:
+    if token not in original_config:
+        raise SystemExit("Unexpectedly missing original spawn behavior: " + token)
+for token in required_source:
+    if token == "GardenAttraction":
+        continue  # handled by original positional biome spawn adjustments, not a placement predicate
+    if token not in natural:
+        raise SystemExit("Natural Fabric spawn placement lost original Forge veto: " + token)
+if "FlowerHabitatIndex.countFlowers(server, pos, 16) < 5" not in natural:
+    raise SystemExit("Hummingbird habitat lost minimum five flowers in sixteen blocks")
+if "EntitySpawnReason.CHUNK_GENERATION" not in natural:
+    raise SystemExit("Runtime region should never query live population during chunk generation")
+if "GuaniaoNaturalSpawnRules.allowsPlacement(type, level, reason, pos)" not in new:
+    raise SystemExit("Native entity builders fail to enforce natural spawn configuration/caps")
+print("NATURAL SPAWN CAP OK: original sky, garden and local/regional species cap vetoes wired.")

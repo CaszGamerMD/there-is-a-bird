@@ -9,6 +9,8 @@ import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.item.Item;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.registries.Registries;
@@ -56,6 +58,10 @@ public final class GuaniaoRegistrationProof {
         return new FullColorSpawnEggItem(
                 GuaniaoRegistrationProof::testEntity, 0xffffff, 0x000000,
                 new Item.Properties().setId(GuaniaoRegistryIds.item("__compile_only_egg")));
+    }
+
+    public static void proofBirdAttributes() {
+        FabricDefaultAttributeRegistry.register(testEntity(), Mob.createMobAttributes());
     }
 
     public static BlockEntityType<ChestBlockEntity> testBlockEntity() {

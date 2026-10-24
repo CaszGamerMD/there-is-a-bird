@@ -47,11 +47,15 @@ if "BirdShearEvents.registerCallbacks();" not in bootstrap:
 for token in (
         "long now = bird.level().getGameTime()",
         "now + Math.max(0, durationTicks)", "keepGrounded(bird)",
-        "bird.setNoGravity(false)", "bird.isInWaterOrBubble()",
+        "bird.setNoGravity(false)",
         "bird.onGround() ? Math.min(movement.y, 0.0D) : Math.min(movement.y, -0.08D)",
         "bird.setDeltaMovement(movement.x, vertical, movement.z)"):
     if token not in old_flight or token not in flight:
         raise SystemExit("Temporary flight-loss behavior changed: " + token)
+if "bird.isInWaterOrBubble()" not in old_flight or (
+        "bird.isInWater()" not in flight
+        or "getBlockState(bird.blockPosition()).is(Blocks.BUBBLE_COLUMN)" not in flight):
+    raise SystemExit("Original flight lock water/bubble-column exemption not preserved.")
 for token in (
         "builder -> builder.persistent(Codec.LONG)",
         "bird.getAttachedOrElse(DISABLED_UNTIL, 0L)",

@@ -84,7 +84,7 @@ public final class SkyBirdEcology {
             return 0;
         }
 
-        long time = Math.floorMod(level.getDayTime(), 24000L);
+        long time = Math.floorMod(level.getDefaultClockTime(), 24000L);
         if (time >= 13000L && time <= 23000L) {
             return 0;
         }

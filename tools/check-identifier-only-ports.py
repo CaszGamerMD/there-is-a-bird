@@ -14,6 +14,9 @@ for path in files:
     updated = (root / path).read_text(encoding="utf-8")
     expected = original.replace("ResourceLocation", "Identifier").replace(
         "new Identifier(", "Identifier.fromNamespaceAndPath(")
+    if path.endswith("SkyBirdEcology.java"):
+        # Modern world clocks replace pre-26.2 dimension day time.
+        expected = expected.replace("level.getDayTime()", "level.getDefaultClockTime()")
     if updated != expected:
         raise SystemExit(f"Unexpected behavior or data migration outside identifier changes: {path}")
     print(f"IDENTIFIER PARITY OK: {path}")

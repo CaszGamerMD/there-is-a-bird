@@ -1,26 +1,27 @@
 package EdDYON.guaniao.client.food;
 
 import EdDYON.guaniao.content.food.BaggedFriesBlockEntity;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
+import net.minecraft.resources.Identifier;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
 
 public final class BaggedFriesModel extends GeoModel<BaggedFriesBlockEntity> {
-    private static final ResourceLocation MODEL = new ResourceLocation("guaniao", "geo/bagged_fries.geo.json");
-    private static final ResourceLocation TEXTURE = new ResourceLocation("guaniao", "textures/block/bagged_fries.png");
-    private static final ResourceLocation ANIMATION = new ResourceLocation("guaniao", "animations/bagged_fries.animation.json");
+    private static final Identifier MODEL = Identifier.fromNamespaceAndPath("guaniao", "geo/bagged_fries.geo.json");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("guaniao", "textures/block/bagged_fries.png");
+    private static final Identifier ANIMATION = Identifier.fromNamespaceAndPath("guaniao", "animations/bagged_fries.animation.json");
 
     @Override
-    public ResourceLocation getModelResource(BaggedFriesBlockEntity animatable) {
+    public Identifier getModelResource(GeoRenderState renderState) {
         return MODEL;
     }
 
     @Override
-    public ResourceLocation getTextureResource(BaggedFriesBlockEntity animatable) {
+    public Identifier getTextureResource(GeoRenderState renderState) {
         return TEXTURE;
     }
 
     @Override
-    public ResourceLocation getAnimationResource(BaggedFriesBlockEntity animatable) {
+    public Identifier getAnimationResource(BaggedFriesBlockEntity animatable) {
         return ANIMATION;
     }
 }

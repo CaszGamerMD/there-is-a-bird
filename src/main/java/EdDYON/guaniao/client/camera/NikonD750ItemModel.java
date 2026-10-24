@@ -2,26 +2,27 @@ package EdDYON.guaniao.client.camera;
 
 import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.camera.NikonD750Item;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
+import net.minecraft.resources.Identifier;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
 
 public class NikonD750ItemModel extends GeoModel<NikonD750Item> {
-    private static final ResourceLocation MODEL = new ResourceLocation(GuaniaoMod.MOD_ID, "geo/nikon_d750.geo.json");
-    private static final ResourceLocation TEXTURE = new ResourceLocation(GuaniaoMod.MOD_ID, "textures/item/nikon_d750.png");
-    private static final ResourceLocation ANIMATION = new ResourceLocation(GuaniaoMod.MOD_ID, "animations/nikon_d750.animation.json");
+    private static final Identifier MODEL = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "geo/nikon_d750.geo.json");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "textures/item/nikon_d750.png");
+    private static final Identifier ANIMATION = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "animations/nikon_d750.animation.json");
 
     @Override
-    public ResourceLocation getModelResource(NikonD750Item animatable) {
+    public Identifier getModelResource(GeoRenderState renderState) {
         return MODEL;
     }
 
     @Override
-    public ResourceLocation getTextureResource(NikonD750Item animatable) {
+    public Identifier getTextureResource(GeoRenderState renderState) {
         return TEXTURE;
     }
 
     @Override
-    public ResourceLocation getAnimationResource(NikonD750Item animatable) {
+    public Identifier getAnimationResource(NikonD750Item animatable) {
         return ANIMATION;
     }
 }

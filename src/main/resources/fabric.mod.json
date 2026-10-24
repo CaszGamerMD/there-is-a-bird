@@ -12,6 +12,9 @@
   "entrypoints": {
     "main": [
       "EdDYON.guaniao.fabric.GuaniaoFabricEntrypoint"
+    ],
+    "client": [
+      "EdDYON.guaniao.fabric.GuaniaoFabricClientEntrypoint"
     ]
   },
   "mixins": [

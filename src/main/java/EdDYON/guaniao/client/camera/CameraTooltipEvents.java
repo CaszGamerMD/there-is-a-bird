@@ -1,30 +1,31 @@
 package EdDYON.guaniao.client.camera;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import net.minecraft.world.item.ItemStack;
+import java.util.List;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID, value = Dist.CLIENT)
 public final class CameraTooltipEvents {
     private CameraTooltipEvents() {
     }
 
-    @SubscribeEvent
-    public static void onTooltip(ItemTooltipEvent event) {
-        if (!event.getItemStack().is(GuaniaoItems.NIKON_D750.get())) return;
-        if (Screen.hasShiftDown()) {
-            event.getToolTip().add(Component.translatable("tooltip.guaniao.camera.open").withStyle(ChatFormatting.GRAY));
+    public static void registerCallbacks() {
+        ItemTooltipCallback.EVENT.register((stack, context, type, lines) ->
+                appendTooltip(stack, lines, Minecraft.getInstance().hasShiftDown()));
+    }
+
+    static void appendTooltip(ItemStack stack, List<Component> lines, boolean hasShiftDown) {
+        if (!stack.is(GuaniaoItems.NIKON_D750.get())) return;
+        if (hasShiftDown) {
+            lines.add(Component.translatable("tooltip.guaniao.camera.open").withStyle(ChatFormatting.GRAY));
             for (Component line : CameraHelpScreen.controlLines()) {
-                event.getToolTip().add(line.copy().withStyle(ChatFormatting.GRAY));
+                lines.add(line.copy().withStyle(ChatFormatting.GRAY));
             }
         } else {
-            event.getToolTip().add(Component.translatable("tooltip.guaniao.camera.help",
+            lines.add(Component.translatable("tooltip.guaniao.camera.help",
                     Component.translatable("key.keyboard.left.shift")).withStyle(ChatFormatting.GRAY));
         }
     }

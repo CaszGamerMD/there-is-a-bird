@@ -2,7 +2,6 @@ package EdDYON.guaniao.content.dropping;
 
 import EdDYON.guaniao.registry.GuaniaoRecipeSerializers;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.ItemStack;
@@ -58,7 +57,7 @@ public class BirdDroppingFoodRecipe extends CustomRecipe {
     }
 
     @Override
-    public @NotNull RecipeSerializer<?> getSerializer() {
+    public @NotNull RecipeSerializer<BirdDroppingFoodRecipe> getSerializer() {
         return SERIALIZER;
     }
 }

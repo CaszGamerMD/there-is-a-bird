@@ -3,10 +3,10 @@ package EdDYON.guaniao.content.camera;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import EdDYON.guaniao.registry.GuaniaoRecipeSerializers;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CustomRecipe;
@@ -35,14 +35,14 @@ public class FilmToPhotographRecipe extends CustomRecipe {
 
         ItemStack result = new ItemStack(GuaniaoItems.PHOTOGRAPH.get());
         PhotographData.copyImage(film, result);
-        if (film.hasCustomHoverName()) {
-            result.setHoverName(Component.translatable("item.guaniao.photograph.named", film.getHoverName()));
+        if (film.getCustomName() != null) {
+            result.set(DataComponents.CUSTOM_NAME, Component.translatable("item.guaniao.photograph.named", film.getHoverName()));
         }
         return result;
     }
 
     @Override
-    public @NotNull RecipeSerializer<?> getSerializer() {
+    public @NotNull RecipeSerializer<FilmToPhotographRecipe> getSerializer() {
         return SERIALIZER;
     }
 

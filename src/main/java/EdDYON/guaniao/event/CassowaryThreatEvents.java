@@ -31,10 +31,10 @@ public final class CassowaryThreatEvents {
         if (!(entity instanceof PathfinderMob mob) || !isAffectedHostile(mob)) {
             return;
         }
-        boolean alreadyInstalled = mob.goalSelector.getAvailableGoals().stream()
+        boolean alreadyInstalled = mob.getGoalSelector().getAvailableGoals().stream()
                 .anyMatch(wrapped -> wrapped.getGoal() instanceof CassowaryAvoidGoal);
         if (!alreadyInstalled) {
-            mob.goalSelector.addGoal(1, new CassowaryAvoidGoal(mob));
+            mob.getGoalSelector().addGoal(1, new CassowaryAvoidGoal(mob));
         }
         HOSTILES.computeIfAbsent(level, ignored -> new HashMap<>()).put(mob.getUUID(), mob);
     }

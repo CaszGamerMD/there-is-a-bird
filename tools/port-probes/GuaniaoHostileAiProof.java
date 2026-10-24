@@ -16,10 +16,10 @@ public final class GuaniaoHostileAiProof {
     }
 
     public static void checkAvoidanceGoal(PathfinderMob mob) {
-        boolean exists = mob.goalSelector.getAvailableGoals().stream()
+        boolean exists = mob.getGoalSelector().getAvailableGoals().stream()
                 .anyMatch(goal -> goal.getGoal() instanceof AvoidEntityGoal<?>);
         if (!exists) {
-            mob.goalSelector.addGoal(1, new AvoidEntityGoal<>(mob, Pig.class, 13.0F, 1.10D, 1.35D));
+            mob.getGoalSelector().addGoal(1, new AvoidEntityGoal<>(mob, Pig.class, 13.0F, 1.10D, 1.35D));
         }
         if (mob.getTarget() instanceof Pig) {
             mob.setTarget(null);

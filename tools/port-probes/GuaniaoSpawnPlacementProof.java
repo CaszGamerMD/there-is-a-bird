@@ -20,7 +20,7 @@ public final class GuaniaoSpawnPlacementProof {
                         SpawnPlacementTypes.ON_GROUND,
                         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                         (type, level, reason, pos, random) ->
-                                reason != net.minecraft.world.entity.MobSpawnType.CHUNK_GENERATION))
+                                reason != net.minecraft.world.entity.EntitySpawnReason.CHUNK_GENERATION))
                 .sized(0.9F, 0.9F)
                 .clientTrackingRange(8)
                 .build(GuaniaoRegistryIds.entity("__compile_only_spawn_placement"));

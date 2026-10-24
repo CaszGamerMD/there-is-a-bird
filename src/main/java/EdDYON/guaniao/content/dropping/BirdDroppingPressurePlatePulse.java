@@ -1,6 +1,5 @@
 package EdDYON.guaniao.content.dropping;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,13 +9,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.BasePressurePlateBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
 
 /** Event-driven, one-shot pressure plate pulses caused by an impacting bird dropping. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdDroppingPressurePlatePulse {
     private static final Map<ServerLevel, Map<Long, Long>> ACTIVE = new WeakHashMap<>();
 
@@ -42,7 +39,7 @@ public final class BirdDroppingPressurePlatePulse {
 
         int duration = BirdConfigManager.droppingPressurePlatePulseTicks();
         pulses.put(key, now + duration);
-        state.entityInside(level, pos, triggeringEntity);
+        state.entityInside(level, pos, triggeringEntity, InsideBlockEffectApplier.NOOP, false);
         level.scheduleTick(pos, state.getBlock(), duration);
         return true;
     }
@@ -67,17 +64,18 @@ public final class BirdDroppingPressurePlatePulse {
         return false;
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            ACTIVE.remove(level);
-        }
+    /** Fabric's per-level end tick keeps the original 200-tick cleanup cadence. */
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
+        ServerTickEvents.END_LEVEL_TICK.register(BirdDroppingPressurePlatePulse::onLevelTick);
     }
 
-    @SubscribeEvent
-    public static void onLevelTick(TickEvent.LevelTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !(event.level instanceof ServerLevel level)
-                || level.getGameTime() % 200L != 0L) {
+    public static void onLevelUnload(ServerLevel level) {
+        ACTIVE.remove(level);
+    }
+
+    public static void onLevelTick(ServerLevel level) {
+        if (level.getGameTime() % 200L != 0L) {
             return;
         }
         Map<Long, Long> pulses = ACTIVE.get(level);

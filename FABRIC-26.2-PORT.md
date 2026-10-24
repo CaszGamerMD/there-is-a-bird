@@ -336,3 +336,15 @@ camera/photos, recipe gameplay, full resource loading and dedicated server
 and client tests must pass before constructing a working test JAR. Do not
 publish/distribute an asset-containing modified build without the author's
 prior written permission as required by `DISTRIBUTION-POLICY.md`.
+
+## Bird-dropping pressure-plate callback checkpoint (2026-10-23)
+
+The original one-shot bird-dropping pressure plate pulse now registers via
+Fabric `ServerTickEvents.END_LEVEL_TICK` and `ServerLevelEvents.UNLOAD`,
+instead of Forge level events. The same per-level expiry map, configured
+duration, no-repeat rule and 200-tick stale-entry cleanup are preserved.
+The native 26.2 block-inside call supplies `InsideBlockEffectApplier.NOOP`
+and the modern precision flag. A compile-only API probe and main-branch
+source comparison protect this compatibility change. The block interaction
+must still be observed in a loaded client/server world; these changes alone
+do not create a runnable test JAR.

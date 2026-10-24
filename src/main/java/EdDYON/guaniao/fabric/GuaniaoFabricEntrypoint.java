@@ -2,6 +2,7 @@ package EdDYON.guaniao.fabric;
 
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.content.dropping.BirdDroppingUtil;
+import EdDYON.guaniao.content.dropping.BirdDroppingPressurePlatePulse;
 import EdDYON.guaniao.event.BirdConfigLifecycleEvents;
 import EdDYON.guaniao.event.BirdPopulationTracker;
 import EdDYON.guaniao.event.BirdAdvancementEvents;
@@ -67,6 +68,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         BirdAdvancementEvents.registerCallbacks();
         CassowaryThreatEvents.registerCallbacks();
         PollutedCakeEvents.registerCallbacks();
+        BirdDroppingPressurePlatePulse.registerCallbacks();
         BirdColonySpawnRules.registerCallbacks();
         BirdFlybySpawnEvents.registerCallbacks();
         EarthwormRainEvents.registerCallbacks();

@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "item": "minecraft:written_book"
+      "id": "minecraft:written_book"
     },
     "title": {
       "translate": "advancements.guaniao.dev_notes_all.title"

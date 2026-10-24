@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "item": "guaniao:crow_spawn_egg"
+      "id": "guaniao:crow_spawn_egg"
     },
     "title": {
       "translate": "advancements.guaniao.husbandry.high_eye.title"

@@ -17,7 +17,7 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -68,9 +68,9 @@ public class PhotographEntity extends HangingEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.getEntityData().define(DATA_ITEM, ItemStack.EMPTY);
-        this.getEntityData().define(DATA_ROTATION, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(DATA_ITEM, ItemStack.EMPTY);
+        builder.define(DATA_ROTATION, 0);
     }
 
     @Override
@@ -406,7 +406,7 @@ public class PhotographEntity extends HangingEntity {
                 return InteractionResult.PASS;
             }
             if (player.isShiftKeyDown()) {
-                if (this.level().isClientSide && PhotographData.hasImage(this.getItem())) {
+                if (this.level().isClientSide() && PhotographData.hasImage(this.getItem())) {
                     ItemStack copy = this.getItem().copy();
                     DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
                         try {
@@ -417,22 +417,22 @@ public class PhotographEntity extends HangingEntity {
                         }
                     });
                 }
-                return InteractionResult.sidedSuccess(this.level().isClientSide);
+                return InteractionResult.sidedSuccess(this.level().isClientSide());
             }
             if (!this.mayModify(player, held)) {
                 return InteractionResult.FAIL;
             }
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 this.setRotation(this.getRotation() + 1);
                 this.playSound(SoundEvents.ITEM_FRAME_ROTATE_ITEM, 0.8F, 1.0F);
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
 
         if (this.frameDesign != null && !PhotographData.hasImage(this.getItem())
                 && (held.is(GuaniaoItems.PHOTOGRAPH.get()) || held.is(GuaniaoItems.FILM.get())) && PhotographData.hasImage(held)) {
             if (!this.mayModify(player, held)) return InteractionResult.FAIL;
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 // Imported legacy pixels must finish conversion before copying the reference.
                 // The queue operates on the real held stack and does not consume it.
                 if (PhotographData.hasLegacyPixels(held)) {
@@ -456,7 +456,7 @@ public class PhotographEntity extends HangingEntity {
                 if (!player.getAbilities().instabuild) held.shrink(1);
                 this.playSound(SoundEvents.ITEM_FRAME_ADD_ITEM, 0.8F, 1.0F);
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
 
         if (this.frameDesign != null) return this.interactWithDesign(player, hand, held);
@@ -484,7 +484,7 @@ public class PhotographEntity extends HangingEntity {
         if (!this.mayModify(player, held)) {
             return InteractionResult.FAIL;
         }
-        if (!this.level().isClientSide && !changed.equals(style)) {
+        if (!this.level().isClientSide() && !changed.equals(style)) {
             ItemStack copy = this.getItem().copy();
             PhotographFrameStyle.write(copy, changed);
             this.setItem(copy);
@@ -497,7 +497,7 @@ public class PhotographEntity extends HangingEntity {
             }
             this.playSound(shears ? SoundEvents.SHEEP_SHEAR : SoundEvents.ITEM_FRAME_ADD_ITEM, 0.8F, 1.0F);
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return InteractionResult.sidedSuccess(this.level().isClientSide());
     }
 
     private InteractionResult interactWithDesign(Player player, InteractionHand hand, ItemStack held) {
@@ -513,13 +513,13 @@ public class PhotographEntity extends HangingEntity {
         else if (held.getItem() instanceof BlockItem) changed = changed.withFrameMaterial(BuiltInRegistries.ITEM.getKey(held.getItem()));
         else return InteractionResult.PASS;
         if (!this.mayModify(player, held)) return InteractionResult.FAIL;
-        if (!this.level().isClientSide && !changed.equals(this.frameDesign)) {
+        if (!this.level().isClientSide() && !changed.equals(this.frameDesign)) {
             ItemStack copy = this.getItem().copy();
             FrameDesign.write(copy, changed);
             this.setItem(copy);
             this.playSound(shears ? SoundEvents.SHEEP_SHEAR : SoundEvents.ITEM_FRAME_ADD_ITEM, 0.8F, 1.0F);
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return InteractionResult.sidedSuccess(this.level().isClientSide());
     }
 
     private boolean mayModify(Player player, ItemStack held) {
@@ -531,7 +531,7 @@ public class PhotographEntity extends HangingEntity {
         if (stack.is(Items.FEATHER)) {
             return true;
         }
-        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         return id != null && id.getNamespace().equals("guaniao") && id.getPath().startsWith("feather_");
     }
 
@@ -540,7 +540,7 @@ public class PhotographEntity extends HangingEntity {
         if (this.isInvulnerableTo(source)) {
             return false;
         }
-        if (!this.isRemoved() && !this.level().isClientSide) {
+        if (!this.isRemoved() && !this.level().isClientSide()) {
             this.dropItem(source.getEntity());
             this.kill();
             this.markHurt();

@@ -540,3 +540,19 @@ flight movements, wing/stroke transitions and nudges. The whole-file
 source parity compares the Forge original with only the symbol rename,
 and an isolated Java API proof compiles direct 26.2 field access.
 Rendering and network gameplay have not yet been runtime tested.
+
+## Bird droppings, feather fan and photograph entity APIs (2026-10-24)
+
+Migrated the original bird-dropping projectile, splat entity, feather-fan
+projectile and photograph entity to the 26.2 `SynchedEntityData.Builder`
+initialization signature without changing **any** accessor or initial value.
+Converted side checks to `isClientSide()` and fan movement synchronization
+to `needsSync` while preserving all original conditions. The photograph
+entity now looks up feather item IDs through vanilla
+`BuiltInRegistries.ITEM.getKey` and `Identifier` rather than the Forge
+registry wrapper; the comparison and ID string are unchanged.
+
+CI compares all four *complete original source files* against exact
+mechanical 26.2 substitutions and fails on any other line change.
+The action/use, physics, saved-state, spawning and rendering APIs are
+**not yet fully ported**; this is not a playable build.

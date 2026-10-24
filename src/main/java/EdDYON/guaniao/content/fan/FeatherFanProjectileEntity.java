@@ -172,11 +172,11 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(DATA_STATE, FanState.OUTBOUND_SPIN.ordinal());
-        this.entityData.define(DATA_CHARGE, 0.0F);
-        this.entityData.define(DATA_RIVEN_TICKS, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_STATE, FanState.OUTBOUND_SPIN.ordinal());
+        builder.define(DATA_CHARGE, 0.0F);
+        builder.define(DATA_RIVEN_TICKS, 0);
     }
 
     public void configureThrow(ItemStack fanStack, InteractionHand hand, float charge) {
@@ -251,7 +251,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     @Override
     public void tick() {
         this.noPhysics = this.isNonCollidingState();
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             if (++this.lifeTicks > MAX_TOTAL_LIFE_TICKS) {
                 this.dropFanAndDiscard();
                 return;
@@ -303,11 +303,11 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         this.noPhysics = this.isNonCollidingState();
         super.tick();
 
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             this.tickClientStuckAttachment();
         }
 
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             ServerPlayer owner = this.findServerOwner();
             if (this.isFlyingOutbound()
                     && this.position().distanceToSqr(this.throwOrigin) >= this.maxDistance * this.maxDistance) {
@@ -359,7 +359,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         }
 
         Set<UUID> hits = this.isReturning() ? this.returnHits : this.outboundHits;
-        if (!hits.add(living.getUUID()) || this.level().isClientSide) {
+        if (!hits.add(living.getUUID()) || this.level().isClientSide()) {
             return;
         }
 
@@ -395,7 +395,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         }
 
         Vec3 surfaceHit = this.findTargetSurface(living, hitLocation);
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             // Predict the same local-space attachment as the server so target knockback cannot
             // visually separate the fan while the authoritative state packet is in flight.
             this.clientStuckEntityId = living.getId();
@@ -654,11 +654,11 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             newVelocity = desiredVelocity;
         }
         this.setDeltaMovement(newVelocity);
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void hitHuntingTarget(LivingEntity target) {
-        if (this.level().isClientSide || this.getFanState() != FanState.HUNTING
+        if (this.level().isClientSide() || this.getFanState() != FanState.HUNTING
                 || this.huntingTargetUuid == null
                 || !this.huntingTargetUuid.equals(target.getUUID())) {
             return;
@@ -746,7 +746,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             this.setDeltaMovement(redirected.lengthSqr() > 1.0E-3D
                     ? redirected.normalize().scale(HUNT_SPEED)
                     : desired);
-            this.hasImpulse = true;
+            this.needsSync = true;
         }
         if (this.level() instanceof ServerLevel serverLevel) {
             this.spawnHuntingTurnEffects(serverLevel, target);
@@ -1166,7 +1166,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
-        if (this.level().isClientSide || this.isNonCollidingState()) {
+        if (this.level().isClientSide() || this.isNonCollidingState()) {
             return;
         }
 
@@ -1220,7 +1220,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             turn = desired;
         }
         this.setDeltaMovement(turn.normalize().scale(this.returnSpeed));
-        this.hasImpulse = true;
+        this.needsSync = true;
         if (this.level() instanceof ServerLevel serverLevel) {
             if (previousState == FanState.OUTBOUND_SPIN) {
                 this.spawnTurnEffects(serverLevel);
@@ -1261,7 +1261,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             double speed = Mth.clamp(distance * 0.38D, 0.35D, this.returnSpeed);
             this.setDeltaMovement(desiredDirection.scale(speed));
         }
-        this.hasImpulse = true;
+        this.needsSync = true;
 
         Vec3 next = this.position().add(this.getDeltaMovement());
         if (distance < 3.0D && next.distanceTo(target) > distance) {
@@ -1917,7 +1917,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void dropFanAndDiscard() {
-        if (this.isRemoved() || this.level().isClientSide) {
+        if (this.isRemoved() || this.level().isClientSide()) {
             return;
         }
         this.releaseBurialTargets();

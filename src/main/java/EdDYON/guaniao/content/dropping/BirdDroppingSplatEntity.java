@@ -131,16 +131,16 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(DATA_SURFACE_DIRECTION, Direction.UP.get3DDataValue());
-        this.entityData.define(DATA_ATTACHED_ENTITY_ID, -1);
-        this.entityData.define(DATA_ATTACHMENT_PART, AttachmentPart.BODY.id);
-        this.entityData.define(DATA_LOCAL_DIRECTION, Direction.SOUTH.get3DDataValue());
-        this.entityData.define(DATA_LOCAL_X, 0.0F);
-        this.entityData.define(DATA_LOCAL_Y, 0.0F);
-        this.entityData.define(DATA_LOCAL_Z, 0.0F);
-        this.entityData.define(DATA_MAX_AGE_TICKS, MIN_AGE_TICKS);
-        this.entityData.define(DATA_STRIP_DROPPING, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(DATA_SURFACE_DIRECTION, Direction.UP.get3DDataValue());
+        builder.define(DATA_ATTACHED_ENTITY_ID, -1);
+        builder.define(DATA_ATTACHMENT_PART, AttachmentPart.BODY.id);
+        builder.define(DATA_LOCAL_DIRECTION, Direction.SOUTH.get3DDataValue());
+        builder.define(DATA_LOCAL_X, 0.0F);
+        builder.define(DATA_LOCAL_Y, 0.0F);
+        builder.define(DATA_LOCAL_Z, 0.0F);
+        builder.define(DATA_MAX_AGE_TICKS, MIN_AGE_TICKS);
+        builder.define(DATA_STRIP_DROPPING, false);
     }
 
     @Override
@@ -171,7 +171,7 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
             }
         }
 
-        if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+        if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
             if (this.isTouchingWater()) {
                 this.washAway(serverLevel, ParticleTypes.SPLASH);
                 return;
@@ -182,7 +182,7 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
             }
         }
 
-        if (!this.level().isClientSide && this.ageTicks >= this.getMaxAgeTicks()) {
+        if (!this.level().isClientSide() && this.ageTicks >= this.getMaxAgeTicks()) {
             this.discard();
         }
     }
@@ -252,7 +252,7 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
         if (this.isInvulnerableTo(source)) {
             return false;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             Entity attacker = source.getEntity();
             if (!(attacker instanceof Player player) || !player.isCreative()) {
                 this.dropCollectible(BirdDroppingUtil.randomDroppingStack(this.level().random));
@@ -269,10 +269,10 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
         if (!stack.is(Items.BRUSH)) {
             return InteractionResult.PASS;
         }
-        if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+        if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
             this.cleanWithBrush(serverLevel, player, hand, stack);
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return InteractionResult.sidedSuccess(this.level().isClientSide());
     }
 
     public Direction getSurfaceDirection() {

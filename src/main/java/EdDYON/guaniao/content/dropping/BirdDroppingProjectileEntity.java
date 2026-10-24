@@ -66,13 +66,13 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(DATA_VARIANT, BirdDroppingVariant.ONE.id());
-        this.entityData.define(DATA_NATURAL_DROPPING, false);
-        this.entityData.define(DATA_STRIP_DROPPING, false);
-        this.entityData.define(DATA_SOURCE_BIRD_ID, -1);
-        this.entityData.define(DATA_STRIP_STARTED_AT, 0L);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_VARIANT, BirdDroppingVariant.ONE.id());
+        builder.define(DATA_NATURAL_DROPPING, false);
+        builder.define(DATA_STRIP_DROPPING, false);
+        builder.define(DATA_SOURCE_BIRD_ID, -1);
+        builder.define(DATA_STRIP_STARTED_AT, 0L);
     }
 
     @Override
@@ -87,11 +87,11 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
 
     @Override
     public void tick() {
-        if (this.level().isClientSide && this.isStripDropping()) {
+        if (this.level().isClientSide() && this.isStripDropping()) {
             this.rememberStripPosition();
         }
         super.tick();
-        if (this.level().isClientSide || this.isRemoved()) {
+        if (this.level().isClientSide() || this.isRemoved()) {
             return;
         }
         ++this.lifeTicks;
@@ -107,7 +107,7 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
-        if (this.level().isClientSide || !this.beginImpactResolution()) {
+        if (this.level().isClientSide() || !this.beginImpactResolution()) {
             return;
         }
 
@@ -159,7 +159,7 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
-        if (this.level().isClientSide || !this.beginImpactResolution()) {
+        if (this.level().isClientSide() || !this.beginImpactResolution()) {
             return;
         }
 

@@ -25,11 +25,13 @@ for token in (
     if token not in old_shear or token not in shear:
         raise SystemExit("Bird shearing logic changed: " + token)
 for token in (
-        "level.getGameTime()", "long elapsed = now - last",
+        "long elapsed = now - last",
         "elapsed >= 0L && elapsed < REGROW_TICKS",
         "player.isSpectator()", "ShearsItem"):
     if token not in old_shear or token not in shear:
         raise SystemExit("Bird shearing conditions changed: " + token)
+if "long now = bird.level().getGameTime()" not in old_shear or "long now = level.getGameTime()" not in shear:
+    raise SystemExit("Original world-time cooldown clock not preserved.")
 if "stack.hurtAndBreak(1, player, hand)" not in shear:
     raise SystemExit("Shears no longer lose one durability when successfully used.")
 for token in (
@@ -60,6 +62,6 @@ for token in (
 if "BirdFlightLock.registerAttachments();" not in bootstrap:
     raise SystemExit("Flight-loss attachment not initialized before birds load.")
 for text in (shear, flight):
-    if re.search(r"net\\.minecraftforge|\\bgetPersistentData\\(", text):
+    if "net.minecraftforge" in text or "getPersistentData(" in text:
         raise SystemExit("Forge dependency remains in a migrated bird interaction.")
 print("BIRD SHEARING PARITY OK: 6000-tick regrowth, mutation feathers, tool wear, persistent flight lock and server-only drops.")

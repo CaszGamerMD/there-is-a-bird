@@ -1,6 +1,5 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.BirdVisibility;
@@ -8,6 +7,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
@@ -17,10 +18,6 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -29,7 +26,6 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 
 /** Incremental wild-bird counts; spawn checks never scan a large entity AABB. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdPopulationTracker {
     private static final String LAST_NEARBY_PLAYER_TIME = "GuaniaoLastNearbyPlayerTime";
     private static final String TRANSIENT_FLYBY_SPAWN_TIME = "GuaniaoTransientFlybySpawnTime";
@@ -65,14 +61,10 @@ public final class BirdPopulationTracker {
         }
     }
 
-    @SubscribeEvent
-    public static void onEntityLeave(EntityLeaveLevelEvent event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) {
-            return;
-        }
+    public static void onEntityLeave(Entity entity, ServerLevel level) {
         LevelPopulation population = LEVELS.get(level);
         if (population != null) {
-            TrackedBird tracked = population.tracked.remove(event.getEntity().getUUID());
+            TrackedBird tracked = population.tracked.remove(entity.getUUID());
             if (tracked != null && tracked.counted) {
                 population.adjust(tracked.region, tracked.species, -1);
             }
@@ -105,11 +97,14 @@ public final class BirdPopulationTracker {
         }
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            LEVELS.remove(level);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        LEVELS.remove(level);
+    }
+
+    /** Keep population totals consistent when a bird unloads or a dimension closes. */
+    public static void registerCallbacks() {
+        ServerEntityEvents.ENTITY_UNLOAD.register(BirdPopulationTracker::onEntityLeave);
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static void update(ServerLevel level, Mob mob, boolean force) {

@@ -50,19 +50,19 @@ for rel in relative_files:
         if f"import {previous};" not in original:
             raise SystemExit(f"Original GeckoLib import unexpectedly absent: {rel}: {previous}")
         expected = expected.replace(previous, updated)
-        if rel.startswith("content/nest/"):
-            old_load = "    @Override\n    public void onLoad() {\n        super.onLoad();\n        if (this.level != null && !this.level.isClientSide) {\n            LOADED_NESTS.computeIfAbsent(this.level, ignored -> new HashSet<>()).add(this);\n        }\n    }"
-            new_load = "    @Override\n    public void setLevel(Level level) {\n        // BlockEntity.onLoad no longer exists in 26.2. Index the nest when\n        // Minecraft assigns the level; setRemoved still unregisters it.\n        super.setLevel(level);\n        if (level != null && !level.isClientSide()) {\n            LOADED_NESTS.computeIfAbsent(level, ignored -> new HashSet<>()).add(this);\n        }\n    }"
-            if old_load not in expected or new_load not in migrated:
-                raise SystemExit("Crow nest load hook changed beyond 26.2 compatibility substitution")
-            expected = expected.replace(old_load, new_load, 1)
-            expected = expected.replace(".isClientSide", ".isClientSide()").replace(".isClientSide()()", ".isClientSide()")
-            expected = expected.replace(
-                "ItemStack.isSameItemSameTags(stored, incoming)",
-                "ItemStack.isSameItemSameComponents(stored, incoming)")
-            expected = expected.replace(
-                "    @Override\n    public AABB getRenderBoundingBox()",
-                "    public AABB getRenderBoundingBox()")
+    if rel.startswith("content/nest/"):
+        old_load = "    @Override\n    public void onLoad() {\n        super.onLoad();\n        if (this.level != null && !this.level.isClientSide) {\n            LOADED_NESTS.computeIfAbsent(this.level, ignored -> new HashSet<>()).add(this);\n        }\n    }"
+        new_load = "    @Override\n    public void setLevel(Level level) {\n        // BlockEntity.onLoad no longer exists in 26.2. Index the nest when\n        // Minecraft assigns the level; setRemoved still unregisters it.\n        super.setLevel(level);\n        if (level != null && !level.isClientSide()) {\n            LOADED_NESTS.computeIfAbsent(level, ignored -> new HashSet<>()).add(this);\n        }\n    }"
+        if old_load not in expected or new_load not in migrated:
+            raise SystemExit("Crow nest load hook changed beyond 26.2 compatibility substitution")
+        expected = expected.replace(old_load, new_load, 1)
+        expected = expected.replace(".isClientSide", ".isClientSide()").replace(".isClientSide()()", ".isClientSide()")
+        expected = expected.replace(
+            "ItemStack.isSameItemSameTags(stored, incoming)",
+            "ItemStack.isSameItemSameComponents(stored, incoming)")
+        expected = expected.replace(
+            "    @Override\n    public AABB getRenderBoundingBox()",
+            "    public AABB getRenderBoundingBox()")
     if rel.startswith("content/food/"):
         # Minecraft 26.2 stores dust RGB in a packed integer rather than Vector3f.
         # Channel values and particle scales remain those authored for 1.20.1.

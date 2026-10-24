@@ -272,3 +272,67 @@ server tests. These commits do not produce a working mod or distributable JAR.
 These adaptations require in-world validation, especially nest level
 assignment/unload and frame-workbench inventory notifications. Isolated
 compilation of a separate API probe does not certify full gameplay.
+
+## Continued full-feature Fabric 26.2 migration checkpoint — 2026-10-23
+
+The author-origin behavior contract remains in force. No dummy bird/entity
+implementations, disabled features, stripped resources or release JAR were
+introduced to bypass remaining compilation failures.
+
+### Authored birds and GeckoLib rendering
+
+- All 17 original bird definition classes that still referenced
+  `ResourceLocation` now use 26.2 `Identifier` and
+  `Identifier.fromNamespaceAndPath`; constants, dimensions, health, speed,
+  model/texture/animation paths and other gameplay details are unchanged.
+  `tools/check-bird-definition-identifiers.py` checks all 17 source files
+  against `main`.
+- Five constant-resource GeckoLib 4 model classes (Bagged Fries, Nikon D750,
+  Crow Nest block/item, Bird Dropping Projectile) now use GeckoLib 5's
+  `GeoModel` and `GeoRenderState` getter signatures. Their file/resource
+  references are unchanged. A separate real 26.2/GeckoLib compilation proof
+  checks those signatures and `tools/check-geckolib-static-models.py`
+  checks their authored asset/path invariants.
+- **Rendering is not yet working.** Dynamic bird mutation textures, bath/cage
+  model variants, animation state extraction, custom render layers and all
+  renderer registrations still require porting. GeckoLib 5's changed asset
+  lookup layout must be resolved without altering/repackaging restricted
+  model/animation/texture assets without the author's approval.
+
+### 26.2 crafting and datapack migration
+
+- Migrated `FilmToPhotographRecipe` and `BirdDroppingFoodRecipe` from the
+  removed 1.20.1 constructors/`CraftingContainer`/registry parameters to
+  the new `CraftingInput` and stateless `RecipeSerializer(MapCodec,
+  StreamCodec)` API. Kept their ingredient matching and image-copy or prank
+  item output flow.
+- Converted the custom `PhotographFrameRecipe` to a `CraftingRecipe`
+  delegating to modern `ShapedRecipe`. Its codec retains the original
+  `frame_shape` field, shaped inputs, one-photo requirement, photo/image
+  component copying, original frame shape check and shape-specific recipe
+  display. This is required because 26.2's generic serializer cannot be
+  covariantly overridden from `ShapedRecipe`. The codec/display APIs have a
+  separate compile-only proof.
+- All 21 original recipe JSONs now live in
+  `data/guaniao/recipe/*.json`. Ingredients use the 26.2 item/tag holder
+  encoding, item results use the new `id` key, and recipe-book categories
+  are mapped to the closest current vanilla categories. The exact original
+  ingredient lists, quantities, patterns, output IDs and cooking values are
+  checked against `main` by `tools/check-26-2-recipes.py`.
+- Relocated 98 other old datapack files (advancements, loot tables, mod tags
+  and vanilla tag extensions) to 26.2's singular registry folder names.
+  Their original JSON bytes and content are unchanged. The
+  `tools/check-26-2-datapack-paths.py` gate verifies this one-for-one
+  against `main` and rejects lingering legacy paths.
+- **Not all datapacks are yet fully verified.** Original Forge biome
+  modifiers, global loot modifiers, advancement trigger compatibility,
+  vanilla loot codec compatibility and worldgen need explicit Fabric runtime
+  migrations/tests.
+
+### Release gate is still closed
+
+Full compilation, all 19 bird AI/entities, GeckoLib 5 renderers, networking,
+camera/photos, recipe gameplay, full resource loading and dedicated server
+and client tests must pass before constructing a working test JAR. Do not
+publish/distribute an asset-containing modified build without the author's
+prior written permission as required by `DISTRIBUTION-POLICY.md`.

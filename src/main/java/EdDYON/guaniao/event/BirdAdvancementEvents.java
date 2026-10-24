@@ -1,6 +1,5 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.advancement.BirdAdvancements;
 import EdDYON.guaniao.content.bird.crow.CrowEntity;
@@ -8,6 +7,8 @@ import EdDYON.guaniao.content.bird.longtailedtit.LongTailedTitEntity;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.MinecraftServer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
@@ -15,14 +16,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 import java.util.EnumSet;
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdAdvancementEvents {
     private static final double NEARBY_BIRD_RADIUS = 24.0D;
     private static final double TIT_LINE_RADIUS = 14.0D;
@@ -31,9 +28,8 @@ public final class BirdAdvancementEvents {
     private BirdAdvancementEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player) || player.isSpectator()) {
+    public static void onPlayerTick(ServerPlayer player) {
+        if (player.isSpectator()) {
             return;
         }
         int staggeredTick = player.tickCount + player.getId();
@@ -53,6 +49,16 @@ public final class BirdAdvancementEvents {
                 BirdAdvancements.grant(player, BirdAdvancements.HIGH_EYE);
             }
         }
+    }
+
+    public static void onServerTick(MinecraftServer server) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            onPlayerTick(player);
+        }
+    }
+
+    public static void registerCallbacks() {
+        ServerTickEvents.END_SERVER_TICK.register(BirdAdvancementEvents::onServerTick);
     }
 
     private static boolean hasFiveNearbyBirdSpecies(ServerPlayer player) {

@@ -6,6 +6,7 @@ import EdDYON.guaniao.event.BirdPopulationTracker;
 import EdDYON.guaniao.event.BirdAdvancementEvents;
 import EdDYON.guaniao.event.CassowaryThreatEvents;
 import EdDYON.guaniao.event.PollutedCakeEvents;
+import EdDYON.guaniao.event.BirdColonySpawnRules;
 import EdDYON.guaniao.event.BirdServerTickManager;
 import EdDYON.guaniao.event.BirdRuntimeConfigEvents;
 import EdDYON.guaniao.event.BirdHeadPerchEvents;
@@ -47,6 +48,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         GuaniaoRecipeSerializers.RECIPE_SERIALIZERS.registerAll();
         GuaniaoFeatures.FEATURES.registerAll();
         GuaniaoCreativeTabs.CREATIVE_MODE_TABS.registerAll();
+        GuaniaoVanillaCreativeTabs.registerCallbacks();
 
         // Preserve the source global/world-scoped configuration lifecycle.
         BirdConfigManager.loadOrCreateDefaults();
@@ -59,6 +61,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         BirdAdvancementEvents.registerCallbacks();
         CassowaryThreatEvents.registerCallbacks();
         PollutedCakeEvents.registerCallbacks();
+        BirdColonySpawnRules.registerCallbacks();
         EarthwormRainEvents.registerCallbacks();
         CrowNestLifecycleEvents.registerCallbacks();
         PhotoLegacyMigrationEvents.registerCallbacks();

@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.crow;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class CrowDefinition {
     public static final String ENTITY_ID = "crow";
@@ -13,9 +13,9 @@ public final class CrowDefinition {
     public static final double WALK_SPEED = 0.25D;
     public static final double FLYING_SPEED = 0.42D;
     public static final double FOLLOW_RANGE = 18.0D;
-    public static final ResourceLocation MODEL = new ResourceLocation("guaniao", "geo/crow.geo.json");
-    public static final ResourceLocation TEXTURE = new ResourceLocation("guaniao", "textures/entity/crow.png");
-    public static final ResourceLocation ANIMATION = new ResourceLocation("guaniao", "animations/crow.animation.json");
+    public static final Identifier MODEL = Identifier.fromNamespaceAndPath("guaniao", "geo/crow.geo.json");
+    public static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("guaniao", "textures/entity/crow.png");
+    public static final Identifier ANIMATION = Identifier.fromNamespaceAndPath("guaniao", "animations/crow.animation.json");
 
     private CrowDefinition() {
     }

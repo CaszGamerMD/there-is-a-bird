@@ -5,9 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
@@ -95,48 +96,50 @@ public final class FrameWorkbenchBlockEntity extends BlockEntity {
     // Chunk updates go to every observer. Private photographs are sent only by
     // the owner's menu packet, never in a block-entity update or chunk tag.
     @Override
-    public CompoundTag getUpdateTag() { return new CompoundTag(); }
-
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        ListTag list = new ListTag();
-        works.forEach((owner, work) -> {
-            if (!work.busy() && work.input.isEmpty() && work.result.isEmpty()) return;
-            CompoundTag entry = new CompoundTag();
-            entry.putUUID("Owner", owner);
-            entry.put("Input", work.input.getItem(0).save(new CompoundTag()));
-            entry.put("Result", work.result.getItem(0).save(new CompoundTag()));
-            entry.put("Pending", work.pending.save(new CompoundTag()));
-            entry.put("ReservedSource", work.reservedSource.save(new CompoundTag()));
-            entry.putInt("Remaining", work.remaining);
-            entry.putInt("Revision", work.revision);
-            entry.putLong("Seed", work.seed);
-            list.add(entry);
-        });
-        tag.put("Works", list);
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return new CompoundTag();
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        ValueOutput.ValueOutputList list = output.childrenList("Works");
+        works.forEach((owner, work) -> {
+            if (!work.busy() && work.input.isEmpty() && work.result.isEmpty()) return;
+            ValueOutput entry = list.addChild();
+            // CompoundTag.putUUID used the same four-integer representation.
+            entry.putIntArray("Owner", uuidToIntArray(owner));
+            entry.store("Input", ItemStack.OPTIONAL_CODEC, work.input.getItem(0));
+            entry.store("Result", ItemStack.OPTIONAL_CODEC, work.result.getItem(0));
+            entry.store("Pending", ItemStack.OPTIONAL_CODEC, work.pending);
+            entry.store("ReservedSource", ItemStack.OPTIONAL_CODEC, work.reservedSource);
+            entry.putInt("Remaining", work.remaining);
+            entry.putInt("Revision", work.revision);
+            entry.putLong("Seed", work.seed);
+        });
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
         works.clear();
         dismantled = false;
         lastTick = Long.MIN_VALUE;
-        ListTag list = tag.getList("Works", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag entry = list.getCompound(i);
-            if (!entry.hasUUID("Owner")) continue;
-            UUID owner = entry.getUUID("Owner");
-            if (works.containsKey(owner)) continue;
+        for (ValueInput entry : input.childrenListOrEmpty("Works")) {
+            UUID owner = entry.getIntArray("Owner")
+                    .filter(parts -> parts.length == 4)
+                    .map(FrameWorkbenchBlockEntity::uuidFromIntArray)
+                    .orElse(null);
+            if (owner == null || works.containsKey(owner)) continue;
             Work work = new Work(this);
             work.input.setItem(0, readStack(entry, "Input"));
             work.result.setItem(0, readStack(entry, "Result"));
             work.pending = readStack(entry, "Pending");
             work.reservedSource = readStack(entry, "ReservedSource");
-            work.remaining = Math.max(0, Math.min(FrameWorkbenchMenu.CRAFT_DURATION_TICKS, entry.getInt("Remaining")));
-            work.revision = entry.getInt("Revision") & 0x7fff;
-            work.seed = entry.getLong("Seed");
+            work.remaining = Math.max(0, Math.min(FrameWorkbenchMenu.CRAFT_DURATION_TICKS,
+                    entry.getIntOr("Remaining", 0)));
+            work.revision = entry.getIntOr("Revision", 0) & 0x7fff;
+            work.seed = entry.getLongOr("Seed", 0L);
             // Incomplete or damaged work cannot become a finished photograph.
             // Keep the original recoverable rather than synthesizing an output.
             if (work.pending.isEmpty() || work.remaining == 0 || !work.result.isEmpty()) {
@@ -151,8 +154,19 @@ public final class FrameWorkbenchBlockEntity extends BlockEntity {
         }
     }
 
-    private static ItemStack readStack(CompoundTag entry, String name) {
-        ItemStack stack = ItemStack.of(entry.getCompound(name));
+    private static int[] uuidToIntArray(UUID uuid) {
+        long most = uuid.getMostSignificantBits();
+        long least = uuid.getLeastSignificantBits();
+        return new int[]{(int)(most >> 32), (int)most, (int)(least >> 32), (int)least};
+    }
+
+    private static UUID uuidFromIntArray(int[] parts) {
+        return new UUID(((long)parts[0] << 32) | (parts[1] & 0xffffffffL),
+                ((long)parts[2] << 32) | (parts[3] & 0xffffffffL));
+    }
+
+    private static ItemStack readStack(ValueInput entry, String name) {
+        ItemStack stack = entry.read(name, ItemStack.OPTIONAL_CODEC).orElse(ItemStack.EMPTY);
         if (!stack.isEmpty()) stack.setCount(1);
         return stack;
     }

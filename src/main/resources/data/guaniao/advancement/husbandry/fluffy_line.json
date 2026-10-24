@@ -2,7 +2,7 @@
   "parent": "minecraft:husbandry/root",
   "display": {
     "icon": {
-      "item": "guaniao:long_tailed_tit_spawn_egg"
+      "id": "guaniao:long_tailed_tit_spawn_egg"
     },
     "title": {
       "translate": "advancements.guaniao.husbandry.fluffy_line.title"

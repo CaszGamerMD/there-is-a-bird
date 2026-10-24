@@ -7,14 +7,10 @@
     " S "
   ],
   "key": {
-    "F": {
-      "tag": "guaniao:wind_feather_fan_feathers"
-    },
-    "S": {
-      "item": "minecraft:stick"
-    }
+    "F": "#guaniao:wind_feather_fan_feathers",
+    "S": "minecraft:stick"
   },
   "result": {
-    "item": "guaniao:wind_feather_fan"
+    "id": "guaniao:wind_feather_fan"
   }
 }

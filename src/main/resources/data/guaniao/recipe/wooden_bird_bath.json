@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "PSP",
+    " F ",
+    " T "
+  ],
+  "key": {
+    "P": "#minecraft:planks",
+    "S": "#minecraft:wooden_slabs",
+    "F": "#minecraft:flowers",
+    "T": "minecraft:stick"
+  },
+  "result": {
+    "id": "guaniao:wooden_bird_bath"
+  }
+}

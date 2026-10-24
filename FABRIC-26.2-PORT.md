@@ -361,3 +361,18 @@ random chances, application timings and gameplay methods remain identical.
 Original-source parity checks and an isolated Java 26.2 API probe cover these
 substitutions. Full-project compilation and actual client/server gameplay are
 still required before a private test build can be considered working.
+
+## Polluted cake SavedData codec conversion (2026-10-24)
+
+`PollutedCakeData` now uses the Minecraft 26.2 `SavedDataType` and codec
+rather than removed `CompoundTag` override and 1.20.1
+`computeIfAbsent(loader, factory, filename)`. The name remains
+`guaniao_polluted_cakes`, and `Codec.LONG_STREAM` under `Positions`
+preserves the original NBT *long array* rather than changing it into a list.
+Loading still deduplicates positions into the same chunk buckets; mutations
+still mark the data dirty. A source parity gate checks the entire unchanged
+runtime cake/particles/chunk-validation region, plus storage invariants.
+The independent 26.2 compile gate includes the matching `SavedDataType` /
+long-stream codec API proof. Existing-world and real-server tests are still
+required: the source parity/compilation checks do not prove DFU migration or
+loaded-game compatibility.

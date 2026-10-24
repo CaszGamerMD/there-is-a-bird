@@ -3,7 +3,10 @@ package EdDYON.guaniao.content.dropping;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.Codec;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.saveddata.SavedDataType;
+import java.util.stream.LongStream;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.CakeBlock;
@@ -23,6 +26,14 @@ import java.util.Set;
 public final class PollutedCakeData extends SavedData {
     private static final String DATA_NAME = "guaniao_polluted_cakes";
     private static final String TAG_POSITIONS = "Positions";
+    // Keep the authored NBT long-array key (and storage name) so saved cake
+    // locations can be decoded by the 26.2 SavedData codec without conversion.
+    private static final Codec<PollutedCakeData> CODEC = Codec.LONG_STREAM
+            .fieldOf(TAG_POSITIONS)
+            .xmap(PollutedCakeData::fromPositions, PollutedCakeData::positionsStream)
+            .codec();
+    private static final SavedDataType<PollutedCakeData> TYPE = new SavedDataType<>(
+            Identifier.withDefaultNamespace(DATA_NAME), PollutedCakeData::new, CODEC, null);
     private static final int PARTICLE_INTERVAL_TICKS = 10;
     private static final int MAX_POSITIONS_PER_PASS = 128;
     private static final int MAX_CHUNKS_PER_PASS = 32;
@@ -35,15 +46,18 @@ public final class PollutedCakeData extends SavedData {
     private Map.Entry<Long, Set<Long>> currentChunk;
 
     public static PollutedCakeData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(PollutedCakeData::load, PollutedCakeData::new, DATA_NAME);
+        return level.getDataStorage().computeIfAbsent(TYPE);
     }
 
-    public static PollutedCakeData load(CompoundTag tag) {
+    private static PollutedCakeData fromPositions(LongStream savedPositions) {
         PollutedCakeData data = new PollutedCakeData();
-        for (long packedPos : tag.getLongArray(TAG_POSITIONS)) {
-            data.addPacked(packedPos, false);
-        }
+        savedPositions.forEach(packedPos -> data.addPacked(packedPos, false));
         return data;
+    }
+
+    private LongStream positionsStream() {
+        return this.positionsByChunk.values().stream()
+                .flatMap(Set::stream).mapToLong(Long::longValue);
     }
 
     public void pollute(ServerLevel level, BlockPos pos) {
@@ -127,20 +141,6 @@ public final class PollutedCakeData extends SavedData {
             this.resetIteration();
             this.setDirty();
         }
-    }
-
-    @Override
-    public CompoundTag save(CompoundTag tag) {
-        int size = this.positionsByChunk.values().stream().mapToInt(Set::size).sum();
-        long[] packedPositions = new long[size];
-        int index = 0;
-        for (Set<Long> positions : this.positionsByChunk.values()) {
-            for (long packedPos : positions) {
-                packedPositions[index++] = packedPos;
-            }
-        }
-        tag.putLongArray(TAG_POSITIONS, packedPositions);
-        return tag;
     }
 
     private void addPacked(long packedPos, boolean markDirty) {

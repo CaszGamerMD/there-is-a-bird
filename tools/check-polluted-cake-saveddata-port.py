@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PATH = "src/main/java/EdDYON/guaniao/content/dropping/PollutedCakeData.java"
 source = (ROOT / PATH).read_text(encoding="utf-8")
-original = subprocess.check_output(["git", "show", f"main:{PATH}"], cwd=ROOT, text=True)
+original = subprocess.check_output(["git", "show", f"origin/main:{PATH}"], cwd=ROOT, text=True)
 
 # The entire gameplay region including pollute(), 10-tick particle checks,
 # 128-position/32-chunk budget and unload-sensitive iterator must stay identical

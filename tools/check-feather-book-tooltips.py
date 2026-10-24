@@ -8,7 +8,7 @@ BASE = "src/main/java/EdDYON/guaniao/content/enchantment/"
 
 for name in ("BurialPlumeBookItem", "HuntingReturnBookItem", "RivenPlumeBookItem"):
     path = BASE + name + ".java"
-    original = subprocess.check_output(["git", "show", "main:" + path], cwd=ROOT, text=True)
+    original = subprocess.check_output(["git", "show", "origin/main:" + path], cwd=ROOT, text=True)
     expected = original.replace("import java.util.List;", "import java.util.function.Consumer;")
     expected = expected.replace("import net.minecraft.world.level.Level;",
                                 "import net.minecraft.world.item.component.TooltipDisplay;")

@@ -9,7 +9,7 @@ INIT = ROOT / "src/main/java/EdDYON/guaniao/fabric/GuaniaoFabricEntrypoint.java"
 
 def verify():
     original = subprocess.check_output(
-        ["git", "show", f"main:{PATH}"], cwd=ROOT, text=True)
+        ["git", "show", f"origin/main:{PATH}"], cwd=ROOT, text=True)
     source = (ROOT / PATH).read_text(encoding="utf-8")
     before = original[original.index("    public static boolean tryTrigger("):
                       original.index("    @SubscribeEvent")]

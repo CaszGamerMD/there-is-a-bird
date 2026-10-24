@@ -25,7 +25,7 @@ DUST = {
 def verify(filename):
     path = BASE + filename
     expected = subprocess.check_output(
-        ["git", "show", f"main:{path}"], cwd=ROOT, text=True)
+        ["git", "show", f"origin/main:{path}"], cwd=ROOT, text=True)
     migrated = (ROOT / path).read_text(encoding="utf-8")
     old_names = {key: expected.count(key) for key in OLD_EFFECTS}
     old_colors = {key: expected.count(key) for key in DUST}

@@ -35,7 +35,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -115,7 +115,7 @@ public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleep
     }
 
     public static boolean canMynaSpawn(EntityType<MynaEntity> entityType, ServerLevelAccessor level,
-                                       MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+                                       EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)

@@ -46,7 +46,7 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -196,7 +196,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
      * would reject exactly the trees it belongs in. Leaves and logs count as footing.
      */
     public static boolean canUmbrellaCockatooSpawn(EntityType<UmbrellaCockatooEntity> entityType,
-                                                   ServerLevelAccessor level, MobSpawnType spawnType,
+                                                   ServerLevelAccessor level, EntitySpawnReason spawnType,
                                                    BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean canopyOrFloor = below.is(BlockTags.LEAVES)

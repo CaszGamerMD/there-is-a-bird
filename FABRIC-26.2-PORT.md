@@ -403,3 +403,13 @@ Converted CrowEntity, HummingbirdEntity, KestrelEntity, KingfisherEntity, KiwiEn
 the same 26.2 native spawn/path enums, preserving their authored branches,
 enums, constant values and flight/foraging choices. Existing GeckoLib and
 whole-file no-Gecko parity tests now cover all 14 migrated classes.
+
+### Bird enum relocation coverage complete (2026-10-24)
+
+The final batch (MynaEntity.java, NightHeronEntity.java, SeagullEntity.java, SparrowEntity.java, UmbrellaCockatooEntity.java, WoodcockEntity.java) brings all 20 original bird entity
+classes onto native `EntitySpawnReason` and `PathType` symbols wherever
+the old types were used, plus the exact 26.2 fish/chunk package moves.
+The original spawn-reason comparisons and path penalties remain untouched.
+The 20-source parity gate and GeckoLib parity test remain active.
+These class moves do not repair the other unported AI, persistence, Forge
+event, flight or rendering APIs and do not yield a playable JAR.

@@ -582,7 +582,7 @@ public class WoodcockEntity extends SparrowEntity
             }
             this.setDeltaMovement(horizontal.x,
                     Math.max(this.controlledFlightInitialLift(true), motion.y), horizontal.z);
-            this.hasImpulse = true;
+            this.needsSync = true;
             if (this.getRandom().nextFloat() < 0.32F && BirdFlockSoundLimiter.allowAmbient(this)) {
                 this.playSound(GuaniaoSoundEvents.WOODCOCK_AMBIENT.get(), 0.9F,
                         0.92F + this.getRandom().nextFloat() * 0.16F);

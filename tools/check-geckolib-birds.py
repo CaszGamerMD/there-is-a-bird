@@ -93,6 +93,10 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
     if p.name in ["BudgerigarEntity.java","AbstractColumbidEntity.java","CrowEntity.java","KestrelEntity.java","NightHeronEntity.java"]:
         expected = expected.replace("getMinBuildHeight()", "getMinY()")
         expected = expected.replace("getMaxBuildHeight()", "getMaxY()")
+    # Minecraft replaced Entity.hasImpulse with the equivalent needsSync
+    # flag; never change the original locations or conditions of writes.
+    if p.name in ["BudgerigarEntity.java","AbstractColumbidEntity.java","CrowEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","WoodcockEntity.java"]:
+        expected = re.sub(r"\bhasImpulse\b", "needsSync", expected)
     if relative.endswith("/hummingbird/HummingbirdEntity.java"):
         expected = expected.replace(
             "import software.bernie.geckolib.core.animation.*;",

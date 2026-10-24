@@ -568,7 +568,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
         this.setBehaviorStateFor(CrowBehaviorState.FLYING, 34);
         this.faceFlightDirection(this.getDeltaMovement());
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1425,7 +1425,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
         Vec3 movement = this.waterEscapeDirection.scale(wet ? .08 : .18).add(0, vertical, 0);
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1539,7 +1539,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
         }
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void tickBehaviorFallback() {
@@ -1636,7 +1636,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 

@@ -752,7 +752,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1022,7 +1022,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1182,7 +1182,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private boolean isControlledFlightActive() {
@@ -1304,7 +1304,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         }
         this.faceFlightDirection(this.getDeltaMovement());
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 

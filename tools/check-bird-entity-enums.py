@@ -54,6 +54,8 @@ for path in sorted(base.rglob("*Entity.java")):
         if path.name in ["BudgerigarEntity.java","AbstractColumbidEntity.java","CrowEntity.java","KestrelEntity.java","NightHeronEntity.java"]:
             expected = expected.replace("getMinBuildHeight()", "getMinY()")
             expected = expected.replace("getMaxBuildHeight()", "getMaxY()")
+        if path.name in ["BudgerigarEntity.java","AbstractColumbidEntity.java","CrowEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","WoodcockEntity.java"]:
+            expected = re.sub(r"\bhasImpulse\b", "needsSync", expected)
         assert current == expected, f"{path.name}: unrelated gameplay edit"
     seen += 1
 assert seen == len(NAMES), f"Expected {len(NAMES)} ported files, saw {seen}"

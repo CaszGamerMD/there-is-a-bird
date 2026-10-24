@@ -530,3 +530,13 @@ remain intact. Added an isolated Java API compile proof and updated
 the original-source parity checks. The maximum bound is **not**
 replaced with `getHeight()`, since that represents world height
 rather than the absolute upper Y coordinate.
+
+## 26.2 bird movement synchronization flag (2026-10-24)
+
+The seven bird classes writing `Entity.hasImpulse` now use the native
+`Entity.needsSync` flag. All **35**
+references retain their exact original guards and assignments, including
+flight movements, wing/stroke transitions and nudges. The whole-file
+source parity compares the Forge original with only the symbol rename,
+and an isolated Java API proof compiles direct 26.2 field access.
+Rendering and network gameplay have not yet been runtime tested.

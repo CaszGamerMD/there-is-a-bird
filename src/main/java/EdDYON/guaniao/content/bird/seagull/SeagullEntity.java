@@ -935,7 +935,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
         Vec3 movement = BirdFlightController.blendMovement(this.getDeltaMovement(), desired, 0.74D);
         this.setDeltaMovement(movement);
         BirdFlightController.faceMovement(this, movement, FLIGHT_PROFILE.maxPitchDegrees());
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private boolean isEscapingWater() {
@@ -968,7 +968,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.airborneGraceTicks = 80;
         this.emergencyTicks = Math.max(this.emergencyTicks, 20);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -996,7 +996,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(movement);
         BirdFlightController.faceMovement(this, movement, FLIGHT_PROFILE.maxPitchDegrees());
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1023,7 +1023,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(movement);
         BirdFlightController.faceMovement(this, movement, FLIGHT_PROFILE.maxPitchDegrees());
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1136,7 +1136,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
         Vec3 movement = BirdFlightController.blendMovement(this.getDeltaMovement(), horizontal.add(0.0D, vertical, 0.0D), 0.74D);
         this.setDeltaMovement(movement);
         BirdFlightController.faceMovement(this, movement, FLIGHT_PROFILE.maxPitchDegrees());
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void completeAirCruise() {

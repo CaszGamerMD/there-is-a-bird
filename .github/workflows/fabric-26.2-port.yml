@@ -38,6 +38,8 @@ jobs:
         run: python3 tools/check-bird-entity-enums.py
       - name: Verify bird synced-data initial values and inheritance order
         run: python3 tools/check-bird-synced-data-port.py
+      - name: Verify original bird movement sync signals on Minecraft 26.2
+        run: python3 tools/check-bird-movement-sync-port.py
       - name: Verify bird build-height limits preserved on modern world accessors
         run: python3 tools/check-bird-world-height-port.py
       - name: Verify bird client server guards use 26.2 method access

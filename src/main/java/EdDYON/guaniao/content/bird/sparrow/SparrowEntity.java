@@ -684,7 +684,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(movement);
         this.faceMovement(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1309,7 +1309,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         float yaw = this.getYRot() * ((float)Math.PI / 180.0f);
         double side = (this.getRandom().nextDouble() - 0.5) * 0.12;
         this.setDeltaMovement(-Math.sin(yaw) * 0.13 + side, 0.23, Math.cos(yaw) * 0.13 - side);
-        this.hasImpulse = true;
+        this.needsSync = true;
         if (this.getBehaviorState() == SparrowBehaviorState.FLEEING) {
             this.setBehaviorStateFor(SparrowBehaviorState.FLEEING, 24);
         } else {
@@ -1341,7 +1341,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         }
         if (!this.onGround() && this.getDeltaMovement().lengthSqr() < 0.0025) {
             this.setDeltaMovement(0.0, -0.08, 0.0);
-            this.hasImpulse = true;
+            this.needsSync = true;
             this.fallDistance = 0.0f;
         }
     }
@@ -1351,7 +1351,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             this.setNoGravity(false);
             if (!this.onGround() && this.getDeltaMovement().lengthSqr() < 0.0025) {
                 this.setDeltaMovement(0.0, -0.08, 0.0);
-                this.hasImpulse = true;
+                this.needsSync = true;
             }
         }
     }
@@ -1425,7 +1425,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(direction.scale(speed * 0.75).add(
                 0.0, this.controlledFlightInitialLift(escapeFlight), 0.0));
         this.faceMovement(this.getDeltaMovement());
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1564,7 +1564,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(movement);
         this.faceMovement(movement);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     /** Species may add a small steering signature without replacing the shared flight controller. */
@@ -1665,7 +1665,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(movement);
         this.faceMovement(movement);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void finishControlledFlight(boolean landed) {

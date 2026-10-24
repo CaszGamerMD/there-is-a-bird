@@ -717,7 +717,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         this.setDeltaMovement(movement);
         this.faceMovementDirection(movement);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     @Override
@@ -738,7 +738,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         this.setDeltaMovement(movement);
         this.faceMovementDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -847,7 +847,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         this.getNavigation().stop();
         this.setDeltaMovement(Vec3.ZERO);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
         this.clearLandingApproach();
         this.setBehaviorState(nextState);
     }
@@ -867,7 +867,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         Vec3 movement = this.getDeltaMovement();
         this.setDeltaMovement(movement.x * 0.45, Math.min(movement.y, -0.045), movement.z * 0.45);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
         this.setBehaviorState(NightHeronBehaviorState.LANDING);
     }
 
@@ -1617,7 +1617,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         }
         if (!this.onGround() && this.getDeltaMovement().lengthSqr() < 0.0025) {
             this.setDeltaMovement(0.0, -0.08, 0.0);
-            this.hasImpulse = true;
+            this.needsSync = true;
             this.fallDistance = 0.0f;
         }
     }
@@ -1628,7 +1628,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
                 this.setNoGravity(false);
                 if (!this.onGround() && this.getDeltaMovement().lengthSqr() < 0.0025) {
                     this.setDeltaMovement(0.0, -0.08, 0.0);
-                    this.hasImpulse = true;
+                    this.needsSync = true;
                 }
             }
             return;
@@ -1637,7 +1637,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
             this.setNoGravity(false);
             this.setBehaviorState(NightHeronBehaviorState.IDLE);
             this.setDeltaMovement(0.0, -0.08, 0.0);
-            this.hasImpulse = true;
+            this.needsSync = true;
             this.fallDistance = 0.0f;
         }
     }
@@ -1712,7 +1712,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
             }
         }
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private BlockPos findNearestDryEscapePosition(BlockPos origin) {
@@ -1812,7 +1812,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         Vec3 movement = this.getDeltaMovement();
         this.setDeltaMovement(movement.x * 0.45D, Math.min(movement.y, -0.06D), movement.z * 0.45D);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private static NightHeronBehaviorState decodeBehaviorState(int ordinal) {

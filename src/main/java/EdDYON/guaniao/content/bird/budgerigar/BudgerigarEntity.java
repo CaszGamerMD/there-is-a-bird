@@ -719,7 +719,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     /** Return flights keep their owner waypoint instead of becoming random flybys. */
@@ -754,7 +754,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
             this.faceFlightDirection(this.getDeltaMovement());
         }
         this.resetFallDistance();
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -852,7 +852,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1302,7 +1302,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void tickPendingFright() {
@@ -1446,7 +1446,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
         }
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void finishFlight() {

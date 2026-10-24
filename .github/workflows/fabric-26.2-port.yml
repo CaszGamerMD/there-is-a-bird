@@ -40,6 +40,8 @@ jobs:
         run: python3 tools/check-bird-entity-events.py
       - name: Verify original vanilla Creative tab contents
         run: python3 tools/check-bird-creative.py
+      - name: Verify flyby spawns, colony scores and polluted cake parity
+        run: python3 tools/check-bird-spawn-events.py
       - name: Verify migrated sound and particle APIs compile on 26.2
         run: |
           chmod +x gradlew

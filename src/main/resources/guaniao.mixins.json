@@ -9,7 +9,8 @@
     "PressurePlateBlockMixin",
     "ServerEntityTrackingMixin",
     "VillagerTradePriceMixin",
-    "WeightedPressurePlateBlockMixin"
+    "WeightedPressurePlateBlockMixin",
+    "BirdDeathDropsMixin"
   ],
   "client": [],
   "server": [],

@@ -74,6 +74,8 @@ for rel in relative_files:
             "new DustParticleOptions(new Vector3f(0.20F, 0.40F, 0.08F), 0.70F);",
             "new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.20F, 0.40F, 0.08F), 0.70F);")
         expected = expected.replace(".isClientSide", ".isClientSide()")
+        expected = expected.replace("RandomSource random = level.random;",
+                                    "RandomSource random = level.getRandom();")
     if rel in persisted:
         # Only the imports and method region for save, load and packet syncing
         # may change; particle, animation and entity behavior remains identical.

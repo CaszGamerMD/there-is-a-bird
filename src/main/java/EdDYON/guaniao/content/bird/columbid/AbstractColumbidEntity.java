@@ -1167,7 +1167,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             if (nextWaypoint != null) {
                 this.flightWaypoint = nextWaypoint;
                 this.flightWaypointTicks = 44 + this.getRandom().nextInt(48);
-                this.flightCruiseY = Mth.clamp(nextWaypoint.y, this.level().getMinBuildHeight() + 8.0D, this.level().getMaxBuildHeight() - 8.0D);
+                this.flightCruiseY = Mth.clamp(nextWaypoint.y, this.level().getMinY() + 8.0D, this.level().getMaxY() - 8.0D);
             }
             movement = horizontal.scale(Math.max(speed, this.flightSpeed * 0.72D)).add(0.0D, this.highCruiseFlight ? 0.16D : 0.10D, 0.0D);
         }
@@ -1330,7 +1330,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         if (nextWaypoint != null) {
             this.flightWaypoint = nextWaypoint;
             this.flightWaypointTicks = 54 + this.getRandom().nextInt(86);
-            this.flightCruiseY = Mth.clamp(nextWaypoint.y, this.level().getMinBuildHeight() + 8.0D, this.level().getMaxBuildHeight() - 8.0D);
+            this.flightCruiseY = Mth.clamp(nextWaypoint.y, this.level().getMinY() + 8.0D, this.level().getMaxY() - 8.0D);
         } else {
             this.flightWaypointTicks = 24;
         }

@@ -1346,7 +1346,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         int x = Mth.floor((double)this.getX());
         int z = Mth.floor((double)this.getZ());
         int startY = Mth.floor((double)this.getY());
-        int minY = this.level().getMinBuildHeight();
+        int minY = this.level().getMinY();
         for (int y = startY; y >= minY; --y) {
             mutablePos.set(x, y, z);
             BlockState state = this.level().getBlockState((BlockPos)mutablePos);

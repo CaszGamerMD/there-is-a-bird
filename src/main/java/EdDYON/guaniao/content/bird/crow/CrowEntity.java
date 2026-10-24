@@ -1814,8 +1814,8 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         Vec3 best = null;
         int bestScore = 24;
-        int minY = Math.max(this.level().getMinBuildHeight() + 1, center.getY() - 4);
-        int maxY = Math.min(this.level().getMaxBuildHeight() - 2, center.getY() + verticalRange);
+        int minY = Math.max(this.level().getMinY() + 1, center.getY() - 4);
+        int maxY = Math.min(this.level().getMaxY() - 2, center.getY() + verticalRange);
         for (int xOffset = -horizontalRange; xOffset <= horizontalRange; ++xOffset) {
             for (int zOffset = -horizontalRange; zOffset <= horizontalRange; ++zOffset) {
                 if (xOffset * xOffset + zOffset * zOffset > horizontalRange * horizontalRange) {
@@ -1895,7 +1895,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
     }
 
     private Vec3 clampFlightTarget(Vec3 target) {
-        double y = Mth.clamp(target.y, this.level().getMinBuildHeight() + 1.5D, this.level().getMaxBuildHeight() - 2.0D);
+        double y = Mth.clamp(target.y, this.level().getMinY() + 1.5D, this.level().getMaxY() - 2.0D);
         return new Vec3(target.x, y, target.z);
     }
 

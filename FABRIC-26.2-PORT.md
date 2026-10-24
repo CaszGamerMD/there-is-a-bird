@@ -519,3 +519,14 @@ native `Level.isClientSide()` method, without changing branching
 behavior. All **18** classes with old side-check fields are now ported
 and covered by the complete GeckoLib and non-Gecko source-parity gates.
 The two other original entity subclasses had no old field reads.
+
+## World height-bound semantics preserved (2026-10-24)
+
+Converted six files (five bird entities and habitat repopulation) to
+`LevelHeightAccessor.getMinY()` and `getMaxY()`, which are the 26.2
+equivalents of the old minimum/maximum build heights. The same
+comparisons and margins for perching, flight and wild habitat checks
+remain intact. Added an isolated Java API compile proof and updated
+the original-source parity checks. The maximum bound is **not**
+replaced with `getHeight()`, since that represents world height
+rather than the absolute upper Y coordinate.

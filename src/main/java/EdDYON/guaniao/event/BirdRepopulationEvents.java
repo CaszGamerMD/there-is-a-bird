@@ -178,7 +178,7 @@ public final class BirdRepopulationEvents {
     }
 
     private static boolean isUsableSite(ServerLevel level, BlockPos pos) {
-        if (pos.getY() <= level.getMinBuildHeight() || pos.getY() + 3 >= level.getMaxBuildHeight()
+        if (pos.getY() <= level.getMinY() || pos.getY() + 3 >= level.getMaxY()
                 || !hasReadyNeighborhood(level, pos) || !level.isPositionEntityTicking(pos)
                 || !level.getWorldBorder().isWithinBounds(pos)
                 || pos.distSqr(level.getSharedSpawnPos()) <= MIN_PLAYER_DISTANCE_SQR) return false;

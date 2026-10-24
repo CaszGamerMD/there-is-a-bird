@@ -1352,7 +1352,7 @@ public class KestrelEntity extends TamableAnimal implements GeoEntity,
             this.orbitAltitude += Mth.clamp(altitude - this.orbitAltitude, -0.045D, 0.065D);
         }
         return new Vec3(x, Mth.clamp(this.orbitAltitude,
-                this.level().getMinBuildHeight() + 3, this.level().getMaxBuildHeight() - 4), z);
+                this.level().getMinY() + 3, this.level().getMaxY() - 4), z);
     }
 
     private BlockPos findPerchNear(BlockPos center, int radius) {

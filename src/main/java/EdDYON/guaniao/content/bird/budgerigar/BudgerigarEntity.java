@@ -1648,7 +1648,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
     }
 
     private Vec3 clampFlightTarget(Vec3 target) {
-        double y = Mth.clamp(target.y, this.level().getMinBuildHeight() + 1.5D, this.level().getMaxBuildHeight() - 2.0D);
+        double y = Mth.clamp(target.y, this.level().getMinY() + 1.5D, this.level().getMaxY() - 2.0D);
         return new Vec3(target.x, y, target.z);
     }
 

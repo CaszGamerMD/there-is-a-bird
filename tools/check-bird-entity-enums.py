@@ -51,6 +51,9 @@ for path in sorted(base.rglob("*Entity.java")):
         client_side_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","LongTailedTitEntity.java","MacawEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
         if path.name in client_side_ported:
             expected = re.sub(r"\.isClientSide\b(?!\s*\()", ".isClientSide()", expected)
+        if path.name in ["BudgerigarEntity.java","AbstractColumbidEntity.java","CrowEntity.java","KestrelEntity.java","NightHeronEntity.java"]:
+            expected = expected.replace("getMinBuildHeight()", "getMinY()")
+            expected = expected.replace("getMaxBuildHeight()", "getMaxY()")
         assert current == expected, f"{path.name}: unrelated gameplay edit"
     seen += 1
 assert seen == len(NAMES), f"Expected {len(NAMES)} ported files, saw {seen}"

@@ -89,6 +89,10 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
     client_side_ported = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","AbstractColumbidEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","LongTailedTitEntity.java","MacawEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
     if p.name in client_side_ported:
         expected = re.sub(r"\.isClientSide\b(?!\s*\()", ".isClientSide()", expected)
+    # World-height access moved to getMinY/getMaxY in Mojang 26.2.
+    if p.name in ["BudgerigarEntity.java","AbstractColumbidEntity.java","CrowEntity.java","KestrelEntity.java","NightHeronEntity.java"]:
+        expected = expected.replace("getMinBuildHeight()", "getMinY()")
+        expected = expected.replace("getMaxBuildHeight()", "getMaxY()")
     if relative.endswith("/hummingbird/HummingbirdEntity.java"):
         expected = expected.replace(
             "import software.bernie.geckolib.core.animation.*;",

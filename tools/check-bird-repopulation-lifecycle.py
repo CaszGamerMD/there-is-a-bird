@@ -19,6 +19,8 @@ expected_body = old[old.index(start):].replace("MobSpawnType", "EntitySpawnReaso
 expected_body = expected_body.replace(
     "getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)",
     "getGameRules().get(GameRules.SPAWN_MOBS)")
+expected_body = expected_body.replace("getMinBuildHeight()", "getMinY()")
+expected_body = expected_body.replace("getMaxBuildHeight()", "getMaxY()")
 assert expected_body == new[new.index(start):], "Bird natural spawning/cap logic was modified"
 assert "ServerTickEvents.END_LEVEL_TICK.register(BirdRepopulationEvents::onLevelTick);" in new
 assert "ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));" in new

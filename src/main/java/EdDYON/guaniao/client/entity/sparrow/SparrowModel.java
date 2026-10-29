@@ -2,6 +2,7 @@ package EdDYON.guaniao.client.entity.sparrow;
 
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
 import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.sparrow.SparrowDefinition;
 import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
 import net.minecraft.resources.Identifier;
@@ -11,7 +12,7 @@ import com.geckolib.model.GeoModel;
 public class SparrowModel extends GeoModel<SparrowEntity> {
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
-        return SparrowDefinition.MODEL;
+        return GuaniaoGeckoAssets.model(SparrowDefinition.MODEL);
     }
 
     @Override
@@ -29,6 +30,6 @@ public class SparrowModel extends GeoModel<SparrowEntity> {
 
     @Override
     public Identifier getAnimationResource(SparrowEntity animatable) {
-        return SparrowDefinition.ANIMATION;
+        return GuaniaoGeckoAssets.animation(SparrowDefinition.ANIMATION);
     }
 }

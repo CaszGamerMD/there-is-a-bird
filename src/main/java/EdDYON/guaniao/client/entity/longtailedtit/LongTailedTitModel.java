@@ -2,6 +2,7 @@ package EdDYON.guaniao.client.entity.longtailedtit;
 
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
 import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.longtailedtit.LongTailedTitDefinition;
 import EdDYON.guaniao.content.bird.longtailedtit.LongTailedTitEntity;
 import net.minecraft.resources.Identifier;
@@ -11,7 +12,7 @@ import com.geckolib.model.GeoModel;
 public class LongTailedTitModel extends GeoModel<LongTailedTitEntity> {
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
-        return LongTailedTitDefinition.MODEL;
+        return GuaniaoGeckoAssets.model(LongTailedTitDefinition.MODEL);
     }
 
     @Override
@@ -29,6 +30,6 @@ public class LongTailedTitModel extends GeoModel<LongTailedTitEntity> {
 
     @Override
     public Identifier getAnimationResource(LongTailedTitEntity animatable) {
-        return LongTailedTitDefinition.ANIMATION;
+        return GuaniaoGeckoAssets.animation(LongTailedTitDefinition.ANIMATION);
     }
 }

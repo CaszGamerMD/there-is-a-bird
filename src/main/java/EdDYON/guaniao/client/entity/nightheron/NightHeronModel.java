@@ -2,6 +2,7 @@ package EdDYON.guaniao.client.entity.nightheron;
 
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
 import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronDefinition;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronEntity;
 import net.minecraft.resources.Identifier;
@@ -11,7 +12,7 @@ import com.geckolib.model.GeoModel;
 public class NightHeronModel
 extends GeoModel<NightHeronEntity> {
     public Identifier getModelResource(GeoRenderState renderState) {
-        return NightHeronDefinition.MODEL;
+        return GuaniaoGeckoAssets.model(NightHeronDefinition.MODEL);
     }
 
     public Identifier getTextureResource(GeoRenderState renderState) {
@@ -25,7 +26,7 @@ extends GeoModel<NightHeronEntity> {
     }
 
     public Identifier getAnimationResource(NightHeronEntity animatable) {
-        return NightHeronDefinition.ANIMATION;
+        return GuaniaoGeckoAssets.animation(NightHeronDefinition.ANIMATION);
     }
 }
 

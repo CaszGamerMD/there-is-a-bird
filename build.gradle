@@ -23,6 +23,28 @@ dependencies {
 processResources {
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') { expand version: project.version }
+    // GeckoLib 5 resolves model IDs below geckolib/models and animation IDs
+    // below geckolib/animations. Stage byte-identical private copies at build
+    // time, leaving the original authored JSON assets untouched in the repo.
+    doLast {
+        def assets = new File(destinationDir, 'assets/guaniao')
+        def originalModels = new File(assets, 'geo')
+        if (originalModels.isDirectory()) {
+            project.copy {
+                from originalModels
+                include '**/*.geo.json'
+                into new File(assets, 'geckolib/models')
+            }
+        }
+        def originalAnimations = new File(assets, 'animations')
+        if (originalAnimations.isDirectory()) {
+            project.copy {
+                from originalAnimations
+                include '**/*.animation.json'
+                into new File(assets, 'geckolib/animations')
+            }
+        }
+    }
     // 26.2 now decodes advancement display icons as ItemStackTemplate (id, not item).
     // Restrict this to the icon object so no item predicates or other authored data change.
     doLast {

@@ -2,6 +2,7 @@ package EdDYON.guaniao.client.entity.seagull;
 
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
 import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.seagull.SeagullDefinition;
 import EdDYON.guaniao.content.bird.seagull.SeagullEntity;
 import net.minecraft.resources.Identifier;
@@ -11,7 +12,7 @@ import com.geckolib.model.GeoModel;
 public class SeagullModel extends GeoModel<SeagullEntity> {
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
-        return SeagullDefinition.MODEL;
+        return GuaniaoGeckoAssets.model(SeagullDefinition.MODEL);
     }
 
     @Override
@@ -27,6 +28,6 @@ public class SeagullModel extends GeoModel<SeagullEntity> {
 
     @Override
     public Identifier getAnimationResource(SeagullEntity animatable) {
-        return SeagullDefinition.ANIMATION;
+        return GuaniaoGeckoAssets.animation(SeagullDefinition.ANIMATION);
     }
 }

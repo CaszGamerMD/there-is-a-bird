@@ -2,6 +2,7 @@ package EdDYON.guaniao.client.entity.kiwi;
 
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
 import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.kiwi.KiwiDefinition;
 import EdDYON.guaniao.content.bird.kiwi.KiwiEntity;
 import net.minecraft.resources.Identifier;
@@ -11,7 +12,7 @@ import com.geckolib.model.GeoModel;
 public class KiwiModel extends GeoModel<KiwiEntity> {
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
-        return KiwiDefinition.MODEL;
+        return GuaniaoGeckoAssets.model(KiwiDefinition.MODEL);
     }
 
     @Override
@@ -29,6 +30,6 @@ public class KiwiModel extends GeoModel<KiwiEntity> {
 
     @Override
     public Identifier getAnimationResource(KiwiEntity animatable) {
-        return KiwiDefinition.ANIMATION;
+        return GuaniaoGeckoAssets.animation(KiwiDefinition.ANIMATION);
     }
 }

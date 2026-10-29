@@ -2,6 +2,7 @@ package EdDYON.guaniao.client.entity.crow;
 
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
 import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.crow.CrowDefinition;
 import EdDYON.guaniao.content.bird.crow.CrowEntity;
 import net.minecraft.resources.Identifier;
@@ -11,7 +12,7 @@ import com.geckolib.model.GeoModel;
 public class CrowModel extends GeoModel<CrowEntity> {
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
-        return CrowDefinition.MODEL;
+        return GuaniaoGeckoAssets.model(CrowDefinition.MODEL);
     }
 
     @Override
@@ -27,6 +28,6 @@ public class CrowModel extends GeoModel<CrowEntity> {
 
     @Override
     public Identifier getAnimationResource(CrowEntity animatable) {
-        return CrowDefinition.ANIMATION;
+        return GuaniaoGeckoAssets.animation(CrowDefinition.ANIMATION);
     }
 }

@@ -616,3 +616,27 @@ server damage/death callback dispatch may differ in timing from Forge event
 priorities, and in-game tests remain mandatory. Neither the complete
 port nor a distributable JAR is ready. Keep the draft PR unmerged and
 respect the asset distribution restrictions.
+
+
+## 2026-10-29 — spawn-reason API and flyby initialization checkpoint
+
+The private source branch now uses Minecraft 26.2 `EntitySpawnReason`
+in kingfisher habitat checks and all four naturally occurring flyby
+initializations (sparrow, budgerigar, night heron and columbid).
+The old `SPAWN_EGG` reason maps to `SPAWN_ITEM_USE`, preserving the
+kingfisher manual-spawn exemption alongside `COMMAND`.
+Flyby initializers now use the current four-argument `finalizeSpawn`
+signature, and the vanilla mob-spawning gamerule uses
+`GameRules.SPAWN_MOBS` in the native 26.2 gamerule package.
+
+Source comparison against pre-migration commit `dbeee5f` confirms
+that only these API substitutions were applied, with no flock size,
+weights, timing, destinations, path decisions, habitat scan or authored
+biome-rule changes. New `tools/check-bird-spawn-reason-port.py` protects
+that mechanical transformation, and a standalone compile probe tests
+the 26.2 enum, gamerule and mob initializer method signatures.
+
+These checks are source-level only until the GitHub Actions runner starts.
+The latest workflow attempt did not run build steps. Unported Forge event
+handling and broader spawning integration remain, so spawning in an actual
+world is **not yet verified**. No released or playable build.

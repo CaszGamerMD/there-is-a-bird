@@ -46,6 +46,7 @@ import net.fabricmc.api.ModInitializer;
 public final class GuaniaoFabricEntrypoint implements ModInitializer {
     @Override
     public void onInitialize() {
+        GuaniaoFabricNetworking.register();
         BirdFlightLock.registerAttachments();
         GuaniaoSoundEvents.registerAll();
         GuaniaoParticleTypes.registerAll();

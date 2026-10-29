@@ -94,6 +94,8 @@ jobs:
         run: python3 tools/check-bird-ambient-drop-port.py
       - name: Verify original bird shearing, regrowth and persistent flight restriction
         run: python3 tools/check-bird-shearing-port.py
+      - name: Verify charged feather fan Fabric input and C2S packet chain
+        run: python3 tools/check-feather-fan-network-port.py
       - name: Verify feather fan combat protection and kill particle parity
         run: python3 tools/check-feather-fan-combat-port.py
       - name: Verify original bird feathers, no-death-loot rule and golden rewards

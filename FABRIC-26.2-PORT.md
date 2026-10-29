@@ -675,15 +675,31 @@ the existing CI checks; source inspection confirms original numeric cadence
 constants, garden multipliers, cap expressions, vanilla/non-bird spawn-entry
 retention and both new call sites.
 
-**Known remaining limitations:** this explicit path covers the custom
-repopulation scheduler only. The original Forge event also modified the
-ordinary vanilla natural-spawn pool; 26.2 vanilla `NaturalSpawner` does not
-call the new helper. A separately validated Fabric/Mixin hook is required
-before claiming ordinary natural-spawn parity. Forge third-party potential-
-spawn vetoes must also be re-evaluated against modern Fabric integration
-rather than silently assumed preserved.
+**Natural-spawn follow-up:** a dedicated `BirdPotentialSpawnsMixin`
+now injects at the return of Minecraft 26.2 `NaturalSpawner.mobsAt`, only
+for `MobCategory.CREATURE`, passing the finished biome/structure weighted
+list through the same position-specific helper. Non-bird entries remain
+unaltered and chunk-generation placement rules remain distinct. The mixin
+is registered in `guaniao.mixins.json`, has `require = 1`, and a source
+guard plus isolated Java callback-signature probe were added. This is an
+**unverified injection until real client/server startup and spawning tests**.
+Forge third-party PotentialSpawns vetoes still require separate compatibility
+review rather than being assumed preserved.
 
 GitHub Actions is currently failing before assigning a runner (zero steps
 executed), so the new Java proof, checker, full compile, dedicated-server
 start, actual world spawning, and client checks are **not verified**.
 Do not merge the draft PR or distribute an asset-containing JAR.
+
+
+### NaturalSpawner hook validation still outstanding
+
+The new injection targets the private `NaturalSpawner.mobsAt` return
+value (26.2 mappings) to restore normal natural-spawn weighting as well as
+the custom repopulation flow. Before claiming working parity, run the
+registered mixin in a **dedicated server** and on the client, verify that
+the `mobsAt` target resolves at runtime, then test hummingbird gardens,
+non-bird biome spawns, configured caps, low-weight species, colony flocks,
+and chunk-generation exclusions. No third-party spawn-list hook parity
+has been established. Do not merge until these tests and full compilation
+pass.

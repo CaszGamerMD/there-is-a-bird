@@ -46,6 +46,8 @@ jobs:
         run: python3 tools/check-bird-world-height-port.py
       - name: Verify bird client server guards use 26.2 method access
         run: python3 tools/check-bird-client-guards-port.py
+      - name: Verify remaining bird Nullable and relocated entity imports
+        run: python3 tools/check-bird-relocated-api.py
       - name: Verify original bird nullable annotations through 26.2 relocation
         run: python3 tools/check-bird-nullable-port.py
       - name: Verify nine original bird flight marker migrations

@@ -36,7 +36,7 @@ assert 'normalized(authored, "geo/", ".geo.json")' in BRIDGE
 assert 'normalized(authored, "animations/", ".animation.json")' in BRIDGE
 assert "Identifier.fromNamespaceAndPath(authored.getNamespace()" in BRIDGE
 
-for stem in ("Kiwi", "Sparrow", "Seagull", "Myna", "LongTailedTit", "NightHeron", "Crow", "Macaw", "Budgerigar", "Columbid"):
+for stem in ("Kiwi", "Sparrow", "Seagull", "Myna", "LongTailedTit", "NightHeron", "Crow", "Macaw", "Budgerigar", "Columbid", "Cockatoo"):
     folders = {
         "LongTailedTit": "longtailedtit",
         "NightHeron": "nightheron"
@@ -59,4 +59,4 @@ for path in ("client/food/BaggedFriesModel.java",
 
 print(f"GECKOLIB 5 RESOURCE PARITY OK: {len(models)} original models and "
       f"{len(animations)} original animations retained byte-for-byte; "
-      "build-time staging, ten bird and five static lookups verified")
+      "build-time staging, eleven bird and five static lookups verified")

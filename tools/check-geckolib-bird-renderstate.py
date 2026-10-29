@@ -103,6 +103,33 @@ for species, radius in (("Pigeon", "0.15F"), ("SpottedDove", "0.14F")):
     assert "super.scaleModelForRender(renderPassInfo, widthScale * scale, heightScale * scale)" in now
     assert "software.bernie" not in now
 
+# Cockatoo toes need the original authored 0.751-pixel offset as well as
+# its bird-specific mutation palette, without using the removed withScale API.
+cockatoo_old = original("client/entity/cockatoo/CockatooModel.java")
+cockatoo = current("client/entity/cockatoo/CockatooModel.java")
+for marker in ("GuaniaoGeckoAssets.model(CockatooDefinition.MODEL)",
+               "GuaniaoGeckoAssets.animation(CockatooDefinition.ANIMATION)",
+               "BirdMutationRenderData.capture(renderState,",
+               "BirdMutationTextureFactory.textureFor(animatable.getTextureResource(), animatable)",
+               "BirdMutationRenderData.texture(renderState, CockatooDefinition.TEXTURE)",
+               "animatable.getModelRenderScale()"):
+    assert marker in cockatoo, marker
+assert "BirdMutationTextureFactory.textureFor(bird.getTextureResource(), bird)" in cockatoo_old
+assert "ResourceLocation" not in cockatoo and "software.bernie" not in cockatoo
+cockatoo_entity = current("content/bird/cockatoo/CockatooEntity.java")
+assert "public Identifier getTextureResource()" in cockatoo_entity
+cockatoo_renderer = current("client/entity/cockatoo/CockatooRenderer.java")
+previous_cockatoo = original("client/entity/cockatoo/CockatooRenderer.java")
+assert "CockatooDefinition.FOOT_OFFSET_PIXELS * scale / 16.0F" in previous_cockatoo
+assert "CockatooDefinition.FOOT_OFFSET_PIXELS / 16.0F" in cockatoo_renderer
+assert "public void adjustRenderPose(RenderPassInfo<R> renderPassInfo)" in cockatoo_renderer
+assert "super.adjustRenderPose(renderPassInfo)" in cockatoo_renderer
+assert "scaleModelForRender(RenderPassInfo<R>" in cockatoo_renderer
+assert "super.scaleModelForRender(renderPassInfo, widthScale * scale, heightScale * scale)" in cockatoo_renderer
+assert "this.shadowRadius = 0.22F;" in cockatoo_renderer
+assert "software.bernie" not in cockatoo_renderer
+assert "withScale(" not in cockatoo_renderer
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -115,9 +142,10 @@ registered = {
     "BUDGERIGAR": "Budgerigar",
     "PIGEON": "Pigeon",
     "SPOTTED_DOVE": "SpottedDove",
+    "COCKATOO": "Cockatoo",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 10 model texture snapshots, 8 renderer scales and client registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 11 model texture snapshots, 9 renderer scales and client registrations, unmodified mutation color formulas")

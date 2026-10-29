@@ -703,3 +703,45 @@ non-bird biome spawns, configured caps, low-weight species, colony flocks,
 and chunk-generation exclusions. No third-party spawn-list hook parity
 has been established. Do not merge until these tests and full compilation
 pass.
+
+
+## 2026-10-29 — private JAR build preparation: prank food and authored notes
+
+The next source cleanup targets build blockers rather than new features:
+
+- Prank-food marker keys and corrupted names now use Minecraft 26.2
+  `DataComponents.CUSTOM_DATA` / `CUSTOM_NAME`, and item registration IDs
+  come from vanilla `BuiltInRegistries` instead of Forge registries.
+- `PrankFoodEvents` uses Fabric `UseItemCallback` to begin eating; a
+  guarded, server-side `LivingEntity.completeUsingItem` mixin applies the
+  original nausea/hunger/slowness effects when the held item still matches.
+  Client-only prank-food and dropping tooltip callbacks are registered
+  separately so dedicated-server class loading stays side-safe.
+- All authored bird note books now use the 26.2 `WRITTEN_BOOK_CONTENT`
+  component (unchanged title, author, translatable page and resolved flag).
+  The `GuaniaoNote` marker is stored in `CUSTOM_DATA`; reading awards the
+  same bird-note and original five developer-author advancements.
+- Bird advancement IDs migrated to `Identifier` and vanilla
+  `AdvancementHolder` reward/progress access.
+- Added source parity checks `tools/check-prank-food-port.py` and
+  `tools/check-bird-note-components-port.py`, and two isolated real-API
+  Gradle compile probes. In this environment checks were inspected at
+  source level; GitHub Actions has not executed them yet.
+- `build-private-fabric-26.2.cmd` offers a local Windows/Java 25 build
+  path: first compile isolated 26.2 APIs, then run the FULL `clean build`
+  (including strict migration audit), then confirm the resulting JAR
+  contains `fabric.mod.json`. No successful JAR will be advertised
+  merely because a subset compiles.
+
+**Still unresolved for a complete playable JAR:** the original Forge
+global loot-modifier serializers (including chest note generation), other
+Forge event classes and custom network packets, GeckoLib 4 renderers,
+camera/photo screens and packet paths, and remaining 26.2 source API
+incompatibilities. The prank-food mixin and written-note creation need
+real server and client tests; their runtime equivalence is not yet proven.
+
+**Build runner status:** GitHub Actions repeatedly fails before a runner
+starts (runner ID 0, zero steps), including a manual re-run; this cannot
+be used as evidence of Gradle compilation success. Do not release or
+share any modified asset-containing JAR without the original author's
+written permission. Keep PR #1 draft and main untouched.

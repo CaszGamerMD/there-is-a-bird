@@ -800,3 +800,43 @@ and `build` followed by dedicated server and client startup are mandatory.
 a runner is allocated (runner ID 0, zero executed steps). No JAR artifact
 was generated or made available. Keep the PR draft, `main` untouched and
 do not distribute asset-containing binaries without the author's consent.
+
+
+## 2026-10-29 — native seven-packet photograph transfer checkpoint
+
+The private 26.2 branch now has a complete **typed transport path** for
+the existing photo transfer feature, retaining the original payload fields,
+field order, byte-array bounds and server-side session checks:
+
+- Client to server: `BeginPhotoUploadPacket`, `PhotoUploadChunkPacket`,
+  `FinishPhotoUploadPacket`, `PhotoRequestPacket`.
+- Server to client: `PhotoCaptureResultPacket`,
+  `PhotoDownloadStartPacket`, `PhotoDownloadChunkPacket`.
+- All seven implement Minecraft's `CustomPacketPayload` with
+  `StreamCodec<RegistryFriendlyByteBuf, T>`; codec registration occurs in
+  the common Fabric initializer on the correct directional registry before
+  receiver installation.
+- The original `PhotoClientRepository` sends all four serverbound messages
+  through `ClientPlayNetworking`. The server's `PhotoUploadManager`
+  sends its six results/chunks through `ServerPlayNetworking`. The Fabric
+  client initializer registers all three receiving callbacks and passes the
+  decoded values to the original client photo repository.
+- The existing `PhotoTransferLimits` protections (including maximum chunk
+  and photo ID/hash sizes) and server-side session/authorization checks are
+  unchanged. Source comparison of each original vs. migrated Java
+  `encode` and `decode` method body confirmed **all 14 methods match
+  exactly**.
+- The regression gate `tools/check-photo-transfer-network-port.py` also
+  asserts directional registration, payload bounds, unchanged codecs and
+  complete client/server send sites. A standalone 26.2
+  `GuaniaoPhotoTransferPacketProof` compiles the typed-chunk API separately
+  once CI runners become available.
+
+**Not yet a functional camera:** Forge-based `SetCameraSettingsPacket`,
+`SetCameraFilterPacket`, frame-workbench packets, the general
+`GuaniaoNetwork` SimpleChannel and camera GUI/rendering dependencies still
+need conversion. Do not describe photo networking or camera screenshots
+as tested in-game until a full client/server build loads and transfer
+round-trips succeed. The author-required asset distribution restrictions
+continue to apply. This checkpoint neither produces nor authorizes a
+redistributable JAR.

@@ -130,6 +130,30 @@ assert "this.shadowRadius = 0.22F;" in cockatoo_renderer
 assert "software.bernie" not in cockatoo_renderer
 assert "withScale(" not in cockatoo_renderer
 
+# Crest rotations retain their original animation-relative offsets,
+# rather than replacing the whole animated bone or sharing live bird state.
+cockatiel_model = current("client/entity/cockatiel/CockatielModel.java")
+cockatiel_before = original("client/entity/cockatiel/CockatielModel.java")
+cockatiel_renderer = current("client/entity/cockatiel/CockatielRenderer.java")
+for token in ("case RELAXED -> 0.0F", "case HAPPY -> -0.12F",
+              "case CURIOUS -> -0.22F", "case ALERT -> -0.38F",
+              "case AFRAID -> -0.56F"):
+    assert token in cockatiel_before and token in cockatiel_model, token
+assert "DataTicket<Float> CREST_ROTATION" in cockatiel_model
+assert "renderState.addGeckolibData(CREST_ROTATION, offset)" in cockatiel_model
+assert "BirdMutationTextureFactory.textureFor(animatable.getTextureResource(), animatable)" in cockatiel_model
+assert "BirdMutationRenderData.capture(renderState," in cockatiel_model
+assert "GuaniaoGeckoAssets.model(CockatielDefinition.MODEL)" in cockatiel_model
+assert "GuaniaoGeckoAssets.animation(CockatielDefinition.ANIMATION)" in cockatiel_model
+assert "public void adjustModelBonesForRender(RenderPassInfo<R> renderPassInfo, BoneSnapshots snapshots)" in cockatiel_renderer
+assert "snapshots.get(\"crest\").ifPresent" in cockatiel_renderer
+assert "crest.setRotX(crest.getRotX() + offset)" in cockatiel_renderer
+assert "super.adjustModelBonesForRender(renderPassInfo, snapshots)" in cockatiel_renderer
+assert "super.scaleModelForRender(renderPassInfo, widthScale * scale, heightScale * scale)" in cockatiel_renderer
+assert "this.shadowRadius = 0.12F;" in cockatiel_renderer
+assert "public Identifier getTextureResource()" in current("content/bird/cockatiel/CockatielEntity.java")
+assert "software.bernie" not in cockatiel_model + cockatiel_renderer
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -143,9 +167,10 @@ registered = {
     "PIGEON": "Pigeon",
     "SPOTTED_DOVE": "SpottedDove",
     "COCKATOO": "Cockatoo",
+    "COCKATIEL": "Cockatiel",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 11 model texture snapshots, 9 renderer scales and client registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 12 model texture snapshots, 10 renderer scales and client registrations, unmodified mutation color formulas")

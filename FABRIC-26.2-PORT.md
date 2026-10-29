@@ -587,3 +587,32 @@ and Minecraft 26.2 API errors across other source files. Client, server,
 spawning, fish capture, existing-save, and visual checks remain outstanding.
 This is **not a playable build or release**. Keep the PR draft and repository
 private; do not merge to `main` or distribute asset-containing artifacts.
+
+
+## 2026-10-29 — feather-fan combat events (source migration only)
+
+The original Forge `LivingAttackEvent` / `LivingDeathEvent` feather-fan
+listeners have been translated into Fabric 26.2
+`ServerLivingEntityEvents.ALLOW_DAMAGE` and `AFTER_DEATH` callbacks
+and explicitly registered in `GuaniaoFabricEntrypoint`.
+
+- Birds in the existing `BirdTags.BIRDS` tag still reject damage from
+  either a directly fired feather-fan projectile or a player directly
+  wielding the wind feather fan. Unrelated damage continues normally.
+- Feather-fan projectile or direct-player kills of non-player living entities
+  still produce the original three poofs and `3 + random.nextInt(5)`
+  kill-feather particles at their authored positions and velocities.
+  The only random API substitution is `level.getRandom()` for
+  removed field access.
+- Added `tools/check-feather-fan-combat-port.py` for baseline-derived
+  conditions/particle parity and an independent real-API compile probe
+  `tools/port-probes/GuaniaoFeatherFanCombatProof.java`.
+
+**Current verification:** Independent GitHub source inspection confirms
+the key predicates, callback registrations and particle formulas. However,
+the latest GitHub Actions job did not start a runner (zero executed steps);
+the new check scripts and Gradle compilation were not executed. Fabric's
+server damage/death callback dispatch may differ in timing from Forge event
+priorities, and in-game tests remain mandatory. Neither the complete
+port nor a distributable JAR is ready. Keep the draft PR unmerged and
+respect the asset distribution restrictions.

@@ -11,6 +11,8 @@ import EdDYON.guaniao.network.PhotoDownloadChunkPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import EdDYON.guaniao.network.FrameWorkSnapshotPacket;
 import EdDYON.guaniao.content.camera.frame.FrameWorkbenchMenu;
+import EdDYON.guaniao.client.config.BirdConfigClient;
+import EdDYON.guaniao.network.OpenBirdConfigPacket;
 import net.fabricmc.api.ClientModInitializer;
 
 /** Client bootstrap; feature registrations are restored as their 26.2 ports compile. */
@@ -36,6 +38,8 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
                         packet.remaining(), packet.revision());
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(OpenBirdConfigPacket.TYPE,
+                (packet, context) -> BirdConfigClient.open(packet.data()));
         // Camera screens, all GeckoLib bird renderers, layers and sound loops
         // must also be registered before the private build can run.
     }

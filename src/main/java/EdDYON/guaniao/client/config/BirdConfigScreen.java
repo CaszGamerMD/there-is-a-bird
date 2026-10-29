@@ -16,7 +16,7 @@ import EdDYON.guaniao.content.bird.kestrel.KestrelEntity;
 import EdDYON.guaniao.content.bird.cassowary.CassowaryEntity;
 import EdDYON.guaniao.content.bird.scale.BirdModelScale;
 import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
-import EdDYON.guaniao.network.GuaniaoNetwork;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import EdDYON.guaniao.network.SaveBirdConfigPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -228,7 +228,7 @@ public class BirdConfigScreen extends Screen {
         if (!captureNumericValues()) {
             return;
         }
-        GuaniaoNetwork.sendToServer(new SaveBirdConfigPacket(this.data));
+        ClientPlayNetworking.send(new SaveBirdConfigPacket(this.data));
         this.status = Component.empty();
     }
 

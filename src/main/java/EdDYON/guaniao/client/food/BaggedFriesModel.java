@@ -4,6 +4,7 @@ import EdDYON.guaniao.content.food.BaggedFriesBlockEntity;
 import net.minecraft.resources.Identifier;
 import com.geckolib.model.GeoModel;
 import com.geckolib.renderer.base.GeoRenderState;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 
 public final class BaggedFriesModel extends GeoModel<BaggedFriesBlockEntity> {
     private static final Identifier MODEL = Identifier.fromNamespaceAndPath("guaniao", "geo/bagged_fries.geo.json");
@@ -12,7 +13,7 @@ public final class BaggedFriesModel extends GeoModel<BaggedFriesBlockEntity> {
 
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
-        return MODEL;
+        return GuaniaoGeckoAssets.model(MODEL);
     }
 
     @Override
@@ -22,6 +23,6 @@ public final class BaggedFriesModel extends GeoModel<BaggedFriesBlockEntity> {
 
     @Override
     public Identifier getAnimationResource(BaggedFriesBlockEntity animatable) {
-        return ANIMATION;
+        return GuaniaoGeckoAssets.animation(ANIMATION);
     }
 }

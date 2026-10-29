@@ -4,6 +4,7 @@ import EdDYON.guaniao.content.nest.CrowNestBlockEntity;
 import net.minecraft.resources.Identifier;
 import com.geckolib.model.GeoModel;
 import com.geckolib.renderer.base.GeoRenderState;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 
 public class CrowNestModel extends GeoModel<CrowNestBlockEntity> {
     private static final Identifier MODEL = Identifier.fromNamespaceAndPath("guaniao", "geo/crow_nest.geo.json");
@@ -12,7 +13,7 @@ public class CrowNestModel extends GeoModel<CrowNestBlockEntity> {
 
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
-        return MODEL;
+        return GuaniaoGeckoAssets.model(MODEL);
     }
 
     @Override
@@ -22,6 +23,6 @@ public class CrowNestModel extends GeoModel<CrowNestBlockEntity> {
 
     @Override
     public Identifier getAnimationResource(CrowNestBlockEntity animatable) {
-        return ANIMATION;
+        return GuaniaoGeckoAssets.animation(ANIMATION);
     }
 }

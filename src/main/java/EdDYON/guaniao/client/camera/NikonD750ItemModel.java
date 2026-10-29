@@ -5,6 +5,7 @@ import EdDYON.guaniao.content.camera.NikonD750Item;
 import net.minecraft.resources.Identifier;
 import com.geckolib.model.GeoModel;
 import com.geckolib.renderer.base.GeoRenderState;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 
 public class NikonD750ItemModel extends GeoModel<NikonD750Item> {
     private static final Identifier MODEL = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "geo/nikon_d750.geo.json");
@@ -13,7 +14,7 @@ public class NikonD750ItemModel extends GeoModel<NikonD750Item> {
 
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
-        return MODEL;
+        return GuaniaoGeckoAssets.model(MODEL);
     }
 
     @Override
@@ -23,6 +24,6 @@ public class NikonD750ItemModel extends GeoModel<NikonD750Item> {
 
     @Override
     public Identifier getAnimationResource(NikonD750Item animatable) {
-        return ANIMATION;
+        return GuaniaoGeckoAssets.animation(ANIMATION);
     }
 }

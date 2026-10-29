@@ -22,6 +22,12 @@ for item in paths:
     ).replace("ResourceLocation", "Identifier").replace(
         "new Identifier(", "Identifier.fromNamespaceAndPath(",
     )
+    expected = expected.replace(
+        "import com.geckolib.renderer.base.GeoRenderState;",
+        "import com.geckolib.renderer.base.GeoRenderState;\\nimport EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;",
+    )
+    expected = expected.replace("return MODEL;", "return GuaniaoGeckoAssets.model(MODEL);")
+    expected = expected.replace("return ANIMATION;", "return GuaniaoGeckoAssets.animation(ANIMATION);")
     expected, changed = re.subn(
         r"public Identifier get(Model|Texture)Resource\(([^)]+)\)",
         lambda match: f"public Identifier get{match.group(1)}Resource(GeoRenderState renderState)",

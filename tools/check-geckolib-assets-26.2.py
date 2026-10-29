@@ -36,7 +36,7 @@ assert 'normalized(authored, "geo/", ".geo.json")' in BRIDGE
 assert 'normalized(authored, "animations/", ".animation.json")' in BRIDGE
 assert "Identifier.fromNamespaceAndPath(authored.getNamespace()" in BRIDGE
 
-for stem in ("Kiwi", "Sparrow", "Seagull", "Myna", "LongTailedTit", "NightHeron", "Crow"):
+for stem in ("Kiwi", "Sparrow", "Seagull", "Myna", "LongTailedTit", "NightHeron", "Crow", "Macaw", "Budgerigar"):
     folders = {
         "LongTailedTit": "longtailedtit",
         "NightHeron": "nightheron"

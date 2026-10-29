@@ -745,3 +745,58 @@ starts (runner ID 0, zero steps), including a manual re-run; this cannot
 be used as evidence of Gradle compilation success. Do not release or
 share any modified asset-containing JAR without the original author's
 written permission. Keep PR #1 draft and main untouched.
+
+
+## 2026-10-29 — native Fabric networking and runtime loot milestones (source-only)
+
+Three scoped migration checkpoints were added to the private
+`port/fabric-26.2` development branch. These are **not** evidence of a
+successful mod compilation or playable JAR:
+
+1. **Charged feather fan** — `FeatherFanPiercePacket` now implements
+   `CustomPacketPayload` and uses a zero-field `StreamCodec.unit`,
+   registered with `PayloadTypeRegistry.serverboundPlay` before a
+   `ServerPlayNetworking` receiver. `FeatherFanClientEvents` now uses
+   Fabric's `ClientPreAttackCallback`; only new clicks while the fan is fully
+   charged send the packet, and the original server-side held-item check and
+   `tryLaunchPiercing(player)` are retained. The client hook is now registered
+   in the Fabric client initializer.
+2. **Three-boolean multiplayer configuration** — `BirdRuntimeConfigPacket`
+   is now a clientbound payload with its original wire field order: leaf
+   passage, April Fools, sky-bird ecology. Native networking sends it on the
+   existing player-join callback and broadcasts after successful config saves.
+   The client registration applies the same `BirdConfigManager.applyRemoteRuntime`
+   values, without client-only symbols in common packet classes. The remaining
+   serverbound save-config packet and its GUI channel still use legacy Forge.
+3. **Runtime loot** — all original global loot modifiers now register
+   `LootTableEvents.MODIFY_DROPS`: handwritten bird notes use their unchanged
+   loot-table tier/rarity rules; feather-fan books still use 4% chest or
+   0.25% monster odds; earthworms still use 20% chance only for a
+   survival player's shovel on the configured forage ground tag. This
+   preserves original drops and is additive. The old Forge loot-modifier
+   registry file now acts as the single Fabric callback registrar, preventing
+   accidental double registration.
+
+Regression guards added:
+- `tools/check-feather-fan-network-port.py`
+- `tools/check-runtime-config-network-port.py`
+- `tools/check-bird-note-loot-port.py`
+- `tools/check-bird-all-loot-modifiers-port.py`
+
+Standalone 26.2 compilation probes added to `verifyRegistriesPort`:
+- `GuaniaoFeatherFanPacketProof`
+- `GuaniaoRuntimeConfigPacketProof`
+- `GuaniaoBirdNoteLootProof`
+
+**Outstanding blockers to a private JAR:** legacy `GuaniaoNetwork`
+still refers to Forge SimpleChannel and the remaining original
+photo/config/crafting packets have not been moved to Fabric payload codecs.
+GeckoLib entity and item renderers, menus, camera-photo client code and many
+other Forge APIs still fail full compilation. Source-level checks are useful
+but cannot validate cross-loader behavior. A real Java 25 `compileJava`
+and `build` followed by dedicated server and client startup are mandatory.
+
+**GitHub Actions status at this checkpoint:** workflow jobs still fail before
+a runner is allocated (runner ID 0, zero executed steps). No JAR artifact
+was generated or made available. Keep the PR draft, `main` untouched and
+do not distribute asset-containing binaries without the author's consent.

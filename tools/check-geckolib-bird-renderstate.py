@@ -71,6 +71,38 @@ for stem, converted_renderer in MODELS.items():
     before_radius = re.search(r"this\.shadowRadius = [^;]+;", original_renderer)
     assert before_radius and before_radius.group(0) in renderer
 
+# The two columbid species share one model and resolve their actual
+# gray/white/spotted palette from each individual entity in the render state.
+columbid_old = original("client/entity/columbid/ColumbidModel.java")
+columbid = current("client/entity/columbid/ColumbidModel.java")
+for marker in (
+    "GeoModel<T>", "ColumbidDefinition.MODEL", "ColumbidDefinition.ANIMATION",
+    "GuaniaoGeckoAssets.model(", "GuaniaoGeckoAssets.animation(",
+    "BirdMutationTextureFactory.textureFor(animatable.getTextureResource(), animatable)",
+    "BirdMutationRenderData.capture(renderState,",
+    "BirdMutationRenderData.texture(renderState,",
+    "BirdMutationRenderData.MODEL_SCALE",
+    "animatable.getModelRenderScale()",
+):
+    assert marker in columbid, marker
+assert "BirdMutationTextureFactory.textureFor(animatable.getTextureResource(), animatable)" in columbid_old
+assert "software.bernie" not in columbid
+assert "ResourceLocation" not in columbid
+entity = current("content/bird/columbid/AbstractColumbidEntity.java")
+assert "public net.minecraft.resources.Identifier getTextureResource()" in entity
+assert "return this.getColumbidVariant().texture();" in entity
+for species, radius in (("Pigeon", "0.15F"), ("SpottedDove", "0.14F")):
+    path = f"client/entity/columbid/{species}Renderer.java"
+    before, now = original(path), current(path)
+    assert "getModelRenderScale()" in before
+    assert "new ColumbidModel<>()" in now
+    assert "this.shadowRadius = " + radius + ";" in now
+    assert "BirdMutationRenderData.MODEL_SCALE" in now
+    assert "getOrDefaultGeckolibData(" in now
+    assert "scaleModelForRender(RenderPassInfo<R>" in now
+    assert "super.scaleModelForRender(renderPassInfo, widthScale * scale, heightScale * scale)" in now
+    assert "software.bernie" not in now
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -81,9 +113,11 @@ registered = {
     "LONG_TAILED_TIT": "LongTailedTit",
     "MACAW": "Macaw",
     "BUDGERIGAR": "Budgerigar",
+    "PIGEON": "Pigeon",
+    "SPOTTED_DOVE": "SpottedDove",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 9 model texture snapshots, 6 renderer scales and client registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 10 model texture snapshots, 8 renderer scales and client registrations, unmodified mutation color formulas")

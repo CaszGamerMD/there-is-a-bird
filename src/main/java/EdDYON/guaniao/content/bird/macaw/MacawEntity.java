@@ -17,7 +17,7 @@ import EdDYON.guaniao.content.bird.scale.BirdModelScaleProfile;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.BlockTags;
@@ -116,7 +116,7 @@ public class MacawEntity extends BudgerigarEntity {
     }
 
     @Override
-    public ResourceLocation getTextureResource() {
+    public Identifier getTextureResource() {
         return MacawDefinition.textureForVariant(this.getSkinVariant());
     }
 

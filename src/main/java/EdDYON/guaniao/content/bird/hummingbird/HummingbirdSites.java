@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.VineBlock;
 import net.minecraft.world.level.block.DoublePlantBlock;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.Vec3;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /** Bounded searches of ready chunks only. An anchor is a real block and never an airborne sleep flag. */
 final class HummingbirdSites {

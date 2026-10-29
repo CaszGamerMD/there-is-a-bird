@@ -90,6 +90,14 @@ assert "ServerPlayNetworking.send(player, new OpenBirdConfigPacket(" in commands
 assert "BirdConfigCommands.registerCallbacks();" in new("fabric/GuaniaoFabricEntrypoint.java")
 assert "net.minecraftforge" not in commands
 
+photo_commands = new("command/PhotoAdminCommands.java")
+assert "CommandRegistrationCallback.EVENT.register" in photo_commands
+for literal in ('"photo"', '"stats"', '"list"', '"delete"', '"restore"',
+                '"verify"', '"prune"', '"dry_run"', '"confirm"'):
+    assert literal in photo_commands, literal
+assert "PhotoAdminCommands.registerCallbacks();" in new("fabric/GuaniaoFabricEntrypoint.java")
+assert "net.minecraftforge" not in photo_commands
+
 legacy = new("network/GuaniaoNetwork.java")
 assert "SimpleChannel" not in legacy and "net.minecraftforge" not in legacy
 assert "ServerPlayNetworking.send(player, packet)" in legacy
@@ -99,6 +107,18 @@ for path in ("client/camera/CameraClientCapture.java",
              "client/config/BirdConfigScreen.java",
              "content/camera/frame/FrameWorkbenchMenu.java"):
     assert "GuaniaoNetwork.send" not in new(path), path
+
+for name in original_classes:
+    packet = new("network/"+name+".java")
+    assert "implements CustomPacketPayload" in packet, name
+    assert "net.minecraftforge" not in packet, name
+
+for path in (root / "src/main/java/EdDYON/guaniao").rglob("*.java"):
+    if path.name == "GuaniaoNetwork.java":
+        continue
+    source = path.read_text("utf-8")
+    assert "GuaniaoNetwork.sendToServer(" not in source, str(path)
+    assert "GuaniaoNetwork.CHANNEL" not in source, str(path)
 
 print("PASS: all 15 authored play packet types moved to Fabric with identical "
       "camera/config/frame codecs, retained authorization and all command IDs")

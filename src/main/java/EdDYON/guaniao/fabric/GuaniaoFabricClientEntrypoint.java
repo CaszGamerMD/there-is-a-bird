@@ -22,6 +22,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         CameraTooltipEvents.registerCallbacks();
         PrankFoodClientEvents.registerCallbacks();
         FeatherFanClientEvents.registerCallbacks();
+        GuaniaoFabricEntityRenderers.register();
         ClientPlayNetworking.registerGlobalReceiver(BirdRuntimeConfigPacket.TYPE,
                 (packet, context) -> packet.applyOnClient());
         ClientPlayNetworking.registerGlobalReceiver(PhotoCaptureResultPacket.TYPE,

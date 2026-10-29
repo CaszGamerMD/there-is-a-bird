@@ -14,7 +14,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
-import net.minecraft.util.random.WeightedRandomList;
+import net.minecraft.util.random.Weighted;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
@@ -22,14 +23,12 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.gamerules.GameRules;
-import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.ForgeEventFactory;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 
@@ -75,12 +74,12 @@ public final class BirdRepopulationEvents {
         int interval = Mth.clamp((int)Math.ceil(baseInterval / rate), MIN_INTERVAL_TICKS, 2400);
         state.nextAttempt = now + interval;
         // Preserve very small configured rates when the wake-up interval is capped.
-        if (level.random.nextDouble() >= Math.min(1.0D, rate * interval / baseInterval)) return;
+        if (level.getRandom().nextDouble() >= Math.min(1.0D, rate * interval / baseInterval)) return;
         if (nearbyCount >= BirdConfigManager.maxBirdsNearby()) return;
 
         for (int attempt = 0; attempt < SITE_ATTEMPTS; ++attempt) {
-            double angle = level.random.nextDouble() * Math.PI * 2.0D;
-            double distance = 32.0D + level.random.nextDouble() * 48.0D;
+            double angle = level.getRandom().nextDouble() * Math.PI * 2.0D;
+            double distance = 32.0D + level.getRandom().nextDouble() * 48.0D;
             int x = Mth.floor(player.getX() + Math.cos(angle) * distance);
             int z = Mth.floor(player.getZ() + Math.sin(angle) * distance);
             LevelChunk chunk = level.getChunkSource().getChunkNow(x >> 4, z >> 4);
@@ -89,7 +88,7 @@ public final class BirdRepopulationEvents {
             if (trySpawnAt(level, surface) > 0) return;
         }
         // Avoid repeatedly colliding with AI scans on the same 20-tick phase.
-        state.nextAttempt = now + Math.min(interval, FAILED_ATTEMPT_RETRY_TICKS + level.random.nextInt(20));
+        state.nextAttempt = now + Math.min(interval, FAILED_ATTEMPT_RETRY_TICKS + level.getRandom().nextInt(20));
     }
 
     public static void onLevelUnload(ServerLevel level) {
@@ -112,10 +111,11 @@ public final class BirdRepopulationEvents {
         // Read the loaded biome list, rather than asking the generator to resolve
         // distant structure references. Keep datapack entries and Forge vetoes.
         var biomeSpawns = level.getBiome(surface).value().getMobSettings().getMobs(MobCategory.CREATURE);
-        var configured = ForgeEventFactory.getPotentialSpawns(level, MobCategory.CREATURE, surface, biomeSpawns);
-        List<MobSpawnSettings.SpawnerData> candidates = new ArrayList<>();
-        for (var data : configured.unwrap()) {
-            BirdSpecies species = BirdSpecies.from(data.type);
+        var configured = BirdSpawnConfigEvents.adjustedPotentialSpawns(level, surface, biomeSpawns);
+        List<Weighted<MobSpawnSettings.SpawnerData>> candidates = new ArrayList<>();
+        for (var entry : configured.unwrap()) {
+            var data = entry.value();
+            BirdSpecies species = BirdSpecies.from(data.type());
             if (species != null && BirdConfigManager.allowsNaturalSpawning(species)
                     && isActiveTime(species, level.getDayTime())
                     && BirdSpawnConfigEvents.remainingCapacity(level, surface.getX(), surface.getZ(), species) > 0) {
@@ -124,48 +124,48 @@ public final class BirdRepopulationEvents {
                 int count = BirdPopulationTracker.speciesAt(level, surface.getX(), surface.getZ(), species);
                 double occupancy = Math.min(1.0D, (double)count / BirdConfigManager.maxWildNearby(species));
                 int weight = (int)Math.min(Integer.MAX_VALUE,
-                        Math.round(data.getWeight().asInt() * (2.0D - occupancy)));
-                candidates.add(new MobSpawnSettings.SpawnerData(data.type, Math.max(1, weight), data.minCount, data.maxCount));
+                        Math.round(entry.weight() * (2.0D - occupancy)));
+                candidates.add(new Weighted<>(data, Math.max(1, weight)));
             }
         }
-        var selected = WeightedRandomList.create(candidates).getRandom(level.random);
+        var selected = WeightedList.of(candidates).getRandom(level.getRandom());
         if (selected.isEmpty()) return 0;
         MobSpawnSettings.SpawnerData data = selected.get();
-        BirdSpecies species = BirdSpecies.from(data.type);
-        int maxGroup = Math.min(MAX_PACK_SIZE, data.maxCount);
-        int minGroup = Math.min(maxGroup, data.minCount);
+        BirdSpecies species = BirdSpecies.from(data.type());
+        int maxGroup = Math.min(MAX_PACK_SIZE, data.maxCount());
+        int minGroup = Math.min(maxGroup, data.minCount());
         if (maxGroup <= 0) return 0;
-        int target = Mth.nextInt(level.random, minGroup, maxGroup);
+        int target = Mth.nextInt(level.getRandom(), minGroup, maxGroup);
         int spawned = 0;
         SpawnGroupData group = null;
 
         for (int attempt = 0; attempt < PACK_ATTEMPTS && spawned < target; ++attempt) {
-            int x = surface.getX() + (attempt == 0 ? 0 : level.random.nextInt(9) - 4);
-            int z = surface.getZ() + (attempt == 0 ? 0 : level.random.nextInt(9) - 4);
+            int x = surface.getX() + (attempt == 0 ? 0 : level.getRandom().nextInt(9) - 4);
+            int z = surface.getZ() + (attempt == 0 ? 0 : level.getRandom().nextInt(9) - 4);
             LevelChunk chunk = level.getChunkSource().getChunkNow(x >> 4, z >> 4);
             if (chunk == null) continue;
-            BlockPos pos = surfaceAt(chunk, SpawnPlacements.getHeightmapType(data.type), x, z);
+            BlockPos pos = surfaceAt(chunk, SpawnPlacements.getHeightmapType(data.type()), x, z);
             if (!isUsableSite(level, pos)
                     || BirdSpawnConfigEvents.remainingCapacity(level, x, z, species) <= 0) continue;
             // Keep the species' placement attempts separate from the unclassified
             // habitat-scan tokens; both still share the per-level total budget.
             if (!BirdScanBudget.tryAcquireForSpecies(level, species)) break;
-            var atPosition = ForgeEventFactory.getPotentialSpawns(level, MobCategory.CREATURE, pos,
+            var atPosition = BirdSpawnConfigEvents.adjustedPotentialSpawns(level, pos,
                     level.getBiome(pos).value().getMobSettings().getMobs(MobCategory.CREATURE));
-            if (atPosition.unwrap().stream().noneMatch(entry -> entry.type == data.type)) continue;
-            if (!NaturalSpawner.isSpawnPositionOk(SpawnPlacements.getPlacementType(data.type), level, pos, data.type)
-                    || !SpawnPlacements.checkSpawnRules(data.type, level, EntitySpawnReason.NATURAL, pos, level.random)
-                    || !level.noCollision(data.type.getAABB(x + 0.5D, pos.getY(), z + 0.5D))) continue;
+            if (atPosition.unwrap().stream().noneMatch(entry -> entry.value().type() == data.type())) continue;
+            if (!SpawnPlacements.isSpawnPositionOk(data.type(), level, pos)
+                    || !SpawnPlacements.checkSpawnRules(data.type(), level, EntitySpawnReason.NATURAL, pos, level.getRandom())
+                    || !level.noCollision(data.type().getAABB(x + 0.5D, pos.getY(), z + 0.5D))) continue;
 
-            Entity entity = data.type.create(level);
+            Entity entity = data.type().create(level, EntitySpawnReason.NATURAL);
             if (!(entity instanceof Mob mob)) continue;
-            mob.moveTo(x + 0.5D, pos.getY(), z + 0.5D, level.random.nextFloat() * 360.0F, 0.0F);
-            if (!ForgeEventFactory.checkSpawnPosition(mob, level, EntitySpawnReason.NATURAL)) continue;
-            group = ForgeEventFactory.onFinalizeSpawn(mob, level, level.getCurrentDifficultyAt(pos),
-                    EntitySpawnReason.NATURAL, group, null);
+            mob.moveTo(x + 0.5D, pos.getY(), z + 0.5D, level.getRandom().nextFloat() * 360.0F, 0.0F);
+            if (!(mob.checkSpawnRules(level, EntitySpawnReason.NATURAL) && mob.checkSpawnObstruction(level))) continue;
+            group = mob.finalizeSpawn(level, level.getCurrentDifficultyAt(pos),
+                    EntitySpawnReason.NATURAL, group);
             if (level.addFreshEntity(mob)) {
                 ++spawned;
-                if (spawned >= ForgeEventFactory.getMaxSpawnPackSize(mob) || mob.isMaxGroupSizeReached(spawned)) break;
+                if (spawned >= mob.getMaxSpawnClusterSize() || mob.isMaxGroupSizeReached(spawned)) break;
             }
         }
         return spawned;

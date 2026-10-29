@@ -890,3 +890,58 @@ all command paths, the photo-transfer round-trip and visual renderer
 tests are **not verified**. The draft PR is not ready to merge. Respect
 the original model/texture rights; do not distribute a modified
 asset-containing JAR without the author's permission.
+
+
+## 2026-10-29 — GeckoLib 5 bird render-state and asset staging checkpoint
+
+This milestone addresses one of the remaining critical blockers for a
+private Java 25 / Fabric 26.2 test build: GeckoLib 4 renderer methods
+cannot directly access their entity with GeckoLib 5's render-state pipeline.
+
+- **Nine bird models** now snapshot the original per-entity mutation
+  texture through `BirdMutationRenderData.MUTATION_TEXTURE`:
+  Kiwi, Sparrow, Myna, LongTailedTit, Seagull, NightHeron, Crow,
+  Macaw and Budgerigar. Mutation selection still calls the original
+  `BirdMutationTextureFactory.textureFor(originalBaseTexture, bird)`.
+  It is never replaced with a shared last-rendered-bird variable.
+- **Six bird renderers** (Kiwi, Sparrow, Myna, LongTailedTit, Macaw
+  and Budgerigar) now use GeckoLib 5's `scaleModelForRender`
+  with a per-entity float data ticket captured in the model.
+  Their original shadow radii and original `getModelRenderScale()`
+  values are preserved. These six renderers are now registered using
+  Fabric's client-only entity renderer registration event.
+- Macaw and Budgerigar palette lookups still use each bird's original
+  variant-specific base texture. Their inherited texture getter
+  signatures now consistently return `Identifier`. The budgerigar's
+  original tame advancement ID and grant criterion remain unchanged,
+  using the 26.2 advancement-holder accessor instead.
+- `BirdMutationTextureFactory` uses Minecraft 26.2 `Identifier`
+  for cached and registered dynamic textures. Its original pixel
+  recoloring formulas, 24-frame rainbow animation and cache keys are
+  unchanged; these still require real client graphics compilation
+  and texture reload tests.
+- **Assets:** original `assets/guaniao/geo/*.geo.json` and
+  `assets/guaniao/animations/*.animation.json` remain untouched.
+  Gradle `processResources` stages byte-identical copies under
+  GeckoLib 5's `geckolib/models` and `geckolib/animations`
+  resource directories. `GuaniaoGeckoAssets` converts legacy
+  authored IDs to GeckoLib 5 short lookup IDs. The nine migrated
+  bird models and five previously migrated static models use it.
+- Added `tools/check-geckolib-bird-renderstate.py` and
+  `tools/check-geckolib-assets-26.2.py` to CI and updated
+  `tools/check-geckolib-static-models.py` to require the short
+  GeckoLib 5 resource IDs, while retaining source-model parity.
+  Added isolated `GuaniaoBirdRenderStateProof.java` to
+  `verifyRegistriesPort`.
+
+**Not yet compiled or playable.** Some bird renderers still use
+GeckoLib 4's `preRender` and legacy held-item layers. Custom
+animation/Molang handling in the hummingbird, kestrel, cassowary,
+woodcock, cockatiel and umbrella cockatoo requires a separate
+render-state migration. Only six bird renderers are registered,
+and 26.2 dynamic texture upload APIs and remaining client GUI
+render paths have not been validated. Real Java 25 Gradle
+compilation, dedicated server/client startups, mutation textures,
+resource reload and in-game visual tests are required before
+providing a private test JAR. Never redistribute the author's
+restricted media assets without written permission.

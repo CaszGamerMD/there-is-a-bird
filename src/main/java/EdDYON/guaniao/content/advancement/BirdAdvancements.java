@@ -4,8 +4,8 @@ import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdSpecies;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.advancements.Advancement;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -13,33 +13,33 @@ import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.player.Player;
 
 public final class BirdAdvancements {
-    public static final ResourceLocation SEAGULL_STOLE_FOOD = id("seagull_stole_food");
-    public static final ResourceLocation HIGH_EYE = id("high_eye");
-    public static final ResourceLocation FLUFFY_LINE = id("fluffy_line");
-    public static final ResourceLocation BIRD_CONFERENCE = id("bird_conference");
-    public static final ResourceLocation ACCEPTED_BY_BIRD = id("accepted_by_bird");
-    public static final ResourceLocation FOREST_FRIEND = id("forest_friend");
-    public static final ResourceLocation SEASIDE_MENACE = id("seaside_menace");
-    public static final ResourceLocation RED_LOUDMOUTH = id("red_loudmouth");
-    public static final ResourceLocation LITTLE_SUN = id("little_sun");
-    public static final ResourceLocation AVIARY_KEEPER = id("aviary_keeper");
-    public static final ResourceLocation BIRD_NOTE = id("bird_note");
-    public static final ResourceLocation DEV_NOTE_PROGRAMMER = id("dev_note_programmer");
-    public static final ResourceLocation DEV_NOTE_KEEPER = id("dev_note_keeper");
-    public static final ResourceLocation DEV_NOTE_ANIMATOR = id("dev_note_animator");
-    public static final ResourceLocation DEV_NOTE_SOUND = id("dev_note_sound");
-    public static final ResourceLocation DEV_NOTE_MODELER = id("dev_note_modeler");
-    public static final ResourceLocation DEV_NOTES_ALL = id("dev_notes_all");
+    public static final Identifier SEAGULL_STOLE_FOOD = id("seagull_stole_food");
+    public static final Identifier HIGH_EYE = id("high_eye");
+    public static final Identifier FLUFFY_LINE = id("fluffy_line");
+    public static final Identifier BIRD_CONFERENCE = id("bird_conference");
+    public static final Identifier ACCEPTED_BY_BIRD = id("accepted_by_bird");
+    public static final Identifier FOREST_FRIEND = id("forest_friend");
+    public static final Identifier SEASIDE_MENACE = id("seaside_menace");
+    public static final Identifier RED_LOUDMOUTH = id("red_loudmouth");
+    public static final Identifier LITTLE_SUN = id("little_sun");
+    public static final Identifier AVIARY_KEEPER = id("aviary_keeper");
+    public static final Identifier BIRD_NOTE = id("bird_note");
+    public static final Identifier DEV_NOTE_PROGRAMMER = id("dev_note_programmer");
+    public static final Identifier DEV_NOTE_KEEPER = id("dev_note_keeper");
+    public static final Identifier DEV_NOTE_ANIMATOR = id("dev_note_animator");
+    public static final Identifier DEV_NOTE_SOUND = id("dev_note_sound");
+    public static final Identifier DEV_NOTE_MODELER = id("dev_note_modeler");
+    public static final Identifier DEV_NOTES_ALL = id("dev_notes_all");
     private static final String CRITERION = "triggered";
 
     /** Maps each dev easter-egg note's author to the hidden "note found" advancement. */
-    private static final Map<String, ResourceLocation> DEV_NOTE_BY_AUTHOR = Map.of(
+    private static final Map<String, Identifier> DEV_NOTE_BY_AUTHOR = Map.of(
             "蛋炒饭", DEV_NOTE_PROGRAMMER,
             "伊洛哥斯拉", DEV_NOTE_KEEPER,
             "多雨", DEV_NOTE_ANIMATOR,
             "老三", DEV_NOTE_SOUND,
             "千年村庄", DEV_NOTE_MODELER);
-    private static final List<ResourceLocation> DEV_NOTE_ADVANCEMENTS =
+    private static final List<Identifier> DEV_NOTE_ADVANCEMENTS =
             List.copyOf(DEV_NOTE_BY_AUTHOR.values());
 
     private BirdAdvancements() {
@@ -77,12 +77,12 @@ public final class BirdAdvancements {
      * "collect the devs' notes" advancement unlocks.
      */
     public static void awardDevNote(ServerPlayer player, String author) {
-        ResourceLocation perNote = DEV_NOTE_BY_AUTHOR.get(author);
+        Identifier perNote = DEV_NOTE_BY_AUTHOR.get(author);
         if (perNote == null) {
             return;
         }
         grant(player, perNote);
-        for (ResourceLocation noteId : DEV_NOTE_ADVANCEMENTS) {
+        for (Identifier noteId : DEV_NOTE_ADVANCEMENTS) {
             if (!isDone(player, noteId)) {
                 return;
             }
@@ -90,13 +90,13 @@ public final class BirdAdvancements {
         grant(player, DEV_NOTES_ALL);
     }
 
-    public static boolean grant(ServerPlayer player, ResourceLocation advancementId) {
-        Advancement advancement = player.server.getAdvancements().getAdvancement(advancementId);
+    public static boolean grant(ServerPlayer player, Identifier advancementId) {
+        AdvancementHolder advancement = player.getServer().getAdvancements().get(advancementId);
         return advancement != null && player.getAdvancements().award(advancement, CRITERION);
     }
 
-    public static boolean isDone(ServerPlayer player, ResourceLocation advancementId) {
-        Advancement advancement = player.server.getAdvancements().getAdvancement(advancementId);
+    public static boolean isDone(ServerPlayer player, Identifier advancementId) {
+        AdvancementHolder advancement = player.getServer().getAdvancements().get(advancementId);
         return advancement != null && player.getAdvancements().getOrStartProgress(advancement).isDone();
     }
 
@@ -116,7 +116,7 @@ public final class BirdAdvancements {
         return count;
     }
 
-    private static ResourceLocation id(String path) {
-        return new ResourceLocation(GuaniaoMod.MOD_ID, "husbandry/" + path);
+    private static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "husbandry/" + path);
     }
 }

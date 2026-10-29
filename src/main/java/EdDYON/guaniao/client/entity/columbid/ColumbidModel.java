@@ -1,24 +1,37 @@
 package EdDYON.guaniao.client.entity.columbid;
 
+import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.columbid.AbstractColumbidEntity;
 import EdDYON.guaniao.content.bird.columbid.ColumbidDefinition;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
+import EdDYON.guaniao.content.bird.columbid.ColumbidVariant;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
+import net.minecraft.resources.Identifier;
 
+/** Shared GeckoLib 5 model for both pigeons and spotted doves. */
 public class ColumbidModel<T extends AbstractColumbidEntity> extends GeoModel<T> {
     @Override
-    public ResourceLocation getModelResource(T animatable) {
-        return ColumbidDefinition.MODEL;
+    public Identifier getModelResource(GeoRenderState renderState) {
+        return GuaniaoGeckoAssets.model(ColumbidDefinition.MODEL);
     }
 
     @Override
-    public ResourceLocation getTextureResource(T animatable) {
-        return BirdMutationTextureFactory.textureFor(animatable.getTextureResource(), animatable);
+    public Identifier getTextureResource(GeoRenderState renderState) {
+        return BirdMutationRenderData.texture(renderState, ColumbidVariant.SPOTTED_DOVE.texture());
     }
 
     @Override
-    public ResourceLocation getAnimationResource(T animatable) {
-        return ColumbidDefinition.ANIMATION;
+    public Identifier getAnimationResource(T animatable) {
+        return GuaniaoGeckoAssets.animation(ColumbidDefinition.ANIMATION);
+    }
+
+    @Override
+    public void addAdditionalStateData(T animatable, Object relatedObject, GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
+        BirdMutationRenderData.capture(renderState,
+                BirdMutationTextureFactory.textureFor(animatable.getTextureResource(), animatable));
     }
 }

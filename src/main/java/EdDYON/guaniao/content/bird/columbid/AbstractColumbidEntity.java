@@ -682,7 +682,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         return ColumbidVariant.SPOTTED_DOVE;
     }
 
-    public net.minecraft.resources.ResourceLocation getTextureResource() {
+    public net.minecraft.resources.Identifier getTextureResource() {
         return this.getColumbidVariant().texture();
     }
 

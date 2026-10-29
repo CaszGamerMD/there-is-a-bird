@@ -46,7 +46,8 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
                                     "net.minecraft.world.level.chunk.status.ChunkStatus")
     # Minecraft 26.2 ResourceLocation -> Identifier retains all authored IDs,
     # including Kestrel's serialized learned-item name and Crow's texture path.
-    if p.name in ("CrowEntity.java", "KestrelEntity.java", "MacawEntity.java", "BudgerigarEntity.java"):
+    if p.name in ("CrowEntity.java", "KestrelEntity.java", "MacawEntity.java", "BudgerigarEntity.java",
+                   "AbstractColumbidEntity.java", "CockatooEntity.java", "CockatielEntity.java"):
         expected = expected.replace("ResourceLocation", "Identifier")
         if p.name == "BudgerigarEntity.java":
             expected = expected.replace(

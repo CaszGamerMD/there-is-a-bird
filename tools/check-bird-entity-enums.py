@@ -6,7 +6,8 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 NAMES = ["BudgerigarEntity.java","CassowaryEntity.java","CockatielEntity.java","CockatooEntity.java","AbstractColumbidEntity.java","PigeonEntity.java","SpottedDoveEntity.java","CrowEntity.java","HummingbirdEntity.java","KestrelEntity.java","KingfisherEntity.java","KiwiEntity.java","LongTailedTitEntity.java","MacawEntity.java","MynaEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","UmbrellaCockatooEntity.java","WoodcockEntity.java"]
-IDENTIFIER_PORTED = ("CrowEntity.java", "KestrelEntity.java")
+IDENTIFIER_PORTED = ("CrowEntity.java", "KestrelEntity.java",
+                     "CockatooEntity.java", "CockatielEntity.java")
 RENAMES = (
     ("MobSpawnType", "EntitySpawnReason"),
     ("BlockPathTypes", "PathType"),

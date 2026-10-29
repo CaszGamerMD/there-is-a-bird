@@ -4,7 +4,7 @@ import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import net.minecraft.sounds.SoundEvent;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Which registered bird voice the cockatoo copies when it decides to chatter.

@@ -52,6 +52,8 @@ jobs:
         run: python3 tools/check-bird-nullable-port.py
       - name: Verify nine original bird flight marker migrations
         run: python3 tools/check-bird-flight-marker-port.py
+      - name: Verify per-bird GeckoLib 5 mutation and render-scale state
+        run: python3 tools/check-geckolib-bird-renderstate.py
       - name: Verify bird AI preserved through GeckoLib 5 API substitutions
         run: python3 tools/check-geckolib-birds.py
       - name: Verify all 19 original bird attribute profiles

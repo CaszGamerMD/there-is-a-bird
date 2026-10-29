@@ -7,6 +7,7 @@ import EdDYON.guaniao.config.BirdSpeciesConfig;
 import EdDYON.guaniao.event.BirdDroppingEvents;
 import EdDYON.guaniao.event.BirdPopulationTracker;
 import net.minecraft.network.FriendlyByteBuf;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -50,10 +51,12 @@ public final class SaveBirdConfigPacket {
                 }
                 GuaniaoNetwork.sendToPlayer(new OpenBirdConfigPacket(BirdConfigManager.snapshot()), player);
                 for (ServerPlayer online : player.server.getPlayerList().getPlayers()) {
-                    GuaniaoNetwork.sendToPlayer(new BirdRuntimeConfigPacket(
-                            BirdConfigManager.birdsPassThroughLeaves(),
-                            BirdConfigManager.aprilFoolsMode(),
-                            BirdConfigManager.skyBirdEcologyEnabled()), online);
+                    if (ServerPlayNetworking.canSend(online, BirdRuntimeConfigPacket.TYPE)) {
+                        ServerPlayNetworking.send(online, new BirdRuntimeConfigPacket(
+                                BirdConfigManager.birdsPassThroughLeaves(),
+                                BirdConfigManager.aprilFoolsMode(),
+                                BirdConfigManager.skyBirdEcologyEnabled()));
+                    }
                 }
             }
         });

@@ -1,6 +1,7 @@
 package EdDYON.guaniao.fabric;
 
 import EdDYON.guaniao.network.FeatherFanPiercePacket;
+import EdDYON.guaniao.network.BirdRuntimeConfigPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
@@ -14,6 +15,8 @@ public final class GuaniaoFabricNetworking {
     public static void register() {
         PayloadTypeRegistry.serverboundPlay().register(
                 FeatherFanPiercePacket.TYPE, FeatherFanPiercePacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(
+                BirdRuntimeConfigPacket.TYPE, BirdRuntimeConfigPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(
                 FeatherFanPiercePacket.TYPE, (packet, context) -> packet.handle(context.player()));
     }

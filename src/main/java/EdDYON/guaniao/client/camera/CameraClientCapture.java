@@ -7,7 +7,7 @@ import EdDYON.guaniao.content.camera.CameraSettingsData;
 import EdDYON.guaniao.content.camera.CameraState;
 import EdDYON.guaniao.content.camera.PhotographData;
 import EdDYON.guaniao.content.camera.PhotoImageCodec;
-import EdDYON.guaniao.network.GuaniaoNetwork;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import EdDYON.guaniao.network.SetCameraSettingsPacket;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -660,6 +660,6 @@ public final class CameraClientCapture {
         }
         ItemStack camera = minecraft.player.getItemInHand(viewfinderHand);
         CameraSettingsData.setState(camera, currentState);
-        GuaniaoNetwork.sendToServer(new SetCameraSettingsPacket(viewfinderHand, currentState));
+        ClientPlayNetworking.send(new SetCameraSettingsPacket(viewfinderHand, currentState));
     }
 }

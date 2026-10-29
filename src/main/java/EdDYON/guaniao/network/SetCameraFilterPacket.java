@@ -3,14 +3,26 @@ package EdDYON.guaniao.network;
 import EdDYON.guaniao.content.camera.CameraFilter;
 import EdDYON.guaniao.content.camera.CameraSettingsData;
 import EdDYON.guaniao.registry.GuaniaoItems;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import EdDYON.guaniao.GuaniaoMod;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public record SetCameraFilterPacket(InteractionHand hand, CameraFilter filter) {
+public record SetCameraFilterPacket(InteractionHand hand, CameraFilter filter) implements CustomPacketPayload {
+    public static final Type<SetCameraFilterPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "set_camera_filter"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, SetCameraFilterPacket> CODEC =
+            StreamCodec.of((RegistryFriendlyByteBuf buffer, SetCameraFilterPacket packet) ->
+                    encode(packet, buffer), SetCameraFilterPacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+
     public static void encode(SetCameraFilterPacket packet, FriendlyByteBuf buffer) {
         buffer.writeEnum(packet.hand);
         buffer.writeVarInt(packet.filter.id());
@@ -20,18 +32,10 @@ public record SetCameraFilterPacket(InteractionHand hand, CameraFilter filter) {
         return new SetCameraFilterPacket(buffer.readEnum(InteractionHand.class), CameraFilter.byId(buffer.readVarInt()));
     }
 
-    public static void handle(SetCameraFilterPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) {
-                return;
-            }
-            ItemStack camera = player.getItemInHand(packet.hand);
-            if (camera.is(GuaniaoItems.NIKON_D750.get())) {
-                CameraSettingsData.setFilter(camera, packet.filter);
-            }
-        });
-        context.setPacketHandled(true);
+    public void handle(ServerPlayer player) {
+        ItemStack camera = player.getItemInHand(hand);
+        if (camera.is(GuaniaoItems.NIKON_D750.get())) {
+            CameraSettingsData.setFilter(camera, filter);
+        }
     }
 }

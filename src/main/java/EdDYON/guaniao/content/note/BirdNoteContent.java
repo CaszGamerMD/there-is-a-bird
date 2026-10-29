@@ -253,9 +253,9 @@ public final class BirdNoteContent {
     private BirdNoteContent() {
     }
 
-    /** Returns a note book for this loot context, or {@link ItemStack#EMPTY} when no note spawns. */
-    public static ItemStack roll(LootContext context) {
-        int tier = tierIndex(context.getQueriedLootTableId());
+    /** Returns a note book for the identified loot table, or {@link ItemStack#EMPTY} when no note spawns. */
+    public static ItemStack roll(LootContext context, Identifier lootTableId) {
+        int tier = tierIndex(lootTableId);
         if (tier < 0) {
             return ItemStack.EMPTY;
         }

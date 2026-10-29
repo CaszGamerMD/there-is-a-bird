@@ -102,6 +102,8 @@ jobs:
         run: python3 tools/check-feather-fan-combat-port.py
       - name: Verify original bird feathers, no-death-loot rule and golden rewards
         run: python3 tools/check-bird-death-drops-port.py
+      - name: Verify Fabric chest-note loot insertion and source rarity parity
+        run: python3 tools/check-bird-note-loot-port.py
       - name: Verify authored bird note content and 26.2 advancement callbacks
         run: python3 tools/check-bird-note-components-port.py
       - name: Verify packaged 26.2 advancement display icons

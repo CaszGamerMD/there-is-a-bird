@@ -11,7 +11,8 @@
     "VillagerTradePriceMixin",
     "WeightedPressurePlateBlockMixin",
     "BirdDeathDropsMixin",
-    "ItemEntityAgeAccessor"
+    "ItemEntityAgeAccessor",
+    "BirdPotentialSpawnsMixin"
   ],
   "client": [],
   "server": [],

@@ -1,6 +1,8 @@
 package EdDYON.guaniao.content.dropping;
 
 import net.minecraft.advancements.Advancement;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,8 +16,9 @@ public final class BirdDroppingMessageUtil {
 
     public static Component stableTooltip(String prefix, ItemStack stack) {
         int hash = stack.getHoverName().getString().hashCode();
-        if (stack.hasTag()) {
-            hash = 31 * hash + stack.getTag().toString().hashCode();
+        CustomData custom = stack.get(DataComponents.CUSTOM_DATA);
+        if (custom != null) {
+            hash = 31 * hash + custom.copyTag().toString().hashCode();
         }
         int index = Math.floorMod(hash, MESSAGE_COUNT);
         return Component.translatable(prefix + "." + index);

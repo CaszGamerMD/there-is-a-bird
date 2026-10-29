@@ -556,3 +556,34 @@ CI compares all four *complete original source files* against exact
 mechanical 26.2 substitutions and fails on any other line change.
 The action/use, physics, saved-state, spawning and rendering APIs are
 **not yet fully ported**; this is not a playable build.
+
+
+## 2026-10-29 — 26.2 source compatibility and fish-capture hook checkpoint
+
+The private experimental branch has continued without changing game assets or
+original bird decision constants:
+
+- Relocated `Villager`, `IronGolem` and `AbstractFish` to their Minecraft
+  26.2 packages in the server bird-tick handler, droppings gameplay, villager
+  pricing mixin and night-heron fishing helper/event.
+- Updated 17 remaining bird navigation, habitat, sound and social-behavior
+  helper classes from `javax.annotation.Nullable` to JetBrains `Nullable`.
+  Their annotated contracts and gameplay method bodies are unchanged.
+- Replaced the night-heron's one Forge cancellable fish-capture event with a
+  Fabric array-backed event. Registered listeners can still veto a capture.
+  Rechecking capture eligibility after the callback, discarding a captured
+  fish only after that recheck, and the existing anti-reentrancy reset remain
+  in the original order.
+- Added `tools/check-bird-relocated-api.py`,
+  `tools/check-night-heron-capture-port.py`, the authored-source parity
+  allowance for the heron event substitution, and two standalone Java
+  API compilation probes. CI references these checks.
+
+**Verification status:** The commits are in GitHub, but GitHub Actions attempts
+on 2026-10-29 failed before a runner started (no job steps/logs). Consequently
+the new probes have **not** been validated by a real Gradle compile. The
+last executable `compileJava` result still contains legacy Forge/GeckoLib
+and Minecraft 26.2 API errors across other source files. Client, server,
+spawning, fish capture, existing-save, and visual checks remain outstanding.
+This is **not a playable build or release**. Keep the PR draft and repository
+private; do not merge to `main` or distribute asset-containing artifacts.

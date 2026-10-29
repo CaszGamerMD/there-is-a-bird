@@ -88,6 +88,8 @@ jobs:
         run: python3 tools/check-night-heron-capture-port.py
       - name: Verify native tick-driven bird droppings without retired Forge subscriber
         run: python3 tools/check-bird-dropping-subscription.py
+      - name: Verify prank-food data components, eating callback and tooltips
+        run: python3 tools/check-prank-food-port.py
       - name: Verify original feather and droppings lifetimes via native 26.2 item ages
         run: python3 tools/check-bird-ambient-drop-port.py
       - name: Verify original bird shearing, regrowth and persistent flight restriction

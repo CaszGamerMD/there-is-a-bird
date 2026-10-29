@@ -6,8 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.network.Filterable;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.WrittenBookContent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
@@ -326,15 +329,14 @@ public final class BirdNoteContent {
 
     private static ItemStack makeBook(String title, String author, String bodyKey) {
         ItemStack book = new ItemStack(Items.WRITTEN_BOOK);
-        CompoundTag tag = new CompoundTag();
-        tag.putString("title", title);
-        tag.putString("author", author);
-        tag.putBoolean("resolved", true);
-        tag.putByte(NOTE_TAG, (byte) 1);
-        ListTag pages = new ListTag();
-        pages.add(StringTag.valueOf("{\"translate\":\"" + bodyKey + "\"}"));
-        tag.put("pages", pages);
-        book.setTag(tag);
+        // Preserve the original title, author, one translated page and resolved flag.
+        book.set(DataComponents.WRITTEN_BOOK_CONTENT,
+                new WrittenBookContent(Filterable.passThrough(title), author, 0,
+                        List.of(Filterable.passThrough(Component.translatable(bodyKey))), true));
+        // Vanilla 26.2 stores custom note markers independently of written pages.
+        CompoundTag marker = new CompoundTag();
+        marker.putByte(NOTE_TAG, (byte) 1);
+        book.set(DataComponents.CUSTOM_DATA, CustomData.of(marker));
         return book;
     }
 

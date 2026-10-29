@@ -68,6 +68,8 @@ jobs:
         run: python3 tools/check-bird-entity-events.py
       - name: Verify original vanilla Creative tab contents
         run: python3 tools/check-bird-creative.py
+      - name: Verify 26.2 bird weighted spawn pools and repopulation source parity
+        run: python3 tools/check-bird-weighted-spawns-port.py
       - name: Verify bird repopulation cadence and loaded-world cleanup in Fabric
         run: python3 tools/check-bird-repopulation-lifecycle.py
       - name: Verify 26.2 flyby initializers and kingfisher spawn-egg bypass

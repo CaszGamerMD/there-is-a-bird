@@ -109,7 +109,7 @@ public final class BirdRepopulationEvents {
         if (!isEnabled(level) || !isUsableSite(level, surface)) return 0;
 
         // Read the loaded biome list, rather than asking the generator to resolve
-        // distant structure references. Keep datapack entries and Forge vetoes.
+        // distant structure references. Reapply the original bird modifiers.
         var biomeSpawns = level.getBiome(surface).value().getMobSettings().getMobs(MobCategory.CREATURE);
         var configured = BirdSpawnConfigEvents.adjustedPotentialSpawns(level, surface, biomeSpawns);
         List<Weighted<MobSpawnSettings.SpawnerData>> candidates = new ArrayList<>();
@@ -155,7 +155,7 @@ public final class BirdRepopulationEvents {
             if (atPosition.unwrap().stream().noneMatch(entry -> entry.value().type() == data.type())) continue;
             if (!SpawnPlacements.isSpawnPositionOk(data.type(), level, pos)
                     || !SpawnPlacements.checkSpawnRules(data.type(), level, EntitySpawnReason.NATURAL, pos, level.getRandom())
-                    || !level.noCollision(data.type().getAABB(x + 0.5D, pos.getY(), z + 0.5D))) continue;
+                    || !level.noCollision(data.type().getSpawnAABB(x + 0.5D, pos.getY(), z + 0.5D))) continue;
 
             Entity entity = data.type().create(level, EntitySpawnReason.NATURAL);
             if (!(entity instanceof Mob mob)) continue;

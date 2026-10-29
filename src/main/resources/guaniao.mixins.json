@@ -12,7 +12,8 @@
     "WeightedPressurePlateBlockMixin",
     "BirdDeathDropsMixin",
     "ItemEntityAgeAccessor",
-    "BirdPotentialSpawnsMixin"
+    "BirdPotentialSpawnsMixin",
+    "PrankFoodFinishMixin"
   ],
   "client": [],
   "server": [],

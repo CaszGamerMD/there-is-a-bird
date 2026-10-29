@@ -103,6 +103,15 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
             "import com.geckolib.animation.AnimationController;\nimport com.geckolib.animation.RawAnimation;")
         expected = expected.replace("new AnimationController<>(this, ", "new AnimationController<>(")
 
+    # The original cancellable Forge fish-capture event is now an equivalent
+    # Fabric callback. Keep the cancellation BEFORE discarding the fish.
+    if relative.endswith("/nightheron/NightHeronEntity.java"):
+        expected = expected.replace("import net.minecraftforge.event.ForgeEventFactory;\n", "")
+        expected = expected.replace("import net.minecraftforge.common.MinecraftForge;\n", "")
+        expected = expected.replace(
+            "MinecraftForge.EVENT_BUS.post(new NightHeronFishCaptureEvent(this, fish, purpose))",
+            "NightHeronFishCaptureEvent.isCancelled(this, fish, purpose)")
+
     current = p.read_text("utf-8")
     # Git stores normalized line endings; CRLF in individual source files is
     # immaterial to this preservation test.

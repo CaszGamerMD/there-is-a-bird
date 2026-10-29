@@ -15,8 +15,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.FishingRodItem;
-import net.minecraftforge.event.ForgeEventFactory;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.world.entity.ai.control.BodyRotationControl;
 
 import EdDYON.guaniao.content.bird.flight.BirdFlightAnimation;
@@ -1177,7 +1175,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         if (this.level().isClientSide() || this.capturingFish || !this.canCaptureFish(fish, purpose)) return false;
         this.capturingFish = true;
         try {
-            if (MinecraftForge.EVENT_BUS.post(new NightHeronFishCaptureEvent(this, fish, purpose))
+            if (NightHeronFishCaptureEvent.isCancelled(this, fish, purpose)
                     || !this.canCaptureFish(fish, purpose)) return false;
             ItemStack caught = new ItemStack(itemForCaughtFish(fish));
             fish.discard();

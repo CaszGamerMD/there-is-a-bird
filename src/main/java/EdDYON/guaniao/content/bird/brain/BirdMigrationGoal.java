@@ -8,7 +8,7 @@ import EdDYON.guaniao.content.bird.flight.BirdFlightController;
 import EdDYON.guaniao.content.bird.flight.BirdFlightTargeting;
 import java.util.EnumSet;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;

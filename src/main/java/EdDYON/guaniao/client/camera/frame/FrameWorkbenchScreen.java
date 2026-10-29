@@ -5,7 +5,7 @@ import EdDYON.guaniao.content.camera.PhotographData;
 import EdDYON.guaniao.content.camera.frame.FrameDesign;
 import EdDYON.guaniao.content.camera.frame.FrameWorkbenchMenu;
 import EdDYON.guaniao.network.CraftFramePacket;
-import EdDYON.guaniao.network.GuaniaoNetwork;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -140,7 +140,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
             this.workshopClock.reset(0,System.nanoTime());
             this.turning=false;this.draggingDecoration=false;this.painting=false;
             this.readyFlashTicks=0;this.statusTicks=0;this.setFocused(null);
-            GuaniaoNetwork.sendToServer(new CraftFramePacket(this.menu.containerId,this.pendingRevision,this.design));
+            ClientPlayNetworking.send(new CraftFramePacket(this.menu.containerId,this.pendingRevision,this.design));
             this.updateCraftingWidgets();
         });
         this.craftButton.active=!this.invalidOutline && !this.isCraftingUi() && this.menu.canCraft(this.design);

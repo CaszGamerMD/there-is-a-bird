@@ -4,7 +4,7 @@ import EdDYON.guaniao.config.FrameWorkbenchConfig;
 import EdDYON.guaniao.content.camera.LegacyPhotoMigration;
 import EdDYON.guaniao.content.camera.PhotographData;
 import EdDYON.guaniao.network.FrameWorkSnapshotPacket;
-import EdDYON.guaniao.network.GuaniaoNetwork;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import EdDYON.guaniao.registry.GuaniaoBlocks;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import EdDYON.guaniao.registry.GuaniaoMenuTypes;
@@ -178,8 +178,8 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
         if (!closed && work != null && owner instanceof ServerPlayer player
                 && player.containerMenu == this && sentSnapshotVersion != work.snapshotVersion) {
             sentSnapshotVersion = work.snapshotVersion;
-            GuaniaoNetwork.sendToPlayer(new FrameWorkSnapshotPacket(containerId, workbenchPos,
-                    work.preview().copy(), work.seed, work.remaining, work.revision), player);
+            ServerPlayNetworking.send(player, new FrameWorkSnapshotPacket(containerId, workbenchPos,
+                    work.preview().copy(), work.seed, work.remaining, work.revision));
         }
     }
 

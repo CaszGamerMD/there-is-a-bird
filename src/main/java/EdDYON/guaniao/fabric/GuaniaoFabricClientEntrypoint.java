@@ -9,6 +9,8 @@ import EdDYON.guaniao.network.PhotoCaptureResultPacket;
 import EdDYON.guaniao.network.PhotoDownloadStartPacket;
 import EdDYON.guaniao.network.PhotoDownloadChunkPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import EdDYON.guaniao.network.FrameWorkSnapshotPacket;
+import EdDYON.guaniao.content.camera.frame.FrameWorkbenchMenu;
 import net.fabricmc.api.ClientModInitializer;
 
 /** Client bootstrap; feature registrations are restored as their 26.2 ports compile. */
@@ -26,6 +28,14 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
                 (packet, context) -> PhotoClientRepository.beginDownload(packet.photoId(), packet.found(), packet.totalBytes(), packet.width(), packet.height(), packet.contentHash()));
         ClientPlayNetworking.registerGlobalReceiver(PhotoDownloadChunkPacket.TYPE,
                 (packet, context) -> PhotoClientRepository.acceptDownloadChunk(packet.photoId(), packet.chunkIndex(), packet.data()));
+        ClientPlayNetworking.registerGlobalReceiver(FrameWorkSnapshotPacket.TYPE, (packet, context) -> {
+            var player = context.client().player;
+            if (player != null && player.containerMenu instanceof FrameWorkbenchMenu menu
+                    && menu.containerId == packet.containerId()) {
+                menu.acceptWorkSnapshot(packet.pos(), packet.preview(), packet.seed(),
+                        packet.remaining(), packet.revision());
+            }
+        });
         // Camera screens, all GeckoLib bird renderers, layers and sound loops
         // must also be registered before the private build can run.
     }

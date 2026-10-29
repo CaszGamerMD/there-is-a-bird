@@ -4,6 +4,8 @@ import EdDYON.guaniao.network.FeatherFanPiercePacket;
 import EdDYON.guaniao.network.BirdRuntimeConfigPacket;
 import EdDYON.guaniao.network.SetCameraFilterPacket;
 import EdDYON.guaniao.network.SetCameraSettingsPacket;
+import EdDYON.guaniao.network.CraftFramePacket;
+import EdDYON.guaniao.network.FrameWorkSnapshotPacket;
 import EdDYON.guaniao.network.PhotoDownloadChunkPacket;
 import EdDYON.guaniao.network.PhotoDownloadStartPacket;
 import EdDYON.guaniao.network.PhotoCaptureResultPacket;
@@ -55,5 +57,10 @@ public final class GuaniaoFabricNetworking {
                 SetCameraSettingsPacket.TYPE, SetCameraSettingsPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(
                 SetCameraSettingsPacket.TYPE, (packet, context) -> packet.handle(context.player()));
+        PayloadTypeRegistry.serverboundPlay().register(CraftFramePacket.TYPE, CraftFramePacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(
+                CraftFramePacket.TYPE, (packet, context) -> packet.handle(context.player()));
+        PayloadTypeRegistry.clientboundPlay().register(
+                FrameWorkSnapshotPacket.TYPE, FrameWorkSnapshotPacket.CODEC);
     }
 }

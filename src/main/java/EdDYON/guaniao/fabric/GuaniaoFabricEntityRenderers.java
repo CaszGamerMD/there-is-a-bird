@@ -3,6 +3,7 @@ package EdDYON.guaniao.fabric;
 import EdDYON.guaniao.client.entity.budgerigar.BudgerigarRenderer;
 import EdDYON.guaniao.client.entity.columbid.PigeonRenderer;
 import EdDYON.guaniao.client.entity.columbid.SpottedDoveRenderer;
+import EdDYON.guaniao.client.entity.cockatoo.CockatooRenderer;
 import EdDYON.guaniao.client.entity.kiwi.KiwiRenderer;
 import EdDYON.guaniao.client.entity.longtailedtit.LongTailedTitRenderer;
 import EdDYON.guaniao.client.entity.macaw.MacawRenderer;
@@ -28,5 +29,6 @@ public final class GuaniaoFabricEntityRenderers {
         EntityRendererRegistry.register(GuaniaoEntityTypes.BUDGERIGAR.get(), BudgerigarRenderer::new);
         EntityRendererRegistry.register(GuaniaoEntityTypes.PIGEON.get(), PigeonRenderer::new);
         EntityRendererRegistry.register(GuaniaoEntityTypes.SPOTTED_DOVE.get(), SpottedDoveRenderer::new);
+        EntityRendererRegistry.register(GuaniaoEntityTypes.COCKATOO.get(), CockatooRenderer::new);
     }
 }

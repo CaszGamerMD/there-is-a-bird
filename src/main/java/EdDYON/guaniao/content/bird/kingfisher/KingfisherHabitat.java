@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -27,8 +27,8 @@ public final class KingfisherHabitat {
 
     private KingfisherHabitat() { }
 
-    public static boolean canSpawn(ServerLevelAccessor level, MobSpawnType reason, BlockPos pos) {
-        if (reason == MobSpawnType.SPAWN_EGG || reason == MobSpawnType.COMMAND) return true;
+    public static boolean canSpawn(ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos) {
+        if (reason == EntitySpawnReason.SPAWN_ITEM_USE || reason == EntitySpawnReason.COMMAND) return true;
         if (!loaded(level, pos) || !loaded(level, pos.below()) || !loaded(level, pos.above())) return false;
         if (level.getRawBrightness(pos, 0) < 8 || !clearAir(level, pos) || !clearAir(level, pos.above())) return false;
         BlockState support = level.getBlockState(pos.below());

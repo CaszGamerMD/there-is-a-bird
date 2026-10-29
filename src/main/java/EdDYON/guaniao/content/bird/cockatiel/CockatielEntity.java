@@ -15,7 +15,7 @@ import EdDYON.guaniao.content.bird.scale.BirdModelScaleProfile;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -208,7 +208,7 @@ public class CockatielEntity extends BudgerigarEntity {
     }
 
     @Override
-    public ResourceLocation getTextureResource() {
+    public Identifier getTextureResource() {
         return CockatielDefinition.textureForVariant(this.getSkinVariant());
     }
 

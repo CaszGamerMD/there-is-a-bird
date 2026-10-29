@@ -13,7 +13,7 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -32,7 +32,7 @@ import net.minecraft.world.level.Level;
  * across the bird like streaks of shimmering light.
  */
 public final class BirdMutationTextureFactory {
-    private static final Map<String, ResourceLocation> CACHE = new HashMap<>();
+    private static final Map<String, Identifier> CACHE = new HashMap<>();
 
     private static final int RAINBOW_FRAME_COUNT = 24;
 
@@ -49,7 +49,7 @@ public final class BirdMutationTextureFactory {
     }
 
     /** Returns the mutation texture for the entity, or the base texture when it is not mutated. */
-    public static ResourceLocation textureFor(ResourceLocation base, Entity entity) {
+    public static Identifier textureFor(Identifier base, Entity entity) {
         if (entity instanceof BirdMutationHolder holder) {
             BirdMutation mutation = holder.getBirdMutation();
             if (mutation != BirdMutation.NONE) {
@@ -59,21 +59,21 @@ public final class BirdMutationTextureFactory {
         return base;
     }
 
-    private static ResourceLocation getTexture(ResourceLocation base, BirdMutation mutation) {
+    private static Identifier getTexture(Identifier base, BirdMutation mutation) {
         if (mutation == BirdMutation.RAINBOW) {
             return getRainbowTexture(base);
         }
         String key = mutation.name() + "|" + base;
-        ResourceLocation cached = CACHE.get(key);
+        Identifier cached = CACHE.get(key);
         if (cached != null) {
             return cached;
         }
-        ResourceLocation generated = generate(base, mutation);
+        Identifier generated = generate(base, mutation);
         CACHE.put(key, generated);
         return generated;
     }
 
-    private static ResourceLocation generate(ResourceLocation base, BirdMutation mutation) {
+    private static Identifier generate(Identifier base, BirdMutation mutation) {
         try {
             NativeImage source = readSource(base);
             int width = source.getWidth();
@@ -88,7 +88,7 @@ public final class BirdMutationTextureFactory {
             DynamicTexture texture = new DynamicTexture(out);
             texture.upload();
             String safePath = base.getPath().replace('/', '_');
-            ResourceLocation location = new ResourceLocation(
+            Identifier location = Identifier.fromNamespaceAndPath(
                     "guaniao", "dynamic/mutations/" + mutation.name().toLowerCase(Locale.ROOT) + "/" + safePath);
             Minecraft.getInstance().getTextureManager().register(location, texture);
             return location;
@@ -97,9 +97,9 @@ public final class BirdMutationTextureFactory {
         }
     }
 
-    private static ResourceLocation getRainbowTexture(ResourceLocation base) {
+    private static Identifier getRainbowTexture(Identifier base) {
         String key = "RAINBOW|" + base;
-        ResourceLocation cached = CACHE.get(key);
+        Identifier cached = CACHE.get(key);
         if (cached != null) {
             return cached;
         }
@@ -113,7 +113,7 @@ public final class BirdMutationTextureFactory {
             }
             source.close();
             String safePath = base.getPath().replace('/', '_');
-            ResourceLocation location = new ResourceLocation("guaniao", "dynamic/mutations/rainbow/" + safePath);
+            Identifier location = Identifier.fromNamespaceAndPath("guaniao", "dynamic/mutations/rainbow/" + safePath);
             Minecraft.getInstance().getTextureManager().register(location, new RainbowAnimatedTexture(frames, width, height));
             CACHE.put(key, location);
             return location;
@@ -153,7 +153,7 @@ public final class BirdMutationTextureFactory {
         return out;
     }
 
-    private static NativeImage readSource(ResourceLocation base) throws IOException {
+    private static NativeImage readSource(Identifier base) throws IOException {
         try (InputStream in = Minecraft.getInstance().getResourceManager()
                 .getResource(base)
                 .orElseThrow(() -> new IOException("Missing texture: " + base))

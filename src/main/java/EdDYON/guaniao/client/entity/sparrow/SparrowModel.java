@@ -21,6 +21,8 @@ public class SparrowModel extends GeoModel<SparrowEntity> {
 
     @Override
     public void addAdditionalStateData(SparrowEntity animatable, Object relatedObject, GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
         BirdMutationRenderData.capture(renderState,
                 BirdMutationTextureFactory.textureFor(SparrowDefinition.TEXTURE, animatable));
     }

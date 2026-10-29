@@ -15,6 +15,9 @@ public final class BirdMutationRenderData {
     public static final DataTicket<Identifier> MUTATION_TEXTURE =
             DataTicket.create("guaniao_mutation_texture", Identifier.class);
 
+    public static final DataTicket<Float> MODEL_SCALE =
+            DataTicket.create("guaniao_bird_model_scale", Float.class);
+
     private BirdMutationRenderData() { }
 
     public static void capture(GeoRenderState renderState, Identifier texture) {

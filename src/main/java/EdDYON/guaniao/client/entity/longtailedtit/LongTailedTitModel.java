@@ -21,6 +21,8 @@ public class LongTailedTitModel extends GeoModel<LongTailedTitEntity> {
 
     @Override
     public void addAdditionalStateData(LongTailedTitEntity animatable, Object relatedObject, GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
         BirdMutationRenderData.capture(renderState,
                 BirdMutationTextureFactory.textureFor(LongTailedTitDefinition.TEXTURE, animatable));
     }

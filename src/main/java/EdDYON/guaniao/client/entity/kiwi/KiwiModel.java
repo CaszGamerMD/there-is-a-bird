@@ -21,6 +21,8 @@ public class KiwiModel extends GeoModel<KiwiEntity> {
 
     @Override
     public void addAdditionalStateData(KiwiEntity animatable, Object relatedObject, GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
         BirdMutationRenderData.capture(renderState,
                 BirdMutationTextureFactory.textureFor(KiwiDefinition.TEXTURE, animatable));
     }

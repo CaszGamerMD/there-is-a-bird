@@ -21,6 +21,8 @@ public class MynaModel extends GeoModel<MynaEntity> {
 
     @Override
     public void addAdditionalStateData(MynaEntity animatable, Object relatedObject, GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
         BirdMutationRenderData.capture(renderState,
                 BirdMutationTextureFactory.textureFor(MynaDefinition.TEXTURE, animatable));
     }

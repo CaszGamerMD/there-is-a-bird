@@ -18,18 +18,15 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class PhotoAdminCommands {
     private PhotoAdminCommands() {
     }
 
-    @SubscribeEvent
-    public static void onRegisterCommands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("guaniao")
+    public static void registerCallbacks() {
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+        dispatcher.register(Commands.literal("guaniao")
                 .requires(BirdConfigCommands::canEdit)
                 .then(Commands.literal("photo")
                         .then(Commands.literal("stats")
@@ -56,6 +53,7 @@ public final class PhotoAdminCommands {
                                         .executes(context -> maintenance(context.getSource(), true)))
                                 .then(Commands.literal("confirm")
                                         .executes(context -> maintenance(context.getSource(), false))))));
+        });
     }
 
     private static int stats(CommandSourceStack source, GameProfile profile) {

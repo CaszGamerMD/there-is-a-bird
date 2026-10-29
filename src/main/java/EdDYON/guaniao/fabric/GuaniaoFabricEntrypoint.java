@@ -20,6 +20,7 @@ import EdDYON.guaniao.event.FeatherFanCombatEvents;
 import EdDYON.guaniao.event.PrankFoodEvents;
 import EdDYON.guaniao.event.BirdNoteEvents;
 import EdDYON.guaniao.command.BirdConfigCommands;
+import EdDYON.guaniao.command.PhotoAdminCommands;
 import EdDYON.guaniao.content.bird.flight.BirdFlightLock;
 import EdDYON.guaniao.event.CrowNestLifecycleEvents;
 import EdDYON.guaniao.event.EarthwormRainEvents;
@@ -90,6 +91,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         PrankFoodEvents.registerCallbacks();
         BirdNoteEvents.registerCallbacks();
         BirdConfigCommands.registerCallbacks();
+        PhotoAdminCommands.registerCallbacks();
         GuaniaoLootModifierSerializers.registerCallbacks();
 
         // TODO: register migrated menus, recipes, effects, enchantments,

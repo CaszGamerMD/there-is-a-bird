@@ -94,6 +94,8 @@ jobs:
         run: python3 tools/check-bird-ambient-drop-port.py
       - name: Verify original bird shearing, regrowth and persistent flight restriction
         run: python3 tools/check-bird-shearing-port.py
+      - name: Verify seven Fabric photo-transfer payloads preserve original bounded wire codecs
+        run: python3 tools/check-photo-transfer-network-port.py
       - name: Verify Fabric runtime-config synchronization and original boolean order
         run: python3 tools/check-runtime-config-network-port.py
       - name: Verify charged feather fan Fabric input and C2S packet chain

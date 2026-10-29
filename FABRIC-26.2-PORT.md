@@ -640,3 +640,50 @@ These checks are source-level only until the GitHub Actions runner starts.
 The latest workflow attempt did not run build steps. Unported Forge event
 handling and broader spawning integration remain, so spawning in an actual
 world is **not yet verified**. No released or playable build.
+
+
+## 2026-10-29 — native weighted bird spawning and repopulation (source checkpoint)
+
+Migrated the prior Forge `PotentialSpawns` adjustment logic into an explicit
+`BirdSpawnConfigEvents.adjustedPotentialSpawns` function for Minecraft 26.2,
+then wired both call sites in the existing bird repopulation scheduler.
+
+Minecraft 26.2 represents biome spawn pools as `WeightedList<SpawnerData>`
+and each entry as `Weighted<SpawnerData>`. The `SpawnerData` itself is a
+record with `type()`, `minCount()` and `maxCount()` (weight is no longer a
+field of `SpawnerData`). The new code keeps per-species spawn multipliers,
+original hummingbird threefold garden cap, 1.0–1.15 songbird multiplier,
+colony group sizes, regional/nearby population ceilings, entry cache limit
+of 512 and unchanged biome entries for other mobs.
+
+The loaded-world repopulator now:
+- Adjusts candidate spawn weights through the original positional policy
+  before applying its unchanged underrepresented-species adjustment.
+- Draws through native `WeightedList.getRandom` using the same server RNG;
+  the 4-bird pack limit, retry rate, scan budget and species/biome filtering
+  remain in place.
+- Rechecks the adjusted spawn list at each actual candidate position.
+- Uses native 26.2 `SpawnPlacements.isSpawnPositionOk`, mob spawn and
+  obstruction checks, four-argument `Mob.finalizeSpawn`, `EntityType.create`
+  with the `NATURAL` reason, `getSpawnAABB` and
+  `Mob.getMaxSpawnClusterSize` in place of the removed Forge wrappers.
+- Uses `level.getRandom()` rather than old mutable random field access.
+
+Added `tools/check-bird-weighted-spawns-port.py` and
+`tools/port-probes/GuaniaoWeightedSpawnProof.java`, both registered in
+the existing CI checks; source inspection confirms original numeric cadence
+constants, garden multipliers, cap expressions, vanilla/non-bird spawn-entry
+retention and both new call sites.
+
+**Known remaining limitations:** this explicit path covers the custom
+repopulation scheduler only. The original Forge event also modified the
+ordinary vanilla natural-spawn pool; 26.2 vanilla `NaturalSpawner` does not
+call the new helper. A separately validated Fabric/Mixin hook is required
+before claiming ordinary natural-spawn parity. Forge third-party potential-
+spawn vetoes must also be re-evaluated against modern Fabric integration
+rather than silently assumed preserved.
+
+GitHub Actions is currently failing before assigning a runner (zero steps
+executed), so the new Java proof, checker, full compile, dedicated-server
+start, actual world spawning, and client checks are **not verified**.
+Do not merge the draft PR or distribute an asset-containing JAR.

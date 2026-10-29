@@ -71,4 +71,19 @@ for stem, converted_renderer in MODELS.items():
     before_radius = re.search(r"this\.shadowRadius = [^;]+;", original_renderer)
     assert before_radius and before_radius.group(0) in renderer
 
-print("GECKOLIB 5 BIRD STATE PARITY OK: 7 model texture snapshots, 4 renderer scales, unmodified mutation color formulas")
+registry = current("fabric/GuaniaoFabricEntityRenderers.java")
+client = current("fabric/GuaniaoFabricClientEntrypoint.java")
+assert "GuaniaoFabricEntityRenderers.register();" in client
+registered = {
+    "KIWI": "Kiwi",
+    "SPARROW": "Sparrow",
+    "MYNA": "Myna",
+    "LONG_TAILED_TIT": "LongTailedTit",
+    "MACAW": "Macaw",
+    "BUDGERIGAR": "Budgerigar",
+}
+for entity, name in registered.items():
+    assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
+assert registry.count("EntityRendererRegistry.register(") == len(registered)
+assert "net.minecraftforge" not in registry
+print("GECKOLIB 5 BIRD STATE PARITY OK: 9 model texture snapshots, 6 renderer scales and client registrations, unmodified mutation color formulas")

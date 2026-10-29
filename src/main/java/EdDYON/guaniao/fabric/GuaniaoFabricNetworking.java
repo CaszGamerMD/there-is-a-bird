@@ -20,7 +20,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 /**
  * Incremental native 26.2 networking registration.
- * The remaining camera settings, config-save and frame-crafting channels are not yet migrated.
+ * All original play packet types are registered here; their gameplay and client
+ * screens still require full compile and in-world verification.
  */
 public final class GuaniaoFabricNetworking {
     private GuaniaoFabricNetworking() { }

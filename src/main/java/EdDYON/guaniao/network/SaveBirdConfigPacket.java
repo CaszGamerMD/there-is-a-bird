@@ -9,6 +9,7 @@ import EdDYON.guaniao.event.BirdPopulationTracker;
 import net.minecraft.network.FriendlyByteBuf;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import EdDYON.guaniao.GuaniaoMod;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -42,7 +43,7 @@ public final class SaveBirdConfigPacket implements CustomPacketPayload {
     }
 
     public void handle(ServerPlayer player) {
-            if (player == null || (!player.hasPermissions(2)
+            if (player == null || (!player.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)
                     && (player.server == null || !player.server.isSingleplayerOwner(player.getGameProfile())))) {
                 return;
             }

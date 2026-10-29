@@ -24,7 +24,7 @@ for item in paths:
     )
     expected = expected.replace(
         "import com.geckolib.renderer.base.GeoRenderState;",
-        "import com.geckolib.renderer.base.GeoRenderState;\\nimport EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;",
+        "import com.geckolib.renderer.base.GeoRenderState;\nimport EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;",
     )
     expected = expected.replace("return MODEL;", "return GuaniaoGeckoAssets.model(MODEL);")
     expected = expected.replace("return ANIMATION;", "return GuaniaoGeckoAssets.animation(ANIMATION);")

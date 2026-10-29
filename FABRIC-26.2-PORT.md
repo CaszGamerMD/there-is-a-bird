@@ -840,3 +840,53 @@ as tested in-game until a full client/server build loads and transfer
 round-trips succeed. The author-required asset distribution restrictions
 continue to apply. This checkpoint neither produces nor authorizes a
 redistributable JAR.
+
+
+## 2026-10-29 — full original play-protocol mapping and command port (source checkpoint)
+
+All **15** original Forge `GuaniaoNetwork.CHANNEL.messageBuilder` entries
+are now represented exactly once by 26.2 Fabric
+`PayloadTypeRegistry.serverboundPlay/clientboundPlay` registrations.
+Compared the original class list against the branch: **15 originals, 15
+Fabric entries, zero missing, zero duplicates**. The original direction
+and server/client receiver for each are retained in the Fabric initializers.
+
+Recent contained migrations:
+- `SetCameraFilterPacket`, `SetCameraSettingsPacket` and
+  `CameraClientCapture`: native Fabric serverbound settings transport;
+  preserve original camera-item check, state codecs and non-finite focal/
+  focus-distance rejection.
+- `CraftFramePacket`, `FrameWorkSnapshotPacket`, frame screen and menu:
+  native serverbound crafting and clientbound owner-only work snapshots;
+  item previews now use 26.2 `ItemStack.OPTIONAL_STREAM_CODEC` with
+  `RegistryFriendlyByteBuf` instead of retired `writeItem/readItem`.
+- `OpenBirdConfigPacket`, `SaveBirdConfigPacket`, `BirdConfigScreen`:
+  preserve original `BirdConfigPacketCodec` wire fields and server-only
+  config authorization, population-tracker rebuild and droppings reset
+  behavior. Operator check uses 26.2 `Permissions.COMMANDS_MODERATOR`.
+- `BirdConfigCommands` and `PhotoAdminCommands`: replace Forge's
+  command-registration event with Fabric `CommandRegistrationCallback`
+  while retaining the authored command and admin operations.
+- The old Forge `SimpleChannel` body in `GuaniaoNetwork` is gone;
+  this legacy class is a server-only send compatibility adapter.
+  All known client senders now use `ClientPlayNetworking` directly.
+
+`tools/check-final-network-port.py` compares original vs migrated
+camera/config/frame encoder and decoder bodies, original network IDs,
+directions and registrations, command names, permission checks, and
+searches the entire Java source tree for obsolete
+`GuaniaoNetwork.sendToServer` and `GuaniaoNetwork.CHANNEL` usages.
+The isolated `GuaniaoFinalNetworkingProof.java` compiles command
+registrations, 26.2 permission capabilities and registry-aware frame
+preview codecs once the CI runner is able to run.
+Source inspection confirmed all 15 registered payload classes, not a
+working in-game client/server protocol.
+
+**Private JAR release gate still not passed.** The full Java sources
+retain other Forge and legacy GeckoLib/client-screen APIs. GitHub
+Actions jobs have been failing with runner ID 0 and zero steps executed.
+Full `./gradlew compileJava`, `build`, server startup, player join,
+all command paths, the photo-transfer round-trip and visual renderer
+tests are **not verified**. The draft PR is not ready to merge. Respect
+the original model/texture rights; do not distribute a modified
+asset-containing JAR without the author's permission.

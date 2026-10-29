@@ -8,7 +8,7 @@ import java.util.Set;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -353,7 +353,7 @@ public final class BirdNoteContent {
         return weights.length - 1;
     }
 
-    private static int tierIndex(ResourceLocation table) {
+    private static int tierIndex(Identifier table) {
         if (!"minecraft".equals(table.getNamespace())) {
             return -1;
         }

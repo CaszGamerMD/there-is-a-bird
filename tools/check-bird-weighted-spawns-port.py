@@ -70,6 +70,8 @@ for token in (
     "BirdPopulationTracker.totalAt(level, player.getX(), player.getZ())",
 ):
     assert token in repopulation, token
+assert "TickEvent.LevelTickEvent" in old_repopulation
+assert "LevelEvent.Unload" in old_repopulation
 for token in ("ServerTickEvents.END_LEVEL_TICK.register", "ServerLevelEvents.UNLOAD.register"):
-    assert token in old_repopulation and token in repopulation, token
+    assert token in repopulation, token
 print("PASS: original spawn weights, habitat modifiers, caps, flock policy and cooldown constants retained")

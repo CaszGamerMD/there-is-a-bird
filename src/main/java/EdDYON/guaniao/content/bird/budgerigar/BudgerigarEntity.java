@@ -54,7 +54,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -118,7 +118,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
     public static final String MUTATION_NBT_KEY = "BirdMutation";
     private static final byte TAMING_FAILED_EVENT = 6;
     private static final byte TAMING_SUCCEEDED_EVENT = 7;
-    private static final ResourceLocation CHIRPY_PARTNER_ADVANCEMENT = new ResourceLocation("guaniao", "husbandry/chirpy_partner");
+    private static final Identifier CHIRPY_PARTNER_ADVANCEMENT = Identifier.fromNamespaceAndPath("guaniao", "husbandry/chirpy_partner");
     private static final int MUSIC_SCAN_RADIUS = 8;
     private static final int MUSIC_GROUP_RADIUS = 10;
     private static final int AMBIENT_AIR_CRUISE_MIN_TICKS = 110;
@@ -567,7 +567,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
         this.behaviorStateLockTicks = Math.max(this.behaviorStateLockTicks, ticks);
     }
 
-    public ResourceLocation getTextureResource() {
+    public Identifier getTextureResource() {
         return BudgerigarDefinition.textureForVariant(this.getSkinVariant());
     }
 
@@ -1670,7 +1670,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return;
         }
-        var advancement = serverPlayer.server.getAdvancements().getAdvancement(CHIRPY_PARTNER_ADVANCEMENT);
+        var advancement = serverPlayer.getServer().getAdvancements().get(CHIRPY_PARTNER_ADVANCEMENT);
         if (advancement != null) {
             serverPlayer.getAdvancements().award(advancement, "tame_budgerigar");
         }

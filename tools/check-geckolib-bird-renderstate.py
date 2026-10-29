@@ -16,6 +16,7 @@ MODELS = {
     "nightheron/NightHeron": False,
     "crow/Crow": False,
     "macaw/Macaw": True,
+    "budgerigar/Budgerigar": True,
 }
 
 def original(path):

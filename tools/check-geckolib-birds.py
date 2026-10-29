@@ -46,8 +46,15 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
                                     "net.minecraft.world.level.chunk.status.ChunkStatus")
     # Minecraft 26.2 ResourceLocation -> Identifier retains all authored IDs,
     # including Kestrel's serialized learned-item name and Crow's texture path.
-    if p.name in ("CrowEntity.java", "KestrelEntity.java"):
+    if p.name in ("CrowEntity.java", "KestrelEntity.java", "MacawEntity.java", "BudgerigarEntity.java"):
         expected = expected.replace("ResourceLocation", "Identifier")
+        if p.name == "BudgerigarEntity.java":
+            expected = expected.replace(
+                'new Identifier("guaniao", "husbandry/chirpy_partner")',
+                'Identifier.fromNamespaceAndPath("guaniao", "husbandry/chirpy_partner")')
+            expected = expected.replace(
+                'serverPlayer.server.getAdvancements().getAdvancement(CHIRPY_PARTNER_ADVANCEMENT)',
+                'serverPlayer.getServer().getAdvancements().get(CHIRPY_PARTNER_ADVANCEMENT)')
     # 26.2 removed FlyingAnimal; preserve its omnidirectional flight semantics
     # by overriding the new Entity method while leaving isFlying() body intact.
     if "import net.minecraft.world.entity.animal.FlyingAnimal;" in expected:

@@ -1,5 +1,7 @@
 package EdDYON.guaniao.network;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+
 import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.content.camera.PhotoImageCodec;
@@ -212,11 +214,11 @@ public final class PhotoUploadManager {
                             loaded.width, loaded.height,
                             loaded.contentHash, now
                     );
-                    GuaniaoNetwork.sendToPlayer(new PhotoDownloadStartPacket(
+                    ServerPlayNetworking.send(online, new PhotoDownloadStartPacket(
                             photoId, true, loaded.data.length,
                             loaded.width, loaded.height,
                             loaded.contentHash
-                    ), online);
+                    ));
                     DOWNLOADS.put(playerId, new DownloadSession(photoId, loaded.data, loaded.contentHash, gameTime(server)));
                     DOWNLOAD_ORDER.addLast(playerId);
                 },
@@ -273,7 +275,7 @@ public final class PhotoUploadManager {
                 DOWNLOAD_ORDER.addFirst(playerId);
                 break;
             }
-            GuaniaoNetwork.sendToPlayer(session.nextPacket(), player);
+            ServerPlayNetworking.send(player, session.nextPacket());
             budget -= chunkBytes;
             // A session that keeps making progress must not be dropped while it waits in a
             // legitimate high-concurrency queue; measure timeout from the last successful chunk.
@@ -379,7 +381,7 @@ public final class PhotoUploadManager {
             }
             rememberCompleted(playerId, uploadId, gameTime(server));
             player.level().playSound(null, player.blockPosition(), SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.PLAYERS, 0.8F, 1.25F);
-            GuaniaoNetwork.sendToPlayer(new PhotoCaptureResultPacket(uploadId, true), player);
+            ServerPlayNetworking.send(player, new PhotoCaptureResultPacket(uploadId, true));
         } catch (RuntimeException exception) {
             GuaniaoMod.LOGGER.warn("Failed to deliver stored photograph {}", result.photoId, exception);
             if (!COMPLETED_UPLOADS.containsKey(new UploadKey(playerId, uploadId))) {
@@ -511,14 +513,14 @@ public final class PhotoUploadManager {
     }
 
     private static void fail(ServerPlayer player, UUID uploadId) {
-        GuaniaoNetwork.sendToPlayer(new PhotoCaptureResultPacket(uploadId, false), player);
+        ServerPlayNetworking.send(player, new PhotoCaptureResultPacket(uploadId, false));
     }
 
     private static boolean acknowledgeCompleted(ServerPlayer player, UUID uploadId) {
         if (!COMPLETED_UPLOADS.containsKey(new UploadKey(player.getUUID(), uploadId))) {
             return false;
         }
-        GuaniaoNetwork.sendToPlayer(new PhotoCaptureResultPacket(uploadId, true), player);
+        ServerPlayNetworking.send(player, new PhotoCaptureResultPacket(uploadId, true));
         return true;
     }
 
@@ -532,7 +534,7 @@ public final class PhotoUploadManager {
     }
 
     private static void sendMissing(ServerPlayer player, String photoId) {
-        GuaniaoNetwork.sendToPlayer(PhotoDownloadStartPacket.missing(photoId), player);
+        ServerPlayNetworking.send(player, PhotoDownloadStartPacket.missing(photoId));
     }
 
     private static long gameTime(MinecraftServer server) {

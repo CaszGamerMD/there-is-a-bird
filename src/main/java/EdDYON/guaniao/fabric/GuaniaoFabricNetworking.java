@@ -2,6 +2,9 @@ package EdDYON.guaniao.fabric;
 
 import EdDYON.guaniao.network.FeatherFanPiercePacket;
 import EdDYON.guaniao.network.BirdRuntimeConfigPacket;
+import EdDYON.guaniao.network.PhotoDownloadChunkPacket;
+import EdDYON.guaniao.network.PhotoDownloadStartPacket;
+import EdDYON.guaniao.network.PhotoCaptureResultPacket;
 import EdDYON.guaniao.network.PhotoRequestPacket;
 import EdDYON.guaniao.network.FinishPhotoUploadPacket;
 import EdDYON.guaniao.network.PhotoUploadChunkPacket;
@@ -21,6 +24,9 @@ public final class GuaniaoFabricNetworking {
                 FeatherFanPiercePacket.TYPE, FeatherFanPiercePacket.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(
                 BirdRuntimeConfigPacket.TYPE, BirdRuntimeConfigPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PhotoCaptureResultPacket.TYPE, PhotoCaptureResultPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PhotoDownloadStartPacket.TYPE, PhotoDownloadStartPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PhotoDownloadChunkPacket.TYPE, PhotoDownloadChunkPacket.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(
                 BeginPhotoUploadPacket.TYPE, BeginPhotoUploadPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(

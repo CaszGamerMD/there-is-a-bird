@@ -1,12 +1,12 @@
 package EdDYON.guaniao.network;
 
-import EdDYON.guaniao.client.camera.PhotoClientRepository;
 import EdDYON.guaniao.content.camera.PhotoTransferLimits;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import EdDYON.guaniao.GuaniaoMod;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 public record PhotoDownloadStartPacket(
         String photoId,
@@ -15,10 +15,19 @@ public record PhotoDownloadStartPacket(
         int width,
         int height,
         String contentHash
-) {
+) implements CustomPacketPayload {
     public static PhotoDownloadStartPacket missing(String photoId) {
         return new PhotoDownloadStartPacket(photoId, false, 0, 0, 0, "");
     }
+
+    public static final Type<PhotoDownloadStartPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "photo_download_start"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PhotoDownloadStartPacket> CODEC =
+            StreamCodec.of((RegistryFriendlyByteBuf buffer, PhotoDownloadStartPacket packet) ->
+                    encode(packet, buffer), PhotoDownloadStartPacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
     public static void encode(PhotoDownloadStartPacket packet, FriendlyByteBuf buffer) {
         buffer.writeUtf(packet.photoId, PhotoTransferLimits.MAX_PHOTO_ID_LENGTH);
@@ -40,19 +49,4 @@ public record PhotoDownloadStartPacket(
         );
     }
 
-    public static void handle(PhotoDownloadStartPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(
-                Dist.CLIENT,
-                () -> () -> PhotoClientRepository.beginDownload(
-                        packet.photoId,
-                        packet.found,
-                        packet.totalBytes,
-                        packet.width,
-                        packet.height,
-                        packet.contentHash
-                )
-        ));
-        context.setPacketHandled(true);
-    }
 }

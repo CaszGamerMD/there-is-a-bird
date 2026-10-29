@@ -1,12 +1,24 @@
 package EdDYON.guaniao.network;
 
 import EdDYON.guaniao.content.camera.PhotoTransferLimits;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import EdDYON.guaniao.GuaniaoMod;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public record PhotoRequestPacket(String photoId, String expectedHash) {
+public record PhotoRequestPacket(String photoId, String expectedHash) implements CustomPacketPayload {
+    public static final Type<PhotoRequestPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "photo_request"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PhotoRequestPacket> CODEC =
+            StreamCodec.of((RegistryFriendlyByteBuf buffer, PhotoRequestPacket packet) ->
+                    encode(packet, buffer), PhotoRequestPacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+
     public static void encode(PhotoRequestPacket packet, FriendlyByteBuf buffer) {
         buffer.writeUtf(packet.photoId, PhotoTransferLimits.MAX_PHOTO_ID_LENGTH);
         buffer.writeUtf(packet.expectedHash, PhotoTransferLimits.SHA256_HEX_LENGTH);
@@ -19,12 +31,7 @@ public record PhotoRequestPacket(String photoId, String expectedHash) {
         );
     }
 
-    public static void handle(PhotoRequestPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        ServerPlayer player = context.getSender();
-        if (player != null) {
-            PhotoUploadManager.requestDownload(player, packet.photoId, packet.expectedHash);
-        }
-        context.setPacketHandled(true);
+    public void handle(ServerPlayer player) {
+        PhotoUploadManager.requestDownload(player, photoId, expectedHash);
     }
 }

@@ -4,7 +4,7 @@ import EdDYON.guaniao.content.camera.PhotoImageCodec;
 import EdDYON.guaniao.content.camera.PhotoTransferLimits;
 import EdDYON.guaniao.network.BeginPhotoUploadPacket;
 import EdDYON.guaniao.network.FinishPhotoUploadPacket;
-import EdDYON.guaniao.network.GuaniaoNetwork;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import EdDYON.guaniao.network.PhotoRequestPacket;
 import EdDYON.guaniao.network.PhotoUploadChunkPacket;
 import java.io.ByteArrayOutputStream;
@@ -88,7 +88,7 @@ public final class PhotoClientRepository {
         String hash = PhotoImageCodec.sha256(jpeg);
         DISPATCHED_UPLOADS.add(uploadId);
         CAPTURE_IMAGES.put(uploadId, new CachedImage(jpeg, hash));
-        GuaniaoNetwork.sendToServer(new BeginPhotoUploadPacket(
+        ClientPlayNetworking.send(new BeginPhotoUploadPacket(
                 uploadId,
                 hand,
                 jpeg.length,
@@ -98,9 +98,9 @@ public final class PhotoClientRepository {
         ));
         for (int offset = 0, index = 0; offset < jpeg.length; offset += PhotoTransferLimits.MAX_CHUNK_BYTES, index++) {
             int end = Math.min(offset + PhotoTransferLimits.MAX_CHUNK_BYTES, jpeg.length);
-            GuaniaoNetwork.sendToServer(new PhotoUploadChunkPacket(uploadId, index, Arrays.copyOfRange(jpeg, offset, end)));
+            ClientPlayNetworking.send(new PhotoUploadChunkPacket(uploadId, index, Arrays.copyOfRange(jpeg, offset, end)));
         }
-        GuaniaoNetwork.sendToServer(new FinishPhotoUploadPacket(uploadId));
+        ClientPlayNetworking.send(new FinishPhotoUploadPacket(uploadId));
     }
 
     public static void captureResult(UUID uploadId, boolean success) {
@@ -255,7 +255,7 @@ public final class PhotoClientRepository {
         activeRequestStarted = System.currentTimeMillis();
         String expectedHash = next.getValue();
         iterator.remove();
-        GuaniaoNetwork.sendToServer(new PhotoRequestPacket(activeRequest, expectedHash));
+        ClientPlayNetworking.send(new PhotoRequestPacket(activeRequest, expectedHash));
     }
 
     private static void finishActiveRequest(String photoId) {

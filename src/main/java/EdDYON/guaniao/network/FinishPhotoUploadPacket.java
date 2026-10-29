@@ -1,12 +1,24 @@
 package EdDYON.guaniao.network;
 
 import java.util.UUID;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import EdDYON.guaniao.GuaniaoMod;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public record FinishPhotoUploadPacket(UUID uploadId) {
+public record FinishPhotoUploadPacket(UUID uploadId) implements CustomPacketPayload {
+    public static final Type<FinishPhotoUploadPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "finish_photo_upload"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, FinishPhotoUploadPacket> CODEC =
+            StreamCodec.of((RegistryFriendlyByteBuf buffer, FinishPhotoUploadPacket packet) ->
+                    encode(packet, buffer), FinishPhotoUploadPacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+
     public static void encode(FinishPhotoUploadPacket packet, FriendlyByteBuf buffer) {
         buffer.writeUUID(packet.uploadId);
     }
@@ -15,12 +27,7 @@ public record FinishPhotoUploadPacket(UUID uploadId) {
         return new FinishPhotoUploadPacket(buffer.readUUID());
     }
 
-    public static void handle(FinishPhotoUploadPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        ServerPlayer player = context.getSender();
-        if (player != null) {
-            PhotoUploadManager.finish(player, packet.uploadId);
-        }
-        context.setPacketHandled(true);
+    public void handle(ServerPlayer player) {
+        PhotoUploadManager.finish(player, uploadId);
     }
 }

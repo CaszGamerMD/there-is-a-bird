@@ -945,3 +945,55 @@ compilation, dedicated server/client startups, mutation textures,
 resource reload and in-game visual tests are required before
 providing a private test JAR. Never redistribute the author's
 restricted media assets without written permission.
+
+
+## 2026-10-29 — four more GeckoLib 5 bird renderers (source checkpoint)
+
+Resumed from the existing nine model ports and six client renderer
+registrations. This pass added **pigeon, spotted dove, cockatoo and
+cockatiel**. The Fabric client now registers **10 of the original 19
+bird entity renderers**, backed by 12 converted GeckoLib models
+(two columbid species share one model).
+
+- **Columbid model:** pigeon and spotted dove use the shared
+  `ColumbidModel`, preserving gray pigeon, white pigeon and spotted
+  dove resource selection via the individual entity's
+  `getTextureResource()`, mutation-palette snapshot and individual model
+  scale. Both original shadows (0.15 and 0.14) remain.
+- **Cockatoo:** model and per-bird scale are now GeckoLib 5 render state.
+  The original 0.751-pixel toe correction uses
+  `adjustRenderPose(RenderPassInfo)`, after the renderer applies the
+  per-bird scale, so it remains proportional rather than becoming a
+  hard-coded global translation.
+- **Cockatiel:** each bird's original five emotional crest rotations
+  (relaxed 0, happy -0.12, curious -0.22, alert -0.38, afraid -0.56)
+  are snapshotted into a float `DataTicket`, then added to the animated
+  crest `BoneSnapshot` by `adjustModelBonesForRender`. These offsets
+  augment animation, not replace it. The five authored texture variants,
+  mutation colors, individual model scales and 0.12 shadow remain.
+- Updated inherited 26.2 `Identifier` texture getter signatures for
+  these birds and extended whole-file GeckoLib parity guards to permit
+  exactly those API substitutions.
+- Expanded `tools/check-geckolib-bird-renderstate.py` for the two
+  columbid palettes, cockatoo toe alignment, all five cockatiel crest
+  states and 10 unique registry entries; expanded
+  `tools/check-geckolib-assets-26.2.py` for 12 models. Added
+  `tools/port-probes/GuaniaoCockatielCrestProof.java` to the existing
+  Gradle isolated compile task, checking the real GeckoLib 5 bone
+  snapshots/data-ticket APIs.
+
+**This is a source migration, not a successful executable test.**
+Still to migrate or fully verify: nine other renderers, remaining
+held-item layers, GeckoLib custom procedural models/pose renderers,
+camera block/item renderers, menus and other old Forge/Minecraft APIs.
+The full Java build, Minecraft client/server startup, species variant
+render comparisons, crest rotations and toe alignment must pass before
+a private test JAR is usable.
+
+GitHub Actions on this branch has repeatedly failed before a runner
+was allocated, so source checks and compilation have not run in CI.
+Use the existing `build-private-fabric-26.2.cmd` with Java 25 for a
+local contributor-only build; if it fails, treat the JAR as not ready.
+The original media distribution restrictions still apply; keep the
+draft PR private and do not release a modified asset-containing JAR
+without the copyright holder's permission.

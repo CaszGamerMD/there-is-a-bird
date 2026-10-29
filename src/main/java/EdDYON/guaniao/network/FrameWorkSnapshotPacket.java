@@ -1,8 +1,6 @@
 package EdDYON.guaniao.network;
 
-import EdDYON.guaniao.content.camera.frame.FrameWorkbenchMenu;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import EdDYON.guaniao.GuaniaoMod;
 import net.minecraft.network.RegistryFriendlyByteBuf;

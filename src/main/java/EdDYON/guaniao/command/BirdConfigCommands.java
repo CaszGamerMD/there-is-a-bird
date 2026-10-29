@@ -1,7 +1,6 @@
 package EdDYON.guaniao.command;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigData;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.content.note.BirdNoteContent;

@@ -94,8 +94,9 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         PhotoAdminCommands.registerCallbacks();
         GuaniaoLootModifierSerializers.registerCallbacks();
 
-        // TODO: register migrated menus, recipes, effects, enchantments,
-        // networking, spawn placements, client renderers and all other
-        // original event handlers before this becomes a runnable release.
+        // TODO: complete remaining menu, enchantment, model/GeckoLib 5,
+        // client-renderer and gameplay event migrations. All 15 original
+        // networking payload types are registered, but full build and
+        // client/server runtime verification are still outstanding.
     }
 }

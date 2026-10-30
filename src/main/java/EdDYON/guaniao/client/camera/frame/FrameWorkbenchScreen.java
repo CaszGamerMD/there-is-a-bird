@@ -620,12 +620,45 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         slot(g,18,54);
         panel(g,331,230,30,30);
         slot(g,FrameWorkbenchMenu.OUTPUT_X,FrameWorkbenchMenu.OUTPUT_Y);
+        this.extractCraftingArea2D(g);
         for(int row=0;row<3;row++)for(int col=0;col<9;col++)slot(g,18+col*18,212+row*18);
         for(int col=0;col<9;col++)slot(g,18+col*18,270);
         if(this.editShape || this.invalidOutline)extractCanvas(g,mouseX,mouseY);
     }
 
     /** Exact author layout for palette/outline modals without slots behind it. */
+    /** Stage/countdown/food/flash match the original author; 3D birds stay separate. */
+    private void extractCraftingArea2D(GuiGraphicsExtractor graphics) {
+        if(this.isWorkshopVisible()) {
+            this.progressBirdClock.observe(this.activeWorkSeed);
+            int stage=workshopStage((int)this.frameWorkTicks);
+            String label=stage==2 && !PhotographData.hasImage(this.craftingPreview)
+                    ? "work_stage.lining_only" : "work_stage."+stage;
+            graphics.text(this.font,text(label),247,211,WOOD_TEXT,false);
+            Component countdown=text("seconds_remaining",
+                    (Math.max(0,this.menu.getCraftTicksRemaining())+19)/20);
+            graphics.text(this.font,countdown,285-this.font.width(countdown)/2,224,WOOD_TEXT,false);
+            FrameCraftingProgress2D.extract(graphics,
+                    FrameWorkshopBird.progressFood(this.activeWorkSeed),-1);
+        } else if(this.isCraftingUi()) {
+            graphics.text(this.font,text("waiting"),247,237,WOOD_TEXT,false);
+        } else {
+            this.progressBirdClock.complete(this.menu.getWorkSeed(),System.nanoTime(),this.minecraft.isPaused());
+            if(this.progressBirdClock.isDeparting()) {
+                float eating=this.progressBirdClock.renderExit(System.nanoTime(),this.minecraft.isPaused());
+                if(eating<FrameObserverClock.EXIT_TICKS) {
+                    FrameCraftingProgress2D.extract(graphics,
+                            FrameWorkshopBird.progressFood(this.progressBirdClock.seed()),eating);
+                } else this.progressBirdClock.clear();
+            }
+        }
+        if(this.readyFlashTicks>0) {
+            int alpha=Math.round(255*Math.min(1,this.readyFlashTicks/10F));
+            graphics.outline(331,230,30,30,(alpha<<24)|0xFFF0B8);
+            graphics.outline(332,231,28,28,(alpha<<24)|0xFFFFFF);
+        }
+    }
+
     private void extractModalPanel(GuiGraphicsExtractor graphics,int mouseX,int mouseY) {
         panel(graphics,0,0,PANEL_WIDTH,PANEL_HEIGHT);
         if(this.paletteKind!=null) {
@@ -726,6 +759,8 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partialTick) {
+        if(this.isWorkshopVisible())
+            this.frameWorkTicks=this.workshopClock.render(System.nanoTime(),this.minecraft.isPaused());
         super.extractRenderState(graphics,mouseX,mouseY,partialTick);
         if(this.paletteKind!=null) {
             // Tooltips are always submitted at native window coordinates,

@@ -18,7 +18,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -37,8 +36,6 @@ public final class CameraClientCapture {
     private static final int CLEAN_CAPTURE_DELAY_FRAMES = 0;
     private static final double DEFAULT_FOCAL_LENGTH = 50.0D;
     private static final double FOCAL_LENGTH_SCROLL_STEP = 4.0D;
-    private static final double FULL_FRAME_SENSOR_WIDTH = 36.0D;
-    private static final double MIN_VIEWFINDER_SENSITIVITY_SCALE = 0.28D;
     private static final double MAX_AUTOFOCUS_DISTANCE = CameraState.MAX_FOCUS_DISTANCE;
 
     private static boolean viewfinderOpen;
@@ -541,10 +538,7 @@ public final class CameraClientCapture {
     }
 
     private static double focalLengthToFov(double focalLength) {
-        double fov = Math.toDegrees(2.0D * Math.atan(FULL_FRAME_SENSOR_WIDTH / (2.0D * focalLength)));
-        // Minecraft consumes this as a vertical FOV. Keep the wide-angle safeguard,
-        // but preserve the full telephoto range: 150 mm and 200 mm are both below 14 degrees.
-        return Math.min(fov, 110.0D);
+        return CameraLensMath.focalLengthToFov(focalLength);
     }
 
     private static void beginSensitivityAdjustment(Minecraft minecraft) {
@@ -570,14 +564,8 @@ public final class CameraClientCapture {
     }
 
     private static double focalSensitivityScale() {
-        double normalized = Mth.clamp(
-                (currentState.focalLength() - CameraState.MIN_FOCAL_LENGTH)
-                        / (CameraState.MAX_FOCAL_LENGTH - CameraState.MIN_FOCAL_LENGTH),
-                0.0D,
-                1.0D
-        );
-        double smooth = normalized * normalized * (3.0D - 2.0D * normalized);
-        return Mth.lerp(smooth, 1.0D, MIN_VIEWFINDER_SENSITIVITY_SCALE);
+        return CameraLensMath.focalSensitivityScale(currentState.focalLength(),
+                CameraState.MIN_FOCAL_LENGTH, CameraState.MAX_FOCAL_LENGTH);
     }
 
     private static void tickContinuousFocus(Minecraft minecraft) {

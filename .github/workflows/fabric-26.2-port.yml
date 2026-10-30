@@ -161,6 +161,13 @@ jobs:
         run: python3 tools/check-camera-key-mappings-26-2.py
       - name: Verify photograph viewer preserves original image, mat and export on Fabric
         run: python3 tools/check-photograph-viewer-26-2.py
+      - name: Verify author-equivalent camera focal length and sensitivity migration
+        run: python3 tools/check-camera-lens-math-26-2.py
+      - name: Run standalone Java 25 camera optics regression
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-optics"
+          javac -d "$RUNNER_TEMP/camera-optics" src/main/java/EdDYON/guaniao/client/camera/CameraLensMath.java tools/port-probes/GuaniaoCameraLensMathRegression.java
+          java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
       - name: Verify camera tooltip parity and Fabric client bootstrap

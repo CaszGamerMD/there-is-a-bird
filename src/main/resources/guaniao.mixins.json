@@ -18,7 +18,8 @@
   "client": [
     "ClientBlockBreakParticlesMixin",
     "GuaniaoGuiRenderStateAccess",
-    "GuaniaoCameraMouseInputMixin"
+    "GuaniaoCameraMouseInputMixin",
+    "GuaniaoCameraKeyboardInputMixin"
   ],
   "server": [],
   "injectors": {

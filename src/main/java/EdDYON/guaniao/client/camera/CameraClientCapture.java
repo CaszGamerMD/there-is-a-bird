@@ -66,7 +66,7 @@ public final class CameraClientCapture {
     public static void openViewfinder(InteractionHand hand) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || cleanCapturePending || PhotoClientRepository.hasPendingCapture()
-                || !isCameraStillHeld(minecraft, hand) || minecraft.screen != null
+                || !isCameraStillHeld(minecraft, hand) || minecraft.gui.screen() != null
                 || minecraft.getOverlay() != null || !minecraft.isWindowActive()) {
             return;
         }
@@ -181,7 +181,7 @@ public final class CameraClientCapture {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen != null || minecraft.getOverlay() != null) {
+        if (minecraft.gui.screen() != null || minecraft.getOverlay() != null) {
             SHUTTER_INPUT.suspend(false);
             return false;
         }
@@ -263,7 +263,7 @@ public final class CameraClientCapture {
 
     private static boolean inputContextReady(Minecraft minecraft) {
         return minecraft.player != null && minecraft.level != null && minecraft.isWindowActive()
-                && minecraft.screen == null && minecraft.getOverlay() == null && minecraft.mouseHandler.isMouseGrabbed();
+                && minecraft.gui.screen() == null && minecraft.getOverlay() == null && minecraft.mouseHandler.isMouseGrabbed();
     }
 
     private static boolean hasShortcutModifiers(int modifiers) {
@@ -371,7 +371,7 @@ public final class CameraClientCapture {
     public static void renderViewfinder(GuiGraphics graphics, float partialTick) {
         if (!viewfinderOpen
                 || cleanCapturePending
-                || Minecraft.getInstance().screen != null) {
+                || Minecraft.getInstance().gui.screen() != null) {
             return;
         }
         CameraViewfinderOverlay.render(graphics, currentState);

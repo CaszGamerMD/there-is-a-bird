@@ -120,6 +120,7 @@ public final class CameraClientCapture {
         SHUTTER_INPUT.reset();
         focusTargetId = -1;
         CameraPreviewPostEffect.close();
+        CameraWorldFrame26.reset();
         restoreSensitivity(Minecraft.getInstance());
     }
 
@@ -502,6 +503,7 @@ public final class CameraClientCapture {
 
         viewfinderOpen = false;
         CameraPreviewPostEffect.close();
+        CameraWorldFrame26.reset();
         cleanCapturePending = true;
         pendingCaptureId = captureId;
         captureSubmitted = false;

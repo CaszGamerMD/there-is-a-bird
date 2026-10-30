@@ -9,6 +9,7 @@ import EdDYON.guaniao.client.camera.PhotographTextureCache;
 import EdDYON.guaniao.client.camera.CameraKeyMappings;
 import EdDYON.guaniao.client.camera.CameraClientCapture;
 import EdDYON.guaniao.client.camera.CameraPreviewGuiBridge;
+import EdDYON.guaniao.client.camera.CameraWorldFrame26;
 import EdDYON.guaniao.GuaniaoMod;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.resources.Identifier;
@@ -47,6 +48,9 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
     public void onInitializeClient() {
         CameraTooltipEvents.registerCallbacks();
         CameraKeyMappings.register();
+        // Real world-frame snapshots must happen in the GPU draw phase.
+        // The copier remains idle until a genuine filter renderer installs.
+        CameraWorldFrame26.register();
         HudElementRegistry.addLast(
                 Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "camera_viewfinder"),
                 (graphics, deltaTracker) -> CameraClientCapture.renderViewfinder(graphics));
@@ -66,6 +70,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
             // The next server must not reuse a native GPU lens provider
             // holding on to textures allocated for the prior world.
             CameraPreviewGuiBridge.clear();
+            CameraWorldFrame26.reset();
             // Disconnect the JPEG/request/upload repository too: image and
             // in-flight upload IDs must not survive into a different server.
             // The repository generation gate ignores any late async responses.

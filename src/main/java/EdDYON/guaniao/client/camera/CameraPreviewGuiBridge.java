@@ -26,7 +26,7 @@ public final class CameraPreviewGuiBridge {
                               int left, int top, int right, int bottom);
     }
 
-    private static Renderer renderer;
+    private static volatile Renderer renderer;
 
     private CameraPreviewGuiBridge() { }
 
@@ -38,6 +38,11 @@ public final class CameraPreviewGuiBridge {
     /** Release stale renderer resources after client disconnect/reload. */
     public static void clear() {
         renderer = null;
+    }
+
+    /** World copying is only useful after a real GPU filter renderer exists. */
+    public static boolean hasRenderer() {
+        return renderer != null;
     }
 
     static boolean drawPreview(GuiGraphicsExtractor graphics, int left, int top,

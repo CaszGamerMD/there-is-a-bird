@@ -4,7 +4,7 @@ import EdDYON.guaniao.registry.GuaniaoItems;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -40,14 +40,14 @@ public final class CameraHelpScreen extends Screen {
     public static boolean showFirstUse(InteractionHand hand) {
         if (CameraClientPreferences.hasSeenHelp()) return false;
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.level == null || minecraft.screen != null
+        if (minecraft.player == null || minecraft.level == null || minecraft.gui.screen() != null
                 || !minecraft.player.getItemInHand(hand).is(GuaniaoItems.NIKON_D750.get())) return false;
-        minecraft.setScreen(new CameraHelpScreen(null, hand));
+        minecraft.gui.setScreen(new CameraHelpScreen(null, hand));
         return true;
     }
 
     static void open(Screen parent) {
-        Minecraft.getInstance().setScreen(new CameraHelpScreen(parent, null));
+        Minecraft.getInstance().gui.setScreen(new CameraHelpScreen(parent, null));
     }
 
     @Override
@@ -64,7 +64,7 @@ public final class CameraHelpScreen extends Screen {
 
     @Override
     public void tick() {
-        if (!validContext()) Minecraft.getInstance().setScreen(null);
+        if (!validContext()) Minecraft.getInstance().gui.setScreen(null);
     }
 
     private boolean validContext() {
@@ -78,14 +78,14 @@ public final class CameraHelpScreen extends Screen {
     private void finish() {
         Minecraft minecraft = Minecraft.getInstance();
         if (!validContext()) {
-            minecraft.setScreen(null);
+            minecraft.gui.setScreen(null);
             return;
         }
         if (this.parent != null) {
-            minecraft.setScreen(this.parent);
+            minecraft.gui.setScreen(this.parent);
         } else {
             CameraClientPreferences.markHelpSeen();
-            minecraft.setScreen(null);
+            minecraft.gui.setScreen(null);
             CameraClientCapture.openViewfinder(this.hand);
         }
     }
@@ -94,7 +94,7 @@ public final class CameraHelpScreen extends Screen {
     public void onClose() {
         boolean valid = validContext();
         if (this.parent == null && valid) CameraClientPreferences.markHelpSeen();
-        Minecraft.getInstance().setScreen(this.parent != null && valid ? this.parent : null);
+        Minecraft.getInstance().gui.setScreen(this.parent != null && valid ? this.parent : null);
     }
 
     @Override
@@ -103,15 +103,16 @@ public final class CameraHelpScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        // Submit the authored card before its vanilla button.
         graphics.fill(0, 0, this.width, this.height, 0x30000000);
         graphics.fill(this.left - 2, this.top - 2, this.left + this.cardWidth + 2, this.top + this.cardHeight + 2, 0xFF373737);
         graphics.fill(this.left, this.top, this.left + this.cardWidth, this.top + this.cardHeight, 0xFFC6C6C6);
-        graphics.hLine(this.left, this.left + this.cardWidth - 1, this.top, 0xFFFFFFFF);
-        graphics.vLine(this.left, this.top, this.top + this.cardHeight - 1, 0xFFFFFFFF);
-        graphics.hLine(this.left, this.left + this.cardWidth, this.top + this.cardHeight, 0xFF555555);
-        graphics.vLine(this.left + this.cardWidth, this.top, this.top + this.cardHeight, 0xFF555555);
-        graphics.drawString(this.font, this.title, (this.width - this.font.width(this.title)) / 2,
+        graphics.horizontalLine(this.left, this.left + this.cardWidth - 1, this.top, 0xFFFFFFFF);
+        graphics.verticalLine(this.left, this.top, this.top + this.cardHeight - 1, 0xFFFFFFFF);
+        graphics.horizontalLine(this.left, this.left + this.cardWidth, this.top + this.cardHeight, 0xFF555555);
+        graphics.verticalLine(this.left + this.cardWidth, this.top, this.top + this.cardHeight, 0xFF555555);
+        graphics.text(this.font, this.title, (this.width - this.font.width(this.title)) / 2,
                 this.top + 8, 0xFF303030, false);
 
         List<Component> labels = compactControlLines();
@@ -128,12 +129,12 @@ public final class CameraHelpScreen extends Screen {
         List<FormattedCharSequence> footer = this.font.split(
                 Component.translatable("gui.guaniao.camera_help.resume_short"), this.cardWidth - 24);
         for (int i = 0; i < Math.min(2, footer.size()); i++) {
-            graphics.drawString(this.font, footer.get(i), this.left + 12,
+            graphics.text(this.font, footer.get(i), this.left + 12,
                     this.top + 79 + i * this.font.lineHeight, 0xFF555555, false);
         }
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.extractContents(graphics, mouseX, mouseY, partialTick);
         if (hoveredControl >= 0) {
-            graphics.renderTooltip(this.font, controlLines().get(hoveredControl), mouseX, mouseY);
+            graphics.setTooltipForNextFrame(this.font, controlLines().get(hoveredControl), mouseX, mouseY);
         }
     }
 
@@ -163,11 +164,11 @@ public final class CameraHelpScreen extends Screen {
         return InputConstants.Type.MOUSE.getOrCreate(button).getDisplayName();
     }
 
-    private void drawTruncated(GuiGraphics graphics, Component text, int x, int y, int availableWidth, int color) {
+    private void drawTruncated(GuiGraphicsExtractor graphics, Component text, int x, int y, int availableWidth, int color) {
         String label = text.getString();
         if (this.font.width(label) > availableWidth) {
             label = this.font.plainSubstrByWidth(label, Math.max(1, availableWidth - this.font.width("…"))) + "…";
         }
-        graphics.drawString(this.font, label, x, y, color, false);
+        graphics.text(this.font, label, x, y, color, false);
     }
 }

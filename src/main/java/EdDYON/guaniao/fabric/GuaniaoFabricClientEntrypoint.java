@@ -6,6 +6,7 @@ import EdDYON.guaniao.client.fan.FeatherFanClientEvents;
 import EdDYON.guaniao.network.BirdRuntimeConfigPacket;
 import EdDYON.guaniao.client.camera.PhotoClientRepository;
 import EdDYON.guaniao.client.camera.PhotographTextureCache;
+import EdDYON.guaniao.client.camera.CameraKeyMappings;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import EdDYON.guaniao.network.PhotoCaptureResultPacket;
@@ -39,10 +40,12 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
     @Override
     public void onInitializeClient() {
         CameraTooltipEvents.registerCallbacks();
+        CameraKeyMappings.register();
         // The original Forge render-tick callback does not run on Fabric.
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             PhotographTextureCache.pumpUploads();
             PhotographTextureCache.tickHeldPhotographs();
+            CameraKeyMappings.tick();
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
                 PhotographTextureCache.clear());

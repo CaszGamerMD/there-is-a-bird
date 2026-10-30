@@ -315,6 +315,7 @@
   "key.guaniao.camera.open_creative_controls": "打开创意拍摄控制",
   "key.guaniao.camera.focus": "相机对焦",
   "key.categories.guaniao": "观鸟",
+  "key.category.guaniao.camera": "观鸟",
   "item.guaniao.photograph.tooltip.empty": "空相框",
   "item.guaniao.photograph.tooltip.photographer": "拍摄者：%s",
   "item.guaniao.photograph.tooltip.actions": "手持右键查看；对墙右键悬挂",

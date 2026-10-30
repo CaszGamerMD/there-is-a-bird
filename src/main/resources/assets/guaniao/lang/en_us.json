@@ -315,6 +315,7 @@
   "key.guaniao.camera.open_creative_controls": "Open Creative Camera Controls",
   "key.guaniao.camera.focus": "Focus Camera",
   "key.categories.guaniao": "Birdwatching",
+  "key.category.guaniao.camera": "Birdwatching",
   "item.guaniao.photograph.tooltip.empty": "Empty frame",
   "item.guaniao.photograph.tooltip.photographer": "Photographer: %s",
   "item.guaniao.photograph.tooltip.actions": "Right-click to view; use on a wall to hang",

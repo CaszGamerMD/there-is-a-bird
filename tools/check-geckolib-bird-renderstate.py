@@ -15,6 +15,7 @@ MODELS = {
     "seagull/Seagull": True,
     "nightheron/NightHeron": True,
     "kestrel/Kestrel": True,
+    "kingfisher/Kingfisher": False,  # eating/fish staged; dropping bone tracking not yet migrated
     "crow/Crow": True,
     "macaw/Macaw": True,
     "budgerigar/Budgerigar": True,
@@ -349,6 +350,33 @@ assert "actor.partialTick()" in hummingbird_molang
 assert "MolangParser.INSTANCE" not in hummingbird_molang
 assert "HummingbirdMolangQueries.register();" in current("fabric/GuaniaoFabricEntityRenderers.java")
 assert "software.bernie" not in hummingbird_model + hummingbird_layer + hummingbird_renderer
+
+# Kingfisher remains UNREGISTERED until GeckoLib 5 body-bone tracking
+# preserves the real-world defecation particle origin. The rest of the
+# authored fish handling and body dip was ported without simplifying timing.
+kingfisher_old = original("client/entity/kingfisher/KingfisherModel.java")
+kingfisher_model = current("client/entity/kingfisher/KingfisherModel.java")
+for key in ("pulse(tick, 11, 5)", "pulse(tick, 22, 5)",
+            "pulse(tick, 38, 11)", "-26 * handling + 14 * swallow",
+            "value * value * (3 - 2 * value)"):
+    assert key in kingfisher_old and key in kingfisher_model
+for key in ("DataTicket<Float> HEAD_DIP", "DataTicket<Float> BODY_DIP",
+            "BirdMutationRenderData.MODEL_SCALE",
+            "GuaniaoGeckoAssets.model(KingfisherDefinition.MODEL)",
+            "GuaniaoGeckoAssets.animation(KingfisherDefinition.ANIMATION)"):
+    assert key in kingfisher_model
+kingfisher_layer_old = original("client/entity/kingfisher/KingfisherHeldFishLayer.java")
+kingfisher_layer = current("client/entity/kingfisher/KingfisherHeldFishLayer.java")
+for key in ("getHeldFish()", "6.35D + 0.25D * swallowing",
+            "-6.05D + 1.65D * swallowing",
+            "-20 - 45 * swallowing", "0.17F * (1 - swallowing)",
+            "swallowing >= 0.999F"):
+    assert key in kingfisher_layer_old and key in kingfisher_layer
+for key in ("BlockAndItemGeoLayer", "RenderData.item(", "ItemDisplayContext.NONE",
+            "RenderUtil.createRenderStateForItem(", "super.submitItemStackRender("):
+    assert key in kingfisher_layer
+assert "software.bernie" not in kingfisher_layer + kingfisher_model
+assert "GuaniaoEntityTypes.KINGFISHER.get()" not in current("fabric/GuaniaoFabricEntityRenderers.java")
 
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")

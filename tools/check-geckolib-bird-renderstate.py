@@ -401,7 +401,9 @@ umbrella_model = current("client/entity/umbrellacockatoo/UmbrellaCockatooModel.j
 umbrella_renderer = current("client/entity/umbrellacockatoo/UmbrellaCockatooRenderer.java")
 umbrella_original_renderer = original("client/entity/umbrellacockatoo/UmbrellaCockatooRenderer.java")
 umbrella_original_model = original("client/entity/umbrellacockatoo/UmbrellaCockatooModel.java")
-for token in ("getModelRenderScale()", "this.shadowRadius = 0.20F;",
+assert "getModelRenderScale()" in umbrella_original_renderer
+assert "getModelRenderScale()" in umbrella_model
+for token in ("this.shadowRadius = 0.20F;",
               "ownerPosition.add(bird.ownerPerchOffset(", "owner.yBodyRotO",
               "owner.yHeadRotO", "owner.xRotO", "Mth.rotLerp("):
     assert token in umbrella_original_renderer and token in umbrella_renderer, token

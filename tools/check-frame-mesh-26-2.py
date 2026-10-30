@@ -37,12 +37,6 @@ expected_algorithms=expected_algorithms.replace(
     "                if(trimmed && trimStart<0)trimStart=cell;\n"
     "                if(!trimmed && trimStart>=0) {")
 assert "boolean trimmed=hasTrim && outside;" in expected_algorithms
-# The source has one explanatory comment absent from the original.
-expected_algorithms=expected_algorithms.replace(
-    "                boolean trimmed=hasTrim && outside;",
-    "                // Only create trim boundary geometry when the author enabled\n"
-    "                // trim; a disabled material must not emit hidden extra faces.\n"
-    "                boolean trimmed=hasTrim && outside;")
 assert expected_algorithms.rstrip()==new_algorithms.rstrip(), (
     "3D boundary merging, outline, face normals or tiled UV changed"
 )

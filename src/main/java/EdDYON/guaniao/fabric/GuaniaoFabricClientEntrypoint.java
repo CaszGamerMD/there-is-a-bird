@@ -28,6 +28,8 @@ import EdDYON.guaniao.client.particle.HuntingStreakParticle;
 import EdDYON.guaniao.client.particle.PlaceableBreakFleckParticle;
 import EdDYON.guaniao.registry.GuaniaoParticleTypes;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry;
+import EdDYON.guaniao.client.camera.frame.FrameWorkbenchPreview3DRenderer;
 
 /** Client bootstrap; feature registrations are restored as their 26.2 ports compile. */
 public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer {
@@ -37,6 +39,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         PrankFoodClientEvents.registerCallbacks();
         FeatherFanClientEvents.registerCallbacks();
         GuaniaoFabricEntityRenderers.register();
+        PictureInPictureRendererRegistry.register(context -> new FrameWorkbenchPreview3DRenderer());
         ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.KILL_FEATHER.get(), KillFeatherParticle.Provider::new);
         ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.BURIAL_WIND.get(), BurialWindParticle.Provider::new);
         ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.BURIAL_CYCLONE.get(), BurialCycloneParticle.Provider::new);

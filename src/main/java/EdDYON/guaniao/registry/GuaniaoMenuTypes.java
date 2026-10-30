@@ -21,7 +21,7 @@ public final class GuaniaoMenuTypes {
 
     private static final StreamCodec<RegistryFriendlyByteBuf, BlockPos> BLOCK_POSITION =
             StreamCodec.of((buffer, pos) -> buffer.writeBlockPos(pos),
-                    RegistryFriendlyByteBuf::readBlockPos);
+                    (RegistryFriendlyByteBuf buffer) -> buffer.readBlockPos());
 
     public static final FabricRegistryQueue.Ref<MenuType<CrowNestMenu>> CROW_NEST =
             MENU_TYPES.register("crow_nest", () -> new ExtendedMenuType<>(

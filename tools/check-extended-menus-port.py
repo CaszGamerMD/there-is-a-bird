@@ -19,7 +19,7 @@ for name in ("crow_nest", "frame_workbench"):
     assert f'MENU_TYPES.register("{name}"' in registry
     assert f'MENU_TYPES.register("{name}"' in legacy_registry
 for marker in ("FabricRegistryQueue<MenuType<?>> MENU_TYPES",
-               "new ExtendedMenuType<>(", "RegistryFriendlyByteBuf::readBlockPos",
+               "new ExtendedMenuType<>(", "(RegistryFriendlyByteBuf buffer) -> buffer.readBlockPos()",
                "buffer.writeBlockPos(pos)", "BLOCK_POSITION"):
     assert marker in registry, marker
 assert registry.count("new ExtendedMenuType<>(") == 2

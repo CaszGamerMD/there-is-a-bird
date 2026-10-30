@@ -13,7 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 public final class GuaniaoExtendedMenuProof {
     private static final StreamCodec<RegistryFriendlyByteBuf, BlockPos> POSITION =
             StreamCodec.of((buffer, pos) -> buffer.writeBlockPos(pos),
-                    RegistryFriendlyByteBuf::readBlockPos);
+                    (RegistryFriendlyByteBuf buffer) -> buffer.readBlockPos());
 
     private GuaniaoExtendedMenuProof() {}
 

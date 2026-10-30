@@ -1240,3 +1240,46 @@ in-game visual test. The much larger `FrameWorkbenchScreen` still needs
 the 26.2 `GuiGraphicsExtractor` migration, as do other Forge-only
 client classes. The private Fabric runner still fails before beginning
 steps, and no complete mod JAR has been produced.
+
+
+## 2026-10-30 — Frame Workbench GUI groundwork on Minecraft 26.2
+
+The complete frame construction workflow and 3D rendering features are still
+required. The 1.20.1 `GuiGraphics`/immediate `PoseStack` pipeline cannot be
+migrated by simple method renames because 26.2 now uses extracted 2D graphics
+and deferred 3D geometry; **the overall Frame Workbench screen is not yet
+ready to compile or use**.
+
+Completed and committed in this checkpoint:
+
+- `FrameWorkbenchBackdrop`: 26.2 `GuiGraphicsExtractor` drawing and tinted
+  vanilla birch wood quad with the original 0.48 shade; original gradients,
+  trim, continuous texture and 38-pixel design retained.
+- `FrameOutlineEditor`: same authored 32×32 mask, brush/erase, line,
+  rectangle, ellipse, flood fill, grid, zoom and panning; switched only the
+  drawing entry points to 26.2 extractor and native outline.
+- `FrameNumberControl`: numeric input, exact BigDecimal formatting, range
+  clamps, step buttons, precision slider and typed-edit focus preserved;
+  converted widget extraction and `MouseButtonEvent`, `KeyEvent` and
+  `CharacterEvent`. Uses the new native slider sprites rather than the
+  removed nine-slice code.
+- `FrameWorkbenchScreen`: migrated scaled mouse button, drag, release,
+  scroll and keyboard event routing, including modal input routing and
+  protection from clicking inventory slots through open palettes. Its
+  custom truncated button labels now use extracted button sprites/text
+  rather than the removed `Button.renderString`.
+- `tools/check-frame-workbench-gui-26-2.py` in private CI asserts the
+  unchanged outline algorithm and vital author-created GUI behavior;
+  the original 3D/animated workshop render calls must still exist.
+- The three independent GUI helpers are now included in Gradle's
+  `verifyRegistriesPort` real API-compile source set so they can be tested
+  without first compiling the entire unported rendering system.
+
+**Unfinished:** full `FrameWorkbenchScreen` extraction/render methods,
+`FrameCraftingProgress`, `FrameCraftingAnimation`, `FrameWorkshopBird`,
+`FrameDesignRenderer` and item/texture submission need a coherent port to
+the new 26.2 3D render pipeline. Keep 3D build preview, the assembly
+animation, visitor bird, frame-to-slot delivery, palette modal, inventory
+slots and interactions; do not remove or replace them with placeholders.
+The ongoing absence of a GitHub Actions runner still prevents Java 25
+compilation and private test JAR validation.

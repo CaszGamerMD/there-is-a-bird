@@ -16,9 +16,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 
 public final class PlaceableBlockBreakEffects {
     private static final Color[] FRIES = colors(0.98F, 0.69F, 0.18F, 1.00F, 0.84F, 0.31F, 0.82F, 0.46F, 0.10F);
@@ -34,44 +32,48 @@ public final class PlaceableBlockBreakEffects {
     private PlaceableBlockBreakEffects() {
     }
 
-    public static IClientBlockExtensions baggedFries() {
-        return extension(Kind.BAGGED_FRIES);
+    /**
+     * 26.2: ClientLevel owns block hit and destroy particles, not ParticleEngine.
+     * Called only from the client mixin; unknown block states return false so
+     * vanilla (and other mods' ordinary debris) keep working unchanged.
+     */
+    public static boolean renderHit(BlockState state, Level level, BlockPos pos,
+                                    net.minecraft.core.Direction side, ParticleEngine particles) {
+        Kind kind = kindFor(state);
+        if (kind == null) return false;
+
+        // Forge used the actual ray-trace hit position. On Fabric the particle
+        // entry point receives a face, so reuse the exact client hit when it
+        // refers to this block; otherwise use the middle of the struck face.
+        net.minecraft.world.phys.HitResult hit = net.minecraft.client.Minecraft.getInstance().hitResult;
+        Vec3 position = hit instanceof net.minecraft.world.phys.BlockHitResult target
+                && target.getBlockPos().equals(pos) ? target.getLocation()
+                : new Vec3(pos.getX() + 0.5 + side.getStepX() * 0.5,
+                           pos.getY() + 0.5 + side.getStepY() * 0.5,
+                           pos.getZ() + 0.5 + side.getStepZ() * 0.5);
+        spawnHitEffect(kind, state, level, position, particles);
+        return true;
     }
 
-    public static IClientBlockExtensions birdBath() {
-        return extension(Kind.BIRD_BATH);
+    public static boolean renderDestroy(BlockState state, Level level, BlockPos pos,
+                                        ParticleEngine particles) {
+        Kind kind = kindFor(state);
+        if (kind == null) return false;
+        spawnDestroyEffect(kind, state, level, pos, particles);
+        return true;
     }
 
-    public static IClientBlockExtensions birdCage() {
-        return extension(Kind.BIRD_CAGE);
-    }
-
-    public static IClientBlockExtensions crowNest() {
-        return extension(Kind.CROW_NEST);
-    }
-
-    public static IClientBlockExtensions breadcrumbs() {
-        return extension(Kind.BREADCRUMBS);
-    }
-
-    public static IClientBlockExtensions droppingStain() {
-        return extension(Kind.DROPPING_STAIN);
-    }
-
-    private static IClientBlockExtensions extension(Kind kind) {
-        return new IClientBlockExtensions() {
-            @Override
-            public boolean addHitEffects(BlockState state, Level level, HitResult target, ParticleEngine particles) {
-                spawnHitEffect(kind, state, level, target.getLocation(), particles);
-                return true;
-            }
-
-            @Override
-            public boolean addDestroyEffects(BlockState state, Level level, BlockPos pos, ParticleEngine particles) {
-                spawnDestroyEffect(kind, state, level, pos, particles);
-                return true;
-            }
-        };
+    private static Kind kindFor(BlockState state) {
+        // Match classes/identities, not tags, so vanilla/third-party blocks
+        // never lose their native particle effects.
+        var block = state.getBlock();
+        if (block instanceof BaggedFriesBlock) return Kind.BAGGED_FRIES;
+        if (block instanceof BirdBathBlock) return Kind.BIRD_BATH;
+        if (block instanceof BirdCageBlock) return Kind.BIRD_CAGE;
+        if (block instanceof EdDYON.guaniao.content.nest.CrowNestBlock) return Kind.CROW_NEST;
+        if (block instanceof BreadcrumbPileBlock) return Kind.BREADCRUMBS;
+        if (block instanceof EdDYON.guaniao.content.dropping.BirdDroppingStainBlock) return Kind.DROPPING_STAIN;
+        return null;
     }
 
     private static void spawnHitEffect(Kind kind, BlockState state,

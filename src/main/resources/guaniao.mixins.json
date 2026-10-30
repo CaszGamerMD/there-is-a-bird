@@ -15,7 +15,9 @@
     "BirdPotentialSpawnsMixin",
     "PrankFoodFinishMixin"
   ],
-  "client": [],
+  "client": [
+    "ClientBlockBreakParticlesMixin"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 0

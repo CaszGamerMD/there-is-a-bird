@@ -1,6 +1,5 @@
 package EdDYON.guaniao.content.bath;
 
-import EdDYON.guaniao.client.particle.PlaceableBlockBreakEffects;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import net.minecraft.core.BlockPos;
@@ -29,9 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
-import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 
-import java.util.function.Consumer;
 
 public class BirdBathBlock extends BaseEntityBlock {
     private final BirdBathVariant variant;
@@ -39,11 +36,6 @@ public class BirdBathBlock extends BaseEntityBlock {
     public BirdBathBlock(BirdBathVariant variant, BlockBehaviour.Properties properties) {
         super(properties);
         this.variant = variant;
-    }
-
-    @Override
-    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
-        consumer.accept(PlaceableBlockBreakEffects.birdBath());
     }
 
     public BirdBathVariant variant() {

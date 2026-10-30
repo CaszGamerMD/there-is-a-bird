@@ -1,6 +1,5 @@
 package EdDYON.guaniao.content.food;
 
-import EdDYON.guaniao.client.particle.PlaceableBlockBreakEffects;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import net.minecraft.core.BlockPos;
@@ -40,9 +39,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
-import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 
-import java.util.function.Consumer;
 
 public final class BaggedFriesBlock extends BaseEntityBlock {
     public static final int TOTAL_FRIES = 13;
@@ -55,11 +52,6 @@ public final class BaggedFriesBlock extends BaseEntityBlock {
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(FRIES, TOTAL_FRIES));
-    }
-
-    @Override
-    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
-        consumer.accept(PlaceableBlockBreakEffects.baggedFries());
     }
 
     @Override

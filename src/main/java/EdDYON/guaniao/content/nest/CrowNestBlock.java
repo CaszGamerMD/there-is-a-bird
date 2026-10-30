@@ -1,6 +1,5 @@
 package EdDYON.guaniao.content.nest;
 
-import EdDYON.guaniao.client.particle.PlaceableBlockBreakEffects;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -31,9 +30,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 
 import org.jetbrains.annotations.Nullable;
-import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 
-import java.util.function.Consumer;
 
 public class CrowNestBlock extends BaseEntityBlock {
     public static final IntegerProperty EGGS = IntegerProperty.create("eggs", 0, 3);
@@ -43,11 +40,6 @@ public class CrowNestBlock extends BaseEntityBlock {
     public CrowNestBlock(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(EGGS, 0).setValue(NATURAL_NEST, false));
-    }
-
-    @Override
-    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
-        consumer.accept(PlaceableBlockBreakEffects.crowNest());
     }
 
     @Override

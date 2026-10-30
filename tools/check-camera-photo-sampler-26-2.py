@@ -17,8 +17,10 @@ for expression in (
     "pixels[y * size + x] = ",
 ):
     assert expression in old and expression in sampler, expression
-assert "return CameraPhotoSampler.cropSquare(" in capture
-assert "image::getPixelRGBA" in capture
+assert "CameraPhotoSampler.cropSquare(" in capture
+assert "CameraPhotoSampler.argbToAbgr(image.getPixel(x, y))" in capture
+assert "image::getPixelRGBA" not in capture
+assert "static int argbToAbgr(int argb)" in sampler
 for fragment in ("CameraImageFilters.apply(", "PhotoImageCodec.encodeJpeg(", "PhotoClientRepository.upload("):
     assert fragment in capture, fragment
 assert "source.get(sampleX, sampleY)" in sampler

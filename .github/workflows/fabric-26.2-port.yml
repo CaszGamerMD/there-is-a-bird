@@ -177,6 +177,13 @@ jobs:
           java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify actual 26.2 screenshot callback lifecycle and ABGR pixel conversion
+        run: python3 tools/check-camera-screenshot-26-2.py
+      - name: Run screenshot ARGB-to-original-ABGR pixel regression (Java 25)
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-color"
+          javac -d "$RUNNER_TEMP/camera-color" src/main/java/EdDYON/guaniao/client/camera/CameraViewfinderFrame.java src/main/java/EdDYON/guaniao/client/camera/CameraPhotoSampler.java tools/port-probes/GuaniaoCameraPixelColorRegression.java
+          java -cp "$RUNNER_TEMP/camera-color" EdDYON.guaniao.client.camera.GuaniaoCameraPixelColorRegression
       - name: Verify original photo crop and 26.2 screenshot sampler integration
         run: python3 tools/check-camera-photo-sampler-26-2.py
       - name: Run pixel-level camera photograph crop regression in standalone Java

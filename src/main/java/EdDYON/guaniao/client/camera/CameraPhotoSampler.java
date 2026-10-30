@@ -13,6 +13,17 @@ final class CameraPhotoSampler {
 
     private CameraPhotoSampler() { }
 
+    /**
+     * NativeImage.getPixel returns 0xAARRGGBB since 1.21.2, whereas the
+     * original camera filter and JPEG encoder consume 0xAABBGGRR.
+     * Preserve alpha and green, exchanging only the red and blue bytes.
+     */
+    static int argbToAbgr(int argb) {
+        return (argb & 0xFF00FF00)
+                | ((argb & 0x00FF0000) >>> 16)
+                | ((argb & 0x000000FF) << 16);
+    }
+
     static int[] cropSquare(int guiWidth, int guiHeight, int fontLineHeight,
                             int sourceWidth, int sourceHeight, int size,
                             PixelReader source) {

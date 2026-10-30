@@ -10,7 +10,6 @@ import EdDYON.guaniao.content.camera.PhotoImageCodec;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import EdDYON.guaniao.network.SetCameraSettingsPacket;
 import EdDYON.guaniao.registry.GuaniaoItems;
-import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.CameraType;
@@ -432,32 +431,50 @@ public final class CameraClientCapture {
             return;
         }
 
-        RenderTarget captureTarget = CameraPreviewPostEffect.cleanCaptureTarget(minecraft.getMainRenderTarget());
-        try (NativeImage image = Screenshot.takeScreenshot(captureTarget)) {
-            int[] pixels = cropSquare(image, PhotographData.IMAGE_SIZE);
-            CameraImageFilters.apply(
-                    pixels,
-                    PhotographData.IMAGE_SIZE,
-                    PhotographData.IMAGE_SIZE,
-                    pendingCaptureState.filter(),
-                    System.nanoTime()
-            );
-            byte[] jpeg = PhotoImageCodec.encodeJpeg(pixels, PhotographData.IMAGE_SIZE, PhotographData.IMAGE_SIZE);
-            PhotoClientRepository.upload(pendingCaptureId, hand, jpeg);
-            captureSubmitted = true;
-        } catch (Exception exception) {
-            GuaniaoMod.LOGGER.warn("Failed to capture photograph", exception);
-        }
-    }
-
-    private static int[] cropSquare(NativeImage image, int size) {
-        Minecraft minecraft = Minecraft.getInstance();
+        // 26.2 screenshots are asynchronous. Snapshot ALL capture state now,
+        // before onRenderTickEnd restores the GUI, viewfinder and pending ID.
+        UUID uploadId = pendingCaptureId;
+        CameraFilter filter = pendingCaptureState.filter();
         int guiWidth = minecraft.getWindow().getGuiScaledWidth();
         int guiHeight = minecraft.getWindow().getGuiScaledHeight();
-        return CameraPhotoSampler.cropSquare(
-                guiWidth, guiHeight, minecraft.font.lineHeight,
-                image.getWidth(), image.getHeight(), size,
-                image::getPixelRGBA);
+        int fontHeight = minecraft.font.lineHeight;
+        int photoSize = PhotographData.IMAGE_SIZE;
+        RenderTarget captureTarget = CameraPreviewPostEffect.cleanCaptureTarget(
+                minecraft.gameRenderer.mainRenderTarget());
+
+        // A queued GPU readback counts as a submitted shutter. The callback
+        // owns its NativeImage; network work is scheduled on the client thread.
+        captureSubmitted = true;
+        try {
+            Screenshot.takeScreenshot(captureTarget, image -> {
+                try (image) {
+                    int[] pixels = CameraPhotoSampler.cropSquare(
+                            guiWidth, guiHeight, fontHeight,
+                            image.getWidth(), image.getHeight(), photoSize,
+                            (x, y) -> CameraPhotoSampler.argbToAbgr(image.getPixel(x, y)));
+                    CameraImageFilters.apply(pixels, photoSize, photoSize, filter, System.nanoTime());
+                    byte[] jpeg = PhotoImageCodec.encodeJpeg(pixels, photoSize, photoSize);
+                    minecraft.execute(() -> {
+                        try {
+                            PhotoClientRepository.upload(uploadId, hand, jpeg);
+                        } catch (Exception exception) {
+                            GuaniaoMod.LOGGER.warn("Failed to upload captured photograph", exception);
+                            PhotoClientRepository.cancelCapture(uploadId);
+                        }
+                    });
+                } catch (Exception exception) {
+                    minecraft.execute(() -> {
+                        GuaniaoMod.LOGGER.warn("Failed to encode captured photograph", exception);
+                        PhotoClientRepository.cancelCapture(uploadId);
+                    });
+                }
+            });
+        } catch (Exception exception) {
+            // If GPU readback never started, restoreAfterCleanCapture must
+            // cancel the reservation instead of leaving the shutter locked.
+            captureSubmitted = false;
+            GuaniaoMod.LOGGER.warn("Failed to request photograph screenshot", exception);
+        }
     }
 
     private static void beginCleanCapture(InteractionHand hand, double fov) {

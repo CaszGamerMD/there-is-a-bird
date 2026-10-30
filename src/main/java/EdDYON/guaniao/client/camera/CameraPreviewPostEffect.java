@@ -73,7 +73,7 @@ public final class CameraPreviewPostEffect {
         CameraState state = CameraClientCapture.renderState();
         CameraFilter filter = state.filter();
 
-        RenderTarget mainTarget = minecraft.getMainRenderTarget();
+        RenderTarget mainTarget = minecraft.gameRenderer.mainRenderTarget();
         int width = mainTarget.width;
         int height = mainTarget.height;
         if (width <= 0 || height <= 0) {

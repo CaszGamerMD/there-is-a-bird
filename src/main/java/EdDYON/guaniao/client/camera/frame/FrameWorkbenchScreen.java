@@ -625,6 +625,41 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         if(this.editShape || this.invalidOutline)extractCanvas(g,mouseX,mouseY);
     }
 
+    /** Exact author layout for palette/outline modals without slots behind it. */
+    private void extractModalPanel(GuiGraphicsExtractor graphics,int mouseX,int mouseY) {
+        panel(graphics,0,0,PANEL_WIDTH,PANEL_HEIGHT);
+        if(this.paletteKind!=null) {
+            graphics.text(this.font,text("palette."+this.paletteKind.name().toLowerCase(Locale.ROOT)),
+                    14,10,0x404040,false);
+            recess(graphics,PALETTE_X-4,PALETTE_Y-4,
+                    PALETTE_COLUMNS*PALETTE_STEP+8,PALETTE_ROWS*PALETTE_STEP+8,0xFF8B8B8B);
+            int start=this.palettePage*PALETTE_PAGE_SIZE;
+            for(int cell=0;cell<PALETTE_PAGE_SIZE;cell++) {
+                int x=PALETTE_X+(cell%PALETTE_COLUMNS)*PALETTE_STEP;
+                int y=PALETTE_Y+(cell/PALETTE_COLUMNS)*PALETTE_STEP;
+                slot(graphics,x,y);
+                if(start+cell>=this.paletteEntries.size())continue;
+                graphics.item(this.paletteEntries.get(start+cell),x,y);
+                if(mouseX>=x && mouseX<x+18 && mouseY>=y && mouseY<y+18) {
+                    graphics.fill(x,y,x+16,y+16,0x80FFFFFF);
+                }
+            }
+            int pages=Math.max(1,(this.paletteEntries.size()+PALETTE_PAGE_SIZE-1)/PALETTE_PAGE_SIZE);
+            Component pageLabel=text("palette_page",this.palettePage+1,pages,this.paletteEntries.size());
+            graphics.text(this.font,pageLabel,195-this.font.width(pageLabel)/2,248,0x404040,false);
+        } else if(this.outlineEditor!=null) {
+            graphics.text(this.font,text("edit_shape"),14,10,0x404040,false);
+            graphics.text(this.font,Component.literal(this.outlineEditor.zoomPercent()+"%"),
+                    228,10,0x404040,false);
+            this.outlineEditor.render(graphics,mouseX,mouseY);
+            graphics.textWithWordWrap(this.font,text("outline_help"),276,216,100,0x404040);
+            if(!this.outlineEditor.valid())
+                graphics.text(this.font,text("invalid_shape"),276,252,0x9B3030,false);
+            if(this.outlineConfirm!=null)
+                this.outlineConfirm.active=this.outlineEditor.valid();
+        }
+    }
+
     private void extractCanvas(GuiGraphicsExtractor g,int mouseX,int mouseY) {
         int[] mask=this.painting ? this.strokeMask : this.workingMask==null ? this.design.mask() : this.workingMask;
         int[] inner=FrameDesign.erode(mask,this.design.borderCells());
@@ -675,6 +710,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         try {
             if(this.paletteKind!=null || this.outlineEditor!=null) {
                 this.hoveredSlot=null;
+                this.extractModalPanel(graphics,localX,localY);
                 // Modal children draw without the underlying container slots;
                 // otherwise an item could be highlighted beneath a palette.
                 for(var renderable:this.renderables) {
@@ -691,7 +727,27 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
 
     @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partialTick) {
         super.extractRenderState(graphics,mouseX,mouseY,partialTick);
+        if(this.paletteKind!=null) {
+            // Tooltips are always submitted at native window coordinates,
+            // not at scaled panel coordinates.
+            int cell=this.paletteCell(this.localX(mouseX),this.localY(mouseY));
+            int index=this.palettePage*PALETTE_PAGE_SIZE+cell;
+            if(cell>=0 && index<this.paletteEntries.size())
+                graphics.setTooltipForNextFrame(this.font,this.paletteEntries.get(index),mouseX,mouseY);
+            return;
+        }
+        if(this.outlineEditor!=null)return;
         this.extractPreview3D(graphics);
+        if(this.hoveredSlot==null && this.menu.getCarried().isEmpty()) {
+            double x=this.localX(mouseX),y=this.localY(mouseY);
+            for(var child:this.children()) {
+                if(child instanceof AbstractWidget widget && widget.isMouseOver(x,y)
+                        && this.font.width(widget.getMessage())>widget.getWidth()-8) {
+                    graphics.setTooltipForNextFrame(this.font,widget.getMessage(),mouseX,mouseY);
+                    break;
+                }
+            }
+        }
     }
 
     private void extractPreview3D(GuiGraphicsExtractor graphics) {

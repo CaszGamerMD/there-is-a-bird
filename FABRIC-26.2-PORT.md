@@ -1194,3 +1194,49 @@ still has the original Forge-specific custom block break-particle extension,
 and other placeable features share that extension. Those effects must be
 migrated without removing the authored colored debris effects. This remains
 a private work-in-progress; no usable test JAR has been produced.
+
+
+## 2026-10-29 — Client block particles, all eight particle providers and Crow Nest 26.2 GUI
+
+**Restored the original custom debris rather than removing it.** All six
+block families—Bagged Fries, Bird Baths, Bird Cages, Crow Nests, Breadcrumb
+Piles and Dropping Stains—now intercept `ClientLevel.addDestroyBlockEffect`
+and `ClientLevel.addBreakingBlockEffect` via a *client-only* mixin. In
+Minecraft 26.2 these are the actual terrain-particle generation methods;
+old `ParticleEngine.destroy/crack` methods no longer exist. The client mixin
+delegates unknown block types to the vanilla implementation. The original
+color palettes, particle counts, velocities and per-variant effects remain
+identical; an actual `BlockHitResult` is used to retain the original hit
+location when available. Removed all six Forge `initializeClient` hooks.
+
+**Converted all eight authored particles.** The seven feather/combat effect
+classes (Kill Feather, Burial Wind, Burial Cyclone, Riven Split, Riven Streak,
+Hunting Mark and Hunting Streak) retain *exact* original physics, delay,
+sway, spin, fade and size formulas. Only the removed
+`TextureSheetParticle`/provider signatures were changed to
+`SingleQuadParticle`, `SingleQuadParticle.Layer.TRANSLUCENT` and the
+26.2 random-aware `ParticleProvider` factory. Placeable Fleck also retains
+its original gravity/rolling/deceleration/lifetime and now sets tint on the
+correct single-quad subclass. `GuaniaoFabricClientEntrypoint` registers
+all eight sprite-aware `ParticleProviderRegistry` factories, restoring the
+client registration formerly performed by Forge's
+`RegisterParticleProvidersEvent`.
+
+**Converted Crow Nest's actual inventory screen.**
+`CrowNestScreen` now uses 26.2 `GuiGraphicsExtractor`, a 176×222
+vanilla chest layout, the same masked 18-pixel loot grid and merging, the
+original rummage progress bar, tooltip and exact server-side
+`TAKE_TREASURE_BUTTON_BASE` ID; input uses the new
+`MouseButtonEvent`. Its previous direct `GuiGraphics` methods no longer
+exist in 26.2, and we preserved visual stacking between inventory slots
+and loot tooltips.
+
+Source-level regression checks added to CI:
+`check-block-break-particle-port.py`,
+`check-particle-providers-26-2.py` and
+`check-crow-nest-screen-26-2.py`. These verify *author-preserved*
+effects and UI behavior; they do **not** replace compilation or an
+in-game visual test. The much larger `FrameWorkbenchScreen` still needs
+the 26.2 `GuiGraphicsExtractor` migration, as do other Forge-only
+client classes. The private Fabric runner still fails before beginning
+steps, and no complete mod JAR has been produced.

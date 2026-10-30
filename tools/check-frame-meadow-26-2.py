@@ -32,5 +32,5 @@ assert "FrameWorkshopBird.renderProgress(" in progress
 assert "FrameWorkshopBird.progressFood(seed)" in progress
 assert "FrameCraftingProgress.render(" in screen
 assert "FrameCraftingMeadow.java" in (ROOT/"build.gradle").read_text("utf-8")
-print("FRAME CRAFTING MEADOW 26.2 PARITY OK: 12 grass tiles, four plants,"
+print("FRAME CRAFTING MEADOW 26.2 PARITY OK: 11 grass tiles, four plants,"
       " original positions and inventory-tinted resource-pack sprites")

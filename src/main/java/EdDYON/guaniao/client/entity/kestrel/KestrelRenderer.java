@@ -40,7 +40,7 @@ public final class KestrelRenderer<R extends LivingEntityRenderState & GeoRender
     }
 
     @Override
-    protected boolean shouldShowName(KestrelEntity kestrel, double distanceToCameraSq) {
+    public boolean shouldShowName(KestrelEntity kestrel, double distanceToCameraSq) {
         return kestrel.isLearningFetchItem() || super.shouldShowName(kestrel, distanceToCameraSq);
     }
 

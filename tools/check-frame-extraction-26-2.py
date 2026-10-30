@@ -58,7 +58,11 @@ for marker in (
     'text("seconds_remaining",',
     '"work_stage."+stage',
     "this.readyFlashTicks>0"):
-    assert marker in old and marker in new,marker
+    # The original and extracted implementations use different local names
+    # for their graphics parameters. Compare the slot geometry, not variable
+    # spelling; all coordinates and output-slot placement remain required.
+    authored = old.replace("slot(graphics,", "slot(g,")
+    assert marker in authored and marker in new,marker
 
 for marker in (
     "FrameCraftingMeadow.render(graphics);",

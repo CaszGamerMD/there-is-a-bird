@@ -154,6 +154,53 @@ assert "this.shadowRadius = 0.12F;" in cockatiel_renderer
 assert "public Identifier getTextureResource()" in current("content/bird/cockatiel/CockatielEntity.java")
 assert "software.bernie" not in cockatiel_model + cockatiel_renderer
 
+# Cassowary's seven-source-value head-led gaze remains weighted and
+# animation-additive for head, upper neck and lower neck, never eye bones.
+cassowary_old = original("client/entity/cassowary/CassowaryModel.java")
+cassowary_model = current("client/entity/cassowary/CassowaryModel.java")
+cassowary_renderer = current("client/entity/cassowary/CassowaryRenderer.java")
+for bone in ('"head"', '"neckUpper"', '"neckLower"'):
+    assert "addRotation(" + bone in cassowary_old
+    assert "snapshots, " + bone in cassowary_renderer
+for getter in ("getClientGazeWeight()", "getClientHeadPitch()", "getClientHeadYaw()",
+               "getClientUpperNeckPitch()", "getClientUpperNeckYaw()",
+               "getClientLowerNeckPitch()", "getClientLowerNeckYaw()"):
+    assert getter in cassowary_old and getter in cassowary_model, getter
+for name in ("HEAD_PITCH", "HEAD_YAW", "UPPER_NECK_PITCH", "UPPER_NECK_YAW",
+             "LOWER_NECK_PITCH", "LOWER_NECK_YAW"):
+    assert "DataTicket<Float> " + name in cassowary_model, name
+    assert "CassowaryModel." + name in cassowary_renderer, name
+for token in ("weight <= 0.001F", "Mth.DEG_TO_RAD",
+              "BirdMutationRenderData.capture(renderState,",
+              "BirdMutationRenderData.MODEL_SCALE",
+              "GuaniaoGeckoAssets.model(CassowaryDefinition.MODEL)",
+              "GuaniaoGeckoAssets.animation(CassowaryDefinition.ANIMATION)"):
+    assert token in cassowary_model
+assert "bone.setRotX(bone.getRotX() + pitch)" in cassowary_renderer
+assert "bone.setRotY(bone.getRotY() + yaw)" in cassowary_renderer
+assert "this.shadowRadius = 0.493F;" in cassowary_renderer
+assert "software.bernie" not in cassowary_model + cassowary_renderer
+
+# Woodcock's original controller-transition workaround forces the
+# root_shape 0.45 scale AFTER animation and swaps walking/flying wing rigs.
+woodcock_old = original("client/entity/woodcock/WoodcockModel.java")
+woodcock_model = current("client/entity/woodcock/WoodcockModel.java")
+woodcock_renderer = current("client/entity/woodcock/WoodcockRenderer.java")
+for token in ('"root_shape"', '"wing_left"', '"wing_right"', '"fly"',
+              "WoodcockDefinition.MODEL_ROOT_SCALE"):
+    assert token in woodcock_old and token in woodcock_renderer
+assert "DataTicket<Boolean> FLYING" in woodcock_model
+assert "renderState.addGeckolibData(FLYING, animatable.isFlying())" in woodcock_model
+assert "BirdMutationRenderData.capture(renderState," in woodcock_model
+assert "BirdMutationRenderData.MODEL_SCALE" in woodcock_model
+assert "GuaniaoGeckoAssets.model(WoodcockDefinition.MODEL)" in woodcock_model
+assert "GuaniaoGeckoAssets.animation(WoodcockDefinition.ANIMATION)" in woodcock_model
+for token in ("root.setScale(", "wing.skipRender(flying)", "wing.skipChildrenRender(flying)",
+              "wing.skipRender(!flying)", "wing.skipChildrenRender(!flying)"):
+    assert token in woodcock_renderer, token
+assert "this.shadowRadius = 0.16F;" in woodcock_renderer
+assert "software.bernie" not in woodcock_model + woodcock_renderer
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -168,9 +215,11 @@ registered = {
     "SPOTTED_DOVE": "SpottedDove",
     "COCKATOO": "Cockatoo",
     "COCKATIEL": "Cockatiel",
+    "CASSOWARY": "Cassowary",
+    "WOODCOCK": "Woodcock",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 12 model texture snapshots, 10 renderer scales and client registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 14 model texture snapshots, 12 renderer scales and client registrations, unmodified mutation color formulas")

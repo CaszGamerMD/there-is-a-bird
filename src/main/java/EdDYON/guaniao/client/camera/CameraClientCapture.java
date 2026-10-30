@@ -65,7 +65,7 @@ public final class CameraClientCapture {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || cleanCapturePending || PhotoClientRepository.hasPendingCapture()
                 || !isCameraStillHeld(minecraft, hand) || minecraft.gui.screen() != null
-                || minecraft.getOverlay() != null || !minecraft.isWindowActive()) {
+                || minecraft.gui.overlay() != null || !minecraft.isWindowActive()) {
             return;
         }
 
@@ -179,7 +179,7 @@ public final class CameraClientCapture {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.gui.screen() != null || minecraft.getOverlay() != null) {
+        if (minecraft.gui.screen() != null || minecraft.gui.overlay() != null) {
             SHUTTER_INPUT.suspend(false);
             return false;
         }
@@ -261,7 +261,7 @@ public final class CameraClientCapture {
 
     private static boolean inputContextReady(Minecraft minecraft) {
         return minecraft.player != null && minecraft.level != null && minecraft.isWindowActive()
-                && minecraft.gui.screen() == null && minecraft.getOverlay() == null && minecraft.mouseHandler.isMouseGrabbed();
+                && minecraft.gui.screen() == null && minecraft.gui.overlay() == null && minecraft.mouseHandler.isMouseGrabbed();
     }
 
     private static boolean hasShortcutModifiers(int modifiers) {
@@ -506,18 +506,29 @@ public final class CameraClientCapture {
         persistCurrentState();
         pendingCameraYRot = minecraft.player.getViewYRot(1.0F);
         pendingCameraXRot = minecraft.player.getViewXRot(1.0F);
-        storedHideGui = minecraft.options.hideGui;
+        storedHideGui = minecraft.gui.hud.isHidden();
         storedCameraType = minecraft.options.getCameraType();
-        minecraft.options.hideGui = true;
+        setHudHidden(minecraft, true);
         if (storedCameraType != CameraType.THIRD_PERSON_FRONT) {
             minecraft.options.setCameraType(CameraType.FIRST_PERSON);
         }
         minecraft.player.playSound(SoundEvents.SPYGLASS_USE, 0.45F, 1.4F);
     }
 
+    /**
+     * Minecraft 26.2 moved F1/HUD visibility from Options.hideGui into Hud.
+     * Hud has a toggle but no absolute setter, so only toggle when necessary.
+     * This restores the player's original F1 preference after clean capture.
+     */
+    private static void setHudHidden(Minecraft minecraft, boolean hidden) {
+        if (minecraft.gui.hud.isHidden() != hidden) {
+            minecraft.gui.hud.toggle();
+        }
+    }
+
     private static void restoreAfterCleanCapture() {
         Minecraft minecraft = Minecraft.getInstance();
-        minecraft.options.hideGui = storedHideGui;
+        setHudHidden(minecraft, storedHideGui);
         minecraft.options.setCameraType(storedCameraType);
         minecraft.gameRenderer.setRenderBlockOutline(true);
         restoreSensitivity(minecraft);

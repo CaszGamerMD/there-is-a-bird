@@ -227,6 +227,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/camera-shutter"
           javac -d "$RUNNER_TEMP/camera-shutter" src/main/java/EdDYON/guaniao/client/camera/CameraShutterInput.java tools/port-probes/GuaniaoCameraShutterInputRegression.java
           java -cp "$RUNNER_TEMP/camera-shutter" EdDYON.guaniao.client.camera.GuaniaoCameraShutterInputRegression
+      - name: Verify 26.2 clean-shutter HUD visibility and overlay blocking parity
+        run: python3 tools/check-camera-hud-26-2.py
       - name: Verify Fabric viewfinder tick, continuous focus, disconnect and config cleanup
         run: python3 tools/check-camera-fabric-lifecycle-26-2.py
       - name: Verify camera tooltip parity and Fabric client bootstrap

@@ -71,7 +71,7 @@ public final class CameraKeyMappings {
      */
     static void migrateLegacyFocusKey() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (focusMigrationChecked || minecraft.options == null || minecraft.getOverlay() != null
+        if (focusMigrationChecked || minecraft.options == null || minecraft.gui.overlay() != null
                 || Arrays.stream(minecraft.options.keyMappings).noneMatch(binding -> binding == FOCUS)) return;
         focusMigrationChecked = true;
         if (!CameraClientPreferences.isFocusKeyMigrationPending()) return;

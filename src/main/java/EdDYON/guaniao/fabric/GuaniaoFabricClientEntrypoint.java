@@ -56,6 +56,10 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
             // Restore zoom sensitivity, abort any incomplete shutter upload
             // and drop private texture data before leaving the server.
             CameraClientCapture.disconnect();
+            // Disconnect the JPEG/request/upload repository too: image and
+            // in-flight upload IDs must not survive into a different server.
+            // The repository generation gate ignores any late async responses.
+            PhotoClientRepository.clear();
             PhotographTextureCache.clear();
             BirdConfigManager.loadOrCreateDefaults();
         });

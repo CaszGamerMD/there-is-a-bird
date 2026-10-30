@@ -19,7 +19,9 @@ for name in ("CameraClientCapture.tickViewfinder();",
 assert "ClientTickEvents.END_CLIENT_TICK.register(" in new
 assert "ClientPlayConnectionEvents.DISCONNECT.register(" in new
 assert new.index("CameraClientCapture.tickViewfinder();") < new.index("CameraKeyMappings.tick();")
-assert new.index("CameraClientCapture.disconnect();") < new.index("PhotographTextureCache.clear();")
+assert (new.index("CameraClientCapture.disconnect();")
+        < new.index("PhotoClientRepository.clear();")
+        < new.index("PhotographTextureCache.clear();"))
 assert "CameraKeyMappings.tick();" in new
 assert "migrateLegacyFocusKey();" in keys
 for token in ("if (!viewfinderOpen)", "closeViewfinder();",
@@ -27,5 +29,16 @@ for token in ("if (!viewfinderOpen)", "closeViewfinder();",
               "tickContinuousFocus(minecraft);",
               "restoreAfterCleanCapture();"):
     assert token in capture, token
+repository = (ROOT / (SRC + "PhotoClientRepository.java")).read_text("utf-8")
+assert "public static void clear()" in repository
+clear = repository.split("public static void clear()", 1)[1].split("private static void reject", 1)[0]
+# No old JPEG, in-flight requests, image hashes or per-server capture IDs
+# may remain when the player joins another world.
+for token in ("IMAGES.clear();", "DOWNLOADS.clear();", "EXPECTED_HASHES.clear();",
+              "RETRY_AFTER.clear();", "PENDING_UPLOADS.clear();", "DISPATCHED_UPLOADS.clear();",
+              "CAPTURE_IMAGES.clear();", "RECENT_CAPTURES.clear();", "REQUEST_QUEUE.clear();",
+              "FAILURE_COUNTS.clear();", "VALIDATING.clear();", "generation++;",
+              "activeRequest = null;", "recentCaptureBytes = 0L;"):
+    assert token in clear, "Missing session reset: " + token
 assert "check-camera-fabric-lifecycle-26-2.py" in workflow
 print("PASS: Fabric camera tick and disconnect restore original autofocus, state and cleanup")

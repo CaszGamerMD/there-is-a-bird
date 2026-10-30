@@ -99,6 +99,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
         include 'EdDYON/guaniao/client/camera/frame/FrameNumberControl.java'
         include 'EdDYON/guaniao/client/camera/frame/FrameMaterialPalette.java'
         include 'EdDYON/guaniao/client/camera/frame/FrameCraftingMeadow.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameCraftingProgress2D.java'
         include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchMeshGeometry.java'
         include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchMeshSubmitter.java'
         include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchPhotoGeometry.java'

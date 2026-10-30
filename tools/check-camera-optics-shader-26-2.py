@@ -17,6 +17,17 @@ body="// Fixed disk samples avoid the square imprint of a sparse, enlarged 5x5 k
 assert body in old and body in new
 expected=old[old.index(body):].replace("DiffuseSampler","InSampler").replace(
     "DepthSampler","MainDepthSampler")
+# 26.2 intentionally reversed the world's depth buffer; the only author
+# math changes permitted are mapping raw reverse-Z to legacy forward-Z and
+# inverting both clear-sky depth checks.
+expected=expected.replace(
+    "    float z = depth * 2.0 - 1.0;",
+    "    // Minecraft 26.2 reversed-Z: near is 1.0, far/clear sky is 0.0.\n"
+    "    // Convert back to the author's legacy forward-Z depth convention\n"
+    "    // before applying the unchanged thin-lens distance reconstruction.\n"
+    "    float z = (1.0 - depth) * 2.0 - 1.0;"
+).replace("depth >= 0.999999", "depth <= 0.000001").replace(
+    "sampleDepth >= 0.999999", "sampleDepth <= 0.000001")
 assert new[new.index(body):] == expected, "Nikon optics math or 32 disk samples changed"
 assert new.startswith("#version 330\n#extension GL_ARB_separate_shader_objects : require\n")
 assert "layout(location = 0) in vec2 texCoord;" in new
@@ -49,4 +60,7 @@ for entry in current:
     assert entry["type"] == "float"
     assert old_defaults[entry["name"]] == entry["value"], entry
 assert "ColorModulate" in str(second["uniforms"])
-print("PASS: 26.2 optical fragment retains all author lens math and original uniform defaults")
+assert "float z = (1.0 - depth) * 2.0 - 1.0;" in new
+assert "circleOfConfusion(sceneDistance, depth <= 0.000001)" in new
+assert "circleOfConfusion(linearDepth(sampleDepth), sampleDepth <= 0.000001)" in new
+print("PASS: author optical math retained with intentional 26.2 reversed-Z reconstruction and sky checks")

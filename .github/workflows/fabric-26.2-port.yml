@@ -184,6 +184,13 @@ jobs:
           mkdir -p "$RUNNER_TEMP/camera-optics-params"
           javac -d "$RUNNER_TEMP/camera-optics-params" src/main/java/EdDYON/guaniao/content/camera/CameraFilterCategory.java src/main/java/EdDYON/guaniao/content/camera/CameraFilter.java src/main/java/EdDYON/guaniao/content/camera/CameraLens.java src/main/java/EdDYON/guaniao/content/camera/CameraFocusMode.java src/main/java/EdDYON/guaniao/content/camera/CameraAperture.java src/main/java/EdDYON/guaniao/content/camera/CameraShootingMode.java src/main/java/EdDYON/guaniao/content/camera/CameraState.java src/main/java/EdDYON/guaniao/client/camera/CameraOpticsParameters.java tools/port-probes/GuaniaoCameraOpticsParametersRegression.java
           java -cp "$RUNNER_TEMP/camera-optics-params" EdDYON.guaniao.client.camera.GuaniaoCameraOpticsParametersRegression
+      - name: Verify camera 26.2 reversed depth sky and original focus calculations
+        run: python3 tools/check-camera-reversed-depth-26-2.py
+      - name: Run real numerical reversed-Z Nikon optics regression with Java 25
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-depth"
+          javac -d "$RUNNER_TEMP/camera-depth" tools/port-probes/GuaniaoCameraReversedDepthRegression.java
+          java -cp "$RUNNER_TEMP/camera-depth" EdDYON.guaniao.client.camera.GuaniaoCameraReversedDepthRegression
       - name: Verify original 32-tap Nikon optics GLSL port and 26.2 sampler/UBO schema
         run: python3 tools/check-camera-optics-shader-26-2.py
       - name: Verify original viewfinder/thumbnail crop and modern screen access

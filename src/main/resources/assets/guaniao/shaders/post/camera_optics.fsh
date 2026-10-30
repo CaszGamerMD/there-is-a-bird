@@ -63,7 +63,10 @@ const vec2 BLUR_DISK[32] = vec2[32](
 );
 
 float linearDepth(float depth) {
-    float z = depth * 2.0 - 1.0;
+    // Minecraft 26.2 reversed-Z: near is 1.0, far/clear sky is 0.0.
+    // Convert back to the author's legacy forward-Z depth convention
+    // before applying the unchanged thin-lens distance reconstruction.
+    float z = (1.0 - depth) * 2.0 - 1.0;
     return (2.0 * NearPlane * FarPlane)
         / max(0.0001, FarPlane + NearPlane - z * (FarPlane - NearPlane));
 }
@@ -102,7 +105,7 @@ void main() {
     }
     float depth = texture(MainDepthSampler, uv).r;
     float sceneDistance = linearDepth(depth);
-    float coc = circleOfConfusion(sceneDistance, depth >= 0.999999);
+    float coc = circleOfConfusion(sceneDistance, depth <= 0.000001);
     float resolutionScale = max(OutSize.y, 1.0) / 1080.0;
     float maximumRadius = 24.0 * resolutionScale;
     // A soft limit preserves the difference between wide apertures on a long lens.
@@ -119,7 +122,7 @@ void main() {
         vec2 offset = BLUR_DISK[index];
         vec2 sampleUv = lensUv(texCoord + offset * texelRadius);
         float sampleDepth = texture(MainDepthSampler, sampleUv).r;
-        float sampleCoc = circleOfConfusion(linearDepth(sampleDepth), sampleDepth >= 0.999999);
+        float sampleCoc = circleOfConfusion(linearDepth(sampleDepth), sampleDepth <= 0.000001);
 
         // Blurred backgrounds may mix across distant surfaces and sky, but never
         // gather an in-focus bird or an object on the other side of the focal plane.

@@ -177,6 +177,13 @@ jobs:
           java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify all original 51 author camera filters and pure-Java source identity
+        run: python3 tools/check-camera-filter-core-26-2.py
+      - name: Run all 51 CPU camera filter regression tests in standalone Java 25
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-effects"
+          javac -d "$RUNNER_TEMP/camera-effects" src/main/java/EdDYON/guaniao/client/camera/CameraFilterPixelCore.java tools/port-probes/GuaniaoCameraFilterCoreRegression.java
+          java -cp "$RUNNER_TEMP/camera-effects" EdDYON.guaniao.client.camera.GuaniaoCameraFilterCoreRegression
       - name: Verify actual 26.2 screenshot callback lifecycle and ABGR pixel conversion
         run: python3 tools/check-camera-screenshot-26-2.py
       - name: Run screenshot ARGB-to-original-ABGR pixel regression (Java 25)

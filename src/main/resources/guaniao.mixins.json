@@ -16,7 +16,8 @@
     "PrankFoodFinishMixin"
   ],
   "client": [
-    "ClientBlockBreakParticlesMixin"
+    "ClientBlockBreakParticlesMixin",
+    "GuaniaoGuiRenderStateAccess"
   ],
   "server": [],
   "injectors": {

@@ -8,6 +8,8 @@ import EdDYON.guaniao.client.entity.cockatiel.CockatielRenderer;
 import EdDYON.guaniao.client.entity.cassowary.CassowaryRenderer;
 import EdDYON.guaniao.client.entity.woodcock.WoodcockRenderer;
 import EdDYON.guaniao.client.entity.kestrel.KestrelRenderer;
+import EdDYON.guaniao.client.entity.hummingbird.HummingbirdRenderer;
+import EdDYON.guaniao.client.entity.hummingbird.HummingbirdMolangQueries;
 import EdDYON.guaniao.client.entity.kiwi.KiwiRenderer;
 import EdDYON.guaniao.client.entity.crow.CrowRenderer;
 import EdDYON.guaniao.client.entity.nightheron.NightHeronRenderer;
@@ -44,5 +46,7 @@ public final class GuaniaoFabricEntityRenderers {
         EntityRendererRegistry.register(GuaniaoEntityTypes.SEAGULL.get(), SeagullRenderer::new);
         EntityRendererRegistry.register(GuaniaoEntityTypes.NIGHT_HERON.get(), NightHeronRenderer::new);
         EntityRendererRegistry.register(GuaniaoEntityTypes.KESTREL.get(), KestrelRenderer::new);
+        HummingbirdMolangQueries.register();
+        EntityRendererRegistry.register(GuaniaoEntityTypes.HUMMINGBIRD.get(), HummingbirdRenderer::new);
     }
 }

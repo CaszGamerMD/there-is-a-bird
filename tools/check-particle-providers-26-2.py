@@ -62,7 +62,15 @@ for species, registration in particles:
 assert "ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.PLACEABLE_FLECK.get(), PlaceableBreakFleckParticle.Provider::new);" in client
 assert client.count("ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.") == 8
 assert "net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry" in client
-assert "PlaceableBreakFleckParticle" in new("client/particle/PlaceableBlockBreakEffects.java")
+# Custom debris is created from its registered particle TYPE, then configured
+# as a SingleQuadParticle. The effect intentionally does not name its provider
+# implementation (registered separately in the client entrypoint).
+effect = new("client/particle/PlaceableBlockBreakEffects.java")
+assert "particles.createParticle(GuaniaoParticleTypes.PLACEABLE_FLECK.get()," in effect
+assert "particle instanceof net.minecraft.client.particle.SingleQuadParticle quad" in effect
+assert "quad.setColor(color.red, color.green, color.blue);" in effect
+assert "quad.scale(scale);" in effect
+assert "PlaceableBreakFleckParticle" in client
 
 print("FABRIC PARTICLE PROVIDERS 26.2 PARITY OK: all 8 registered, all seven"
       " combat/special feathers preserve exact authored motion and fade formulas")

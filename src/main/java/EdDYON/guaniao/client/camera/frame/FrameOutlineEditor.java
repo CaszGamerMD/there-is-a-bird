@@ -2,7 +2,7 @@ package EdDYON.guaniao.client.camera.frame;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
 
 /** Modal bitmap draft. Cancel never touches the source design. */
@@ -27,7 +27,7 @@ final class FrameOutlineEditor {
     private int cellY(double y) {return Mth.clamp((int)Math.floor((y-Y-this.panY)/this.cell()),0,31);}
     boolean inside(double x,double y) {return x>=X && y>=Y && x<X+SIZE && y<Y+SIZE;}
 
-    void render(GuiGraphics graphics,int mouseX,int mouseY) {
+    void render(GuiGraphicsExtractor graphics,int mouseX,int mouseY) {
         float cell=this.cell();
         for(int y=0;y<32;y++) for(int x=0;x<32;x++) {
             int x0=Math.max(X,Math.round(X+this.panX+x*cell)),y0=Math.max(Y,Math.round(Y+this.panY+y*cell));
@@ -40,14 +40,14 @@ final class FrameOutlineEditor {
                 graphics.fill(x0,y0,Math.min(x1,x0+1),y1,0x44404040);
             }
         }
-        graphics.renderOutline(X-1,Y-1,SIZE+2,SIZE+2,0xFF373737);
+        graphics.outline(X-1,Y-1,SIZE+2,SIZE+2,0xFF373737);
         if(this.inside(mouseX,mouseY)) {
             int x=this.cellX(mouseX),y=this.cellY(mouseY),radius=(this.brushSize-1)/2;
             int x0=Math.max(X,Math.round(X+this.panX+(x-radius)*cell));
             int y0=Math.max(Y,Math.round(Y+this.panY+(y-radius)*cell));
             int x1=Math.min(X+SIZE,Math.round(X+this.panX+(x-radius+this.brushSize)*cell));
             int y1=Math.min(Y+SIZE,Math.round(Y+this.panY+(y-radius+this.brushSize)*cell));
-            graphics.renderOutline(x0,y0,x1-x0,y1-y0,this.tool==Tool.ERASER ? 0xFFFF7777 : 0xFFFFFFFF);
+            graphics.outline(x0,y0,x1-x0,y1-y0,this.tool==Tool.ERASER ? 0xFFFF7777 : 0xFFFFFFFF);
         }
     }
 

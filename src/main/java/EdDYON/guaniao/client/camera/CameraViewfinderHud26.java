@@ -10,12 +10,12 @@ import net.minecraft.network.chat.Component;
 /**
  * Native 26.2 GUI-extraction port of the original viewfinder bezel.
  * The authenticated filtered-lens layer is required as a callback.
- * Do not register before the original photo shader pipeline is migrated.
+ * Safe to register now: without a real filtered lens the HUD is a no-op.
  */
 final class CameraViewfinderHud26 {
     @FunctionalInterface
     interface LensDrawer {
-        void extract(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom);
+        boolean extract(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom);
     }
     private static final int BODY = 0xFF181817;
     private static final int EDGE = 0xFF363632;
@@ -37,7 +37,9 @@ final class CameraViewfinderHud26 {
         int right = left + frame.size();
         int bottom = top + frame.size();
 
-        lensDrawer.extract(graphics, left, top, right, bottom);
+        // A missing renderer is not a successful filtered photograph. Do not
+        // mask the world with an empty bezel while the GPU port is incomplete.
+        if (!lensDrawer.extract(graphics, left, top, right, bottom)) return;
         graphics.fill(0, 0, width, top, BODY);
         graphics.fill(0, bottom, width, height, BODY);
         graphics.fill(0, top, left, bottom, BODY);

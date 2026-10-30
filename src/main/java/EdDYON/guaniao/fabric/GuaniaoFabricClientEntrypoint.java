@@ -8,6 +8,10 @@ import EdDYON.guaniao.client.camera.PhotoClientRepository;
 import EdDYON.guaniao.client.camera.PhotographTextureCache;
 import EdDYON.guaniao.client.camera.CameraKeyMappings;
 import EdDYON.guaniao.client.camera.CameraClientCapture;
+import EdDYON.guaniao.client.camera.CameraPreviewGuiBridge;
+import EdDYON.guaniao.GuaniaoMod;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
 import EdDYON.guaniao.config.BirdConfigManager;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -43,6 +47,9 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
     public void onInitializeClient() {
         CameraTooltipEvents.registerCallbacks();
         CameraKeyMappings.register();
+        HudElementRegistry.addLast(
+                Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "camera_viewfinder"),
+                (graphics, deltaTracker) -> CameraClientCapture.renderViewfinder(graphics));
         // The original Forge render-tick callback does not run on Fabric.
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             PhotographTextureCache.pumpUploads();
@@ -56,6 +63,9 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
             // Restore zoom sensitivity, abort any incomplete shutter upload
             // and drop private texture data before leaving the server.
             CameraClientCapture.disconnect();
+            // The next server must not reuse a native GPU lens provider
+            // holding on to textures allocated for the prior world.
+            CameraPreviewGuiBridge.clear();
             // Disconnect the JPEG/request/upload repository too: image and
             // in-flight upload IDs must not survive into a different server.
             // The repository generation gate ignores any late async responses.

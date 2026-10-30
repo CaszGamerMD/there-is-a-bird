@@ -15,7 +15,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -366,13 +366,20 @@ public final class CameraClientCapture {
         return updateFocusFromCrosshair(Minecraft.getInstance(), true);
     }
 
-    public static void renderViewfinder(GuiGraphics graphics, float partialTick) {
+    /**
+     * Extract the authored camera HUD only after the actual filtered world
+     * frame is available. This is called by the Fabric 26.2 HUD registry,
+     * not the old immediate Forge RenderGuiEvent.Post.
+     */
+    public static void renderViewfinder(GuiGraphicsExtractor graphics) {
         if (!viewfinderOpen
                 || cleanCapturePending
                 || Minecraft.getInstance().gui.screen() != null) {
             return;
         }
-        CameraViewfinderOverlay.render(graphics, currentState);
+        CameraViewfinderHud26.extract(graphics, currentState,
+                (g, left, top, right, bottom) -> CameraPreviewGuiBridge.drawPreview(
+                        g, left, top, right, bottom, currentState.filter()));
     }
 
     /**

@@ -1,4 +1,5 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
 // Native Minecraft 26.2 post effect program. Original author optics math,
 // lens distortion, foreground/background rejection and 32-sample disk follow
@@ -22,8 +23,8 @@ layout(std140) uniform OpticsConfig {
     float LensDistortion;
 };
 
-in vec2 texCoord;
-out vec4 fragColor;
+layout(location = 0) in vec2 texCoord;
+layout(location = 0) out vec4 fragColor;
 
 // Fixed disk samples avoid the square imprint of a sparse, enlarged 5x5 kernel.
 const vec2 BLUR_DISK[32] = vec2[32](

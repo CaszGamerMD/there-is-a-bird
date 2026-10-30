@@ -26,12 +26,12 @@ for mode in range(1, 51):
     assert after["targets"] == {"guaniao_camera_swap": {}}, filename
     assert len(after["passes"]) == 2, filename
     first, second = after["passes"]
-    assert first["vertex_shader"] == "minecraft:core/screenquad", filename
+    assert first["vertex_shader"] == "minecraft:core/screentriangle", filename
     assert first["fragment_shader"] == "guaniao:post/camera_universal", filename
     assert first["inputs"] == [{"sampler_name": "In", "target": "minecraft:main"}], filename
     assert first["output"] == "guaniao_camera_swap", filename
     assert first["uniforms"] == {"FilterConfig": [{"name": "FilterMode", "type": "int", "value": mode}]}, filename
-    assert second["vertex_shader"] == "minecraft:core/screenquad", filename
+    assert second["vertex_shader"] == "minecraft:core/screentriangle", filename
     assert second["fragment_shader"] == "minecraft:post/blit", filename
     assert second["inputs"] == [{"sampler_name": "In", "target": "guaniao_camera_swap"}], filename
     assert second["output"] == "minecraft:main", filename

@@ -305,6 +305,51 @@ for marker in ("DataTicket<Vec3> OWNER_RENDER_OFFSET", "DataTicket<Boolean> OWNE
 assert "software.bernie" not in kestrel_renderer
 assert "net.minecraftforge" not in kestrel_renderer
 
+# Hummingbird kept the authored tiny model, 0.06 shadow, head-local
+# garden item and eight wing/bank Molang variables. GeckoLib 5 evaluates the
+# variables against each bird instead of sharing a last-rendered global.
+hummingbird_original_model = original("client/entity/hummingbird/HummingbirdModel.java")
+hummingbird_model = current("client/entity/hummingbird/HummingbirdModel.java")
+hummingbird_renderer = current("client/entity/hummingbird/HummingbirdRenderer.java")
+hummingbird_original_renderer = original("client/entity/hummingbird/HummingbirdRenderer.java")
+hummingbird_old_layer = original("client/entity/hummingbird/HummingbirdHeldItemLayer.java")
+hummingbird_layer = current("client/entity/hummingbird/HummingbirdHeldItemLayer.java")
+hummingbird_molang = current("client/entity/hummingbird/HummingbirdMolangQueries.java")
+for token in ('"root"', '"all"', '"waist"', '"leg_left"', '"leg_right"',
+              '"foot_left"', '"foot_right"', "HEAD_PERCH_SUPPORT_BONES"):
+    assert token in hummingbird_original_model and token in hummingbird_model
+for token in ("geo/hummingbird.geo.json", "textures/entity/hummingbird.png",
+              "animations/hummingbird_runtime.animation.json"):
+    assert token in hummingbird_original_model and token in hummingbird_model
+assert "HEAD_PERCHED" in hummingbird_model and "getVehicle() instanceof Player owner" in hummingbird_model
+for token in ("getRenderOffset(", "ownerHeadOffset(", "owner.yHeadRotO", "owner.xRotO",
+              "Mth.rotLerp(", "this.shadowRadius = 0.06F;"):
+    assert token in hummingbird_original_renderer and token in hummingbird_renderer
+for token in ("DataTickets.ENTITY_BODY_YAW", "OWNER_RENDER_OFFSET", "OWNER_PITCH",
+              "super.getRenderOffset(renderState)", "super.applyRotations(",
+              "super.adjustModelBonesForRender(",
+              "getOrDefaultGeckolibData(HummingbirdModel.HEAD_PERCHED, false)",
+              "HummingbirdModel.HEAD_PERCH_SUPPORT_BONES",
+              "bone.setRotation(0, 0, 0)", "bone.setTranslation(0, 0, 0)",
+              "bone.setScale(1, 1, 1)", "new HummingbirdHeldItemLayer<>(context, this)"):
+    assert token in hummingbird_renderer, token
+for token in ("4.25 / 16.0", "-3.45 / 16.0", "rotationDegrees(-20)",
+              "0.12F", "getHeldGardenItem()", 'ItemDisplayContext.NONE'):
+    assert token in hummingbird_old_layer and token in hummingbird_layer
+assert "BlockAndItemGeoLayer" in hummingbird_layer
+assert "RenderUtil.createRenderStateForItem(" in hummingbird_layer
+for variable in ("flight_time", "wing_stroke_time", "forward_blend",
+                 "backward_blend", "lateral_blend", "wing_pitch",
+                 "wing_yaw_bias", "bank_angle"):
+    token = "variable." + variable
+    assert token in hummingbird_original_model and token in hummingbird_molang, token
+assert "MolangQueries.<HummingbirdEntity>setActorVariable(" in hummingbird_molang
+assert "actor.animatable()" in hummingbird_molang
+assert "actor.partialTick()" in hummingbird_molang
+assert "MolangParser.INSTANCE" not in hummingbird_molang
+assert "HummingbirdMolangQueries.register();" in current("fabric/GuaniaoFabricEntityRenderers.java")
+assert "software.bernie" not in hummingbird_model + hummingbird_layer + hummingbird_renderer
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -325,9 +370,10 @@ registered = {
     "SEAGULL": "Seagull",
     "NIGHT_HERON": "NightHeron",
     "KESTREL": "Kestrel",
+    "HUMMINGBIRD": "Hummingbird",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 15 model texture snapshots, 16 renderer scales and client registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 15 mutation bird models plus hummingbird, 17 renderer registrations, unmodified mutation color formulas")

@@ -32,5 +32,14 @@ assert "holder.unwrapKey().ifPresent(key ->" in new_modifier
 assert "BirdNoteContent.roll(context, key.location())" in new_modifier
 assert "generatedLoot.add(note)" in old_modifier and "generatedLoot.add(note)" in new_modifier
 assert "net.minecraftforge" not in new_modifier
-assert "BirdNoteLootModifier.registerCallbacks();" in now("fabric/GuaniaoFabricEntrypoint.java")
+# Runtime loot callbacks are registered together by the Fabric replacement
+# for Forge's global loot modifier serializer registry. Avoid a second direct
+# registration, which would duplicate notes in generated chest inventories.
+bootstrap = now("fabric/GuaniaoFabricEntrypoint.java")
+registration = now("registry/GuaniaoLootModifierSerializers.java")
+assert bootstrap.count("GuaniaoLootModifierSerializers.registerCallbacks();") == 1
+assert registration.count("BirdNoteLootModifier.registerCallbacks();") == 1
+assert registration.count("FeatherFanBookLootModifier.registerCallbacks();") == 1
+assert registration.count("EarthwormLootModifier.registerCallbacks();") == 1
+assert "BirdNoteLootModifier.registerCallbacks();" not in bootstrap
 print("PASS: authored note rarity, authors, eligible chest keys and additive loot behavior retained")

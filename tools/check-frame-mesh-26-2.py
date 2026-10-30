@@ -29,19 +29,19 @@ new_algorithms=geom[geom.index(anchor):geom.index("    public record Quad(")]
 # corrected branch already covered by the real no-trim Java regression.
 expected_algorithms=old_algorithms.replace("FrameDesign.CellRect","CellRect")
 expected_algorithms=expected_algorithms.replace(
-    "                // Trim stops where an exterior edge becomes an inner window edge.\\n"
-    "                if(outside && trimStart<0)trimStart=cell;\\n"
+    "                // Trim stops where an exterior edge becomes an inner window edge.\n"
+    "                if(outside && trimStart<0)trimStart=cell;\n"
     "                if(!outside && trimStart>=0) {",
-    "                // Trim stops where an exterior edge becomes an inner window edge.\\n"
-    "                boolean trimmed=hasTrim && outside;\\n"
-    "                if(trimmed && trimStart<0)trimStart=cell;\\n"
+    "                // Trim stops where an exterior edge becomes an inner window edge.\n"
+    "                boolean trimmed=hasTrim && outside;\n"
+    "                if(trimmed && trimStart<0)trimStart=cell;\n"
     "                if(!trimmed && trimStart>=0) {")
 assert "boolean trimmed=hasTrim && outside;" in expected_algorithms
 # The source has one explanatory comment absent from the original.
 expected_algorithms=expected_algorithms.replace(
     "                boolean trimmed=hasTrim && outside;",
-    "                // Only create trim boundary geometry when the author enabled\\n"
-    "                // trim; a disabled material must not emit hidden extra faces.\\n"
+    "                // Only create trim boundary geometry when the author enabled\n"
+    "                // trim; a disabled material must not emit hidden extra faces.\n"
     "                boolean trimmed=hasTrim && outside;")
 assert expected_algorithms.rstrip()==new_algorithms.rstrip(), (
     "3D boundary merging, outline, face normals or tiled UV changed"

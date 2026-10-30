@@ -3,14 +3,15 @@ package EdDYON.guaniao.client.particle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
-import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.util.RandomSource;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
-public final class KillFeatherParticle extends TextureSheetParticle {
+public final class KillFeatherParticle extends SingleQuadParticle {
     private final double driftX;
     private final double driftZ;
     private final double initialYSpeed;
@@ -30,9 +31,8 @@ public final class KillFeatherParticle extends TextureSheetParticle {
     private boolean started;
     private boolean landed;
 
-    private KillFeatherParticle(ClientLevel level, double x, double y, double z, SpriteSet sprites) {
-        super(level, x, y, z);
-        this.pickSprite(sprites);
+    private KillFeatherParticle(ClientLevel level, double x, double y, double z, TextureAtlasSprite sprite) {
+        super(level, x, y, z, sprite);
         this.hasPhysics = true;
         this.startDelay = level.random.nextInt(11);
         this.fadeTicks = 10 + level.random.nextInt(13);
@@ -128,8 +128,8 @@ public final class KillFeatherParticle extends TextureSheetParticle {
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    public SingleQuadParticle.Layer getLayer() {
+        return SingleQuadParticle.Layer.TRANSLUCENT;
     }
 
     public static final class Provider implements ParticleProvider<SimpleParticleType> {
@@ -142,8 +142,8 @@ public final class KillFeatherParticle extends TextureSheetParticle {
         @Override
         public @Nullable Particle createParticle(SimpleParticleType type, ClientLevel level,
                                                  double x, double y, double z,
-                                                 double xSpeed, double ySpeed, double zSpeed) {
-            return new KillFeatherParticle(level, x, y, z, this.sprites);
+                                                 double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
+            return new KillFeatherParticle(level, x, y, z, this.sprites.get(random));
         }
     }
 }

@@ -3,23 +3,23 @@ package EdDYON.guaniao.client.particle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
-import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.util.RandomSource;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
 /** A sharp, straight piercing trace used only by Riven Plume's inward strike. */
-public final class RivenStreakParticle extends TextureSheetParticle {
+public final class RivenStreakParticle extends SingleQuadParticle {
     private final float baseQuadSize;
     private final float baseAlpha;
 
     private RivenStreakParticle(ClientLevel level, double x, double y, double z,
                                 double xSpeed, double ySpeed, double zSpeed,
-                                SpriteSet sprites) {
-        super(level, x, y, z, xSpeed, ySpeed, zSpeed);
-        this.pickSprite(sprites);
+                                TextureAtlasSprite sprite) {
+        super(level, x, y, z, xSpeed, ySpeed, zSpeed, sprite);
         this.hasPhysics = false;
         this.gravity = 0.0F;
         this.friction = 0.86F;
@@ -50,8 +50,8 @@ public final class RivenStreakParticle extends TextureSheetParticle {
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    public SingleQuadParticle.Layer getLayer() {
+        return SingleQuadParticle.Layer.TRANSLUCENT;
     }
 
     public static final class Provider implements ParticleProvider<SimpleParticleType> {
@@ -64,8 +64,8 @@ public final class RivenStreakParticle extends TextureSheetParticle {
         @Override
         public @Nullable Particle createParticle(SimpleParticleType type, ClientLevel level,
                                                  double x, double y, double z,
-                                                 double xSpeed, double ySpeed, double zSpeed) {
-            return new RivenStreakParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites);
+                                                 double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
+            return new RivenStreakParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites.get(random));
         }
     }
 }

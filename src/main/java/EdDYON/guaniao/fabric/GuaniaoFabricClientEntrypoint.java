@@ -18,6 +18,16 @@ import net.minecraft.client.gui.screens.MenuScreens;
 import EdDYON.guaniao.client.config.BirdConfigClient;
 import EdDYON.guaniao.network.OpenBirdConfigPacket;
 import net.fabricmc.api.ClientModInitializer;
+import EdDYON.guaniao.client.particle.KillFeatherParticle;
+import EdDYON.guaniao.client.particle.BurialWindParticle;
+import EdDYON.guaniao.client.particle.BurialCycloneParticle;
+import EdDYON.guaniao.client.particle.RivenSplitParticle;
+import EdDYON.guaniao.client.particle.RivenStreakParticle;
+import EdDYON.guaniao.client.particle.HuntingMarkParticle;
+import EdDYON.guaniao.client.particle.HuntingStreakParticle;
+import EdDYON.guaniao.client.particle.PlaceableBreakFleckParticle;
+import EdDYON.guaniao.registry.GuaniaoParticleTypes;
+import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
 
 /** Client bootstrap; feature registrations are restored as their 26.2 ports compile. */
 public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer {
@@ -27,6 +37,14 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         PrankFoodClientEvents.registerCallbacks();
         FeatherFanClientEvents.registerCallbacks();
         GuaniaoFabricEntityRenderers.register();
+        ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.KILL_FEATHER.get(), KillFeatherParticle.Provider::new);
+        ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.BURIAL_WIND.get(), BurialWindParticle.Provider::new);
+        ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.BURIAL_CYCLONE.get(), BurialCycloneParticle.Provider::new);
+        ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.RIVEN_SPLIT.get(), RivenSplitParticle.Provider::new);
+        ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.RIVEN_STREAK.get(), RivenStreakParticle.Provider::new);
+        ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.HUNTING_MARK.get(), HuntingMarkParticle.Provider::new);
+        ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.HUNTING_STREAK.get(), HuntingStreakParticle.Provider::new);
+        ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.PLACEABLE_FLECK.get(), PlaceableBreakFleckParticle.Provider::new);
         MenuScreens.register(GuaniaoMenuTypes.CROW_NEST.get(), CrowNestScreen::new);
         MenuScreens.register(GuaniaoMenuTypes.FRAME_WORKBENCH.get(), FrameWorkbenchScreen::new);
         ClientPlayNetworking.registerGlobalReceiver(BirdRuntimeConfigPacket.TYPE,

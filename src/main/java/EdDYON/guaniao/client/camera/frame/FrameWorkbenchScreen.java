@@ -603,6 +603,33 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
      * the staged photo texture cache, workshop birds and remaining 2D GUI
      * are ported. Do not delete them or claim this screen compiles yet.
      */
+    /**
+     * Preserve the original 390x300 virtual canvas for real 26.2 widgets,
+     * native inventory slots and the original modal input routing. The
+     * superclass extracts slots in our translated local coordinates, while
+     * the native carried-item/tooltip pass still receives true screen coords.
+     */
+    @Override public void extractContents(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partialTick) {
+        int localX=(int)this.localX(mouseX),localY=(int)this.localY(mouseY);
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(this.originX,this.originY);
+        graphics.pose().scale(this.uiScale,this.uiScale);
+        try {
+            if(this.paletteKind!=null || this.outlineEditor!=null) {
+                this.hoveredSlot=null;
+                // Modal children draw without the underlying container slots;
+                // otherwise an item could be highlighted beneath a palette.
+                for(var renderable:this.renderables) {
+                    renderable.extractRenderState(graphics,localX,localY,partialTick);
+                }
+            } else {
+                super.extractContents(graphics,localX,localY,partialTick);
+            }
+        } finally {
+            graphics.pose().popMatrix();
+        }
+    }
+
     @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partialTick) {
         super.extractRenderState(graphics,mouseX,mouseY,partialTick);
         this.extractPreview3D(graphics);

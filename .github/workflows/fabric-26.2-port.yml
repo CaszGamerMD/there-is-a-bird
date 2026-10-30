@@ -227,6 +227,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/camera-shutter"
           javac -d "$RUNNER_TEMP/camera-shutter" src/main/java/EdDYON/guaniao/client/camera/CameraShutterInput.java tools/port-probes/GuaniaoCameraShutterInputRegression.java
           java -cp "$RUNNER_TEMP/camera-shutter" EdDYON.guaniao.client.camera.GuaniaoCameraShutterInputRegression
+      - name: Verify original camera layouts, clipping, and deferred 26.2 extraction
+        run: python3 tools/check-camera-screen-extraction-26-2.py
       - name: Verify original camera filter picker and creative control inputs on 26.2
         run: python3 tools/check-camera-screen-input-26-2.py
       - name: Verify 26.2 clean-shutter HUD visibility and overlay blocking parity

@@ -10,7 +10,7 @@ import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -164,29 +164,33 @@ public final class CameraCreativeControlsScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, this.width, this.height, SCREEN_SHADE);
         drawPanel(graphics, this.panelLeft, this.panelTop, this.panelRight, this.panelBottom, PANEL_BACKGROUND);
         renderPreview(graphics);
         renderControls(graphics, mouseX, mouseY);
         renderFooter(graphics);
         updatePreferenceButtons();
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.extractContents(graphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderPreview(GuiGraphics graphics) {
+    private void renderPreview(GuiGraphicsExtractor graphics) {
         drawPanel(graphics, this.leftLeft, this.previewTop, this.leftRight, this.previewBottom, 0xFF090B0D);
-        CameraPreviewPostEffect.drawPreview(
-                graphics,
-                this.leftLeft + 3,
-                this.previewTop + 3,
-                this.leftRight - 3,
-                this.previewBottom - 3
-        );
+        // The original filter preview must be submitted by a real 26.2 GPU
+        // extractor. Never display the unfiltered world as the selected filter.
+        if (!CameraPreviewGuiBridge.drawPreview(
+                graphics, this.leftLeft + 3, this.previewTop + 3,
+                this.leftRight - 3, this.previewBottom - 3, this.working.filter())) {
+            graphics.centeredText(this.font,
+                    Component.translatable("gui.guaniao.camera_preview.unavailable"),
+                    (this.leftLeft + this.leftRight) / 2,
+                    (this.previewTop + this.previewBottom) / 2 - this.font.lineHeight / 2,
+                    TEXT_SECONDARY);
+        }
         if (CameraClientPreferences.showGuides()) renderPreviewReticle(graphics);
 
         drawPanel(graphics, this.leftLeft, this.infoTop, this.leftRight, this.controlsBottom, SECTION_BACKGROUND);
-        graphics.drawString(
+        graphics.text(
                 this.font,
                 Component.translatable(this.working.shootingMode().translationKey()),
                 this.leftLeft + 10,
@@ -194,7 +198,7 @@ public final class CameraCreativeControlsScreen extends Screen {
                 ACCENT,
                 false
         );
-        graphics.drawString(
+        graphics.text(
                 this.font,
                 Component.translatable(this.working.lens().translationKey()),
                 this.leftLeft + 10,
@@ -204,9 +208,9 @@ public final class CameraCreativeControlsScreen extends Screen {
         );
 
         int dividerX = this.leftLeft + (this.leftRight - this.leftLeft) * 2 / 5;
-        graphics.vLine(dividerX, this.infoTop + 7, this.controlsBottom - 7, BORDER_LIGHT);
+        graphics.verticalLine(dividerX, this.infoTop + 7, this.controlsBottom - 7, BORDER_LIGHT);
         int summaryX = dividerX + 9;
-        graphics.drawString(
+        graphics.text(
                 this.font,
                 Component.translatable("gui.guaniao.camera_creative.current_setup"),
                 summaryX,
@@ -224,8 +228,8 @@ public final class CameraCreativeControlsScreen extends Screen {
                 this.working.aperture().label(),
                 this.working.focusMode().shortName()
         );
-        graphics.drawString(this.font, firstLine, summaryX, this.infoTop + 25, ACCENT, false);
-        graphics.drawString(
+        graphics.text(this.font, firstLine, summaryX, this.infoTop + 25, ACCENT, false);
+        graphics.text(
                 this.font,
                 Component.translatable("gui.guaniao.camera_creative.focus_value", focus),
                 summaryX,
@@ -235,7 +239,7 @@ public final class CameraCreativeControlsScreen extends Screen {
         );
     }
 
-    private void renderPreviewReticle(GuiGraphics graphics) {
+    private void renderPreviewReticle(GuiGraphicsExtractor graphics) {
         int inset = Math.max(10, (this.previewBottom - this.previewTop) / 12);
         int left = this.leftLeft + inset;
         int right = this.leftRight - inset;
@@ -260,9 +264,9 @@ public final class CameraCreativeControlsScreen extends Screen {
         graphics.fill(centerX, centerY + 3, centerX + 1, centerY + 9, color);
     }
 
-    private void renderControls(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderControls(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         drawPanel(graphics, this.rightLeft, this.panelTop + GAP, this.rightRight, this.controlsBottom, SECTION_BACKGROUND);
-        graphics.drawString(this.font, this.title, this.rightLeft + 8, this.panelTop + GAP + 9, ACCENT, false);
+        graphics.text(this.font, this.title, this.rightLeft + 8, this.panelTop + GAP + 9, ACCENT, false);
         renderTabs(graphics, mouseX, mouseY);
         switch (this.page) {
             case LENS -> renderLensList(graphics, mouseX, mouseY);
@@ -282,7 +286,7 @@ public final class CameraCreativeControlsScreen extends Screen {
         this.depthOfFieldButton.visible = this.page == Page.VIEWFINDER;
     }
 
-    private void renderTabs(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderTabs(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         Page[] pages = Page.values();
         int tabWidth = Math.max(1, (this.rightRight - this.rightLeft - 4) / pages.length);
         for (int i = 0; i < pages.length; i++) {
@@ -298,7 +302,7 @@ public final class CameraCreativeControlsScreen extends Screen {
         }
     }
 
-    private void renderLensList(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderLensList(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         CameraLens[] lenses = CameraLens.values();
         int visibleRows = visibleChoiceRows(lenses.length);
         int rowHeight = choiceRowHeight(visibleRows);
@@ -316,7 +320,7 @@ public final class CameraCreativeControlsScreen extends Screen {
             boolean selected = this.working.lens() == lens;
             renderChoiceRow(graphics, mouseX, mouseY, y0, y1, selected, contentRight);
             String focal = Math.round(lens.defaultFocalLength()) + "mm";
-            graphics.drawCenteredString(this.font, focal, this.rightLeft + 32, y0 + Math.max(5, (y1 - y0 - 8) / 2),
+            graphics.centeredText(this.font, focal, this.rightLeft + 32, y0 + Math.max(5, (y1 - y0 - 8) / 2),
                     selected ? ACCENT : TEXT_SECONDARY);
             renderNamedDescription(
                     graphics,
@@ -333,7 +337,7 @@ public final class CameraCreativeControlsScreen extends Screen {
         renderChoiceScrollbar(graphics, lenses.length, visibleRows, scrollOffset);
     }
 
-    private void renderModeList(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderModeList(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         CameraShootingMode[] modes = CameraShootingMode.values();
         int visibleRows = visibleChoiceRows(modes.length);
         int rowHeight = choiceRowHeight(visibleRows);
@@ -350,7 +354,7 @@ public final class CameraCreativeControlsScreen extends Screen {
             int y1 = Math.min(this.controlsBottom, y0 + rowHeight);
             boolean selected = this.working.shootingMode() == mode;
             renderChoiceRow(graphics, mouseX, mouseY, y0, y1, selected, contentRight);
-            graphics.drawCenteredString(this.font, String.format(Locale.ROOT, "%02d", modeIndex + 1), this.rightLeft + 25,
+            graphics.centeredText(this.font, String.format(Locale.ROOT, "%02d", modeIndex + 1), this.rightLeft + 25,
                     y0 + Math.max(5, (y1 - y0 - 8) / 2), selected ? ACCENT : TEXT_SECONDARY);
             renderNamedDescription(
                     graphics,
@@ -367,12 +371,12 @@ public final class CameraCreativeControlsScreen extends Screen {
         renderChoiceScrollbar(graphics, modes.length, visibleRows, scrollOffset);
     }
 
-    private void renderChoiceRow(GuiGraphics graphics, int mouseX, int mouseY, int y0, int y1, boolean selected) {
+    private void renderChoiceRow(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int y0, int y1, boolean selected) {
         renderChoiceRow(graphics, mouseX, mouseY, y0, y1, selected, this.rightRight - 3);
     }
 
     private void renderChoiceRow(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int mouseX,
             int mouseY,
             int y0,
@@ -389,7 +393,7 @@ public final class CameraCreativeControlsScreen extends Screen {
         }
     }
 
-    private void renderChoiceScrollbar(GuiGraphics graphics, int totalRows, int visibleRows, int scrollOffset) {
+    private void renderChoiceScrollbar(GuiGraphicsExtractor graphics, int totalRows, int visibleRows, int scrollOffset) {
         if (totalRows <= visibleRows) {
             return;
         }
@@ -420,7 +424,7 @@ public final class CameraCreativeControlsScreen extends Screen {
     }
 
     private void renderNamedDescription(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             String nameKey,
             String descriptionKey,
             int x,
@@ -442,11 +446,11 @@ public final class CameraCreativeControlsScreen extends Screen {
         }
         List<FormattedCharSequence> lines = this.font.split((FormattedText)Component.translatable(descriptionKey), width);
         if (!lines.isEmpty()) {
-            graphics.drawString(this.font, lines.get(0), x, y + 22, TEXT_SECONDARY, false);
+            graphics.text(this.font, lines.get(0), x, y + 22, TEXT_SECONDARY, false);
         }
     }
 
-    private void renderParameters(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderParameters(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int rowHeight = parameterRowHeight();
         graphics.enableScissor(this.rightLeft + 2, this.controlsTop, this.rightRight - 2, this.controlsBottom);
         renderSliderRow(
@@ -486,7 +490,7 @@ public final class CameraCreativeControlsScreen extends Screen {
     }
 
     private void renderSliderRow(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int mouseX,
             int mouseY,
             int index,
@@ -498,8 +502,8 @@ public final class CameraCreativeControlsScreen extends Screen {
         int y0 = this.controlsTop + index * (rowHeight + 4);
         int y1 = Math.min(this.controlsBottom, y0 + rowHeight);
         renderChoiceRow(graphics, mouseX, mouseY, y0, y1, false);
-        graphics.drawString(this.font, label, this.rightLeft + 10, y0 + 7, TEXT_PRIMARY, false);
-        graphics.drawString(this.font, value, this.rightRight - 10 - this.font.width(value), y0 + 7, ACCENT, false);
+        graphics.text(this.font, label, this.rightLeft + 10, y0 + 7, TEXT_PRIMARY, false);
+        graphics.text(this.font, value, this.rightRight - 10 - this.font.width(value), y0 + 7, ACCENT, false);
         int barLeft = this.rightLeft + 10;
         int barRight = this.rightRight - 10;
         int barY = y1 - 13;
@@ -509,11 +513,11 @@ public final class CameraCreativeControlsScreen extends Screen {
         graphics.fill(knobX - 2, barY - 2, knobX + 2, barY + 5, ACCENT);
     }
 
-    private void renderApertureRow(GuiGraphics graphics, int mouseX, int mouseY, int rowHeight) {
+    private void renderApertureRow(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rowHeight) {
         int y0 = this.controlsTop + rowHeight + 4;
         int y1 = Math.min(this.controlsBottom, y0 + rowHeight);
         renderChoiceRow(graphics, mouseX, mouseY, y0, y1, false);
-        graphics.drawString(this.font, Component.translatable("gui.guaniao.camera_parameter.aperture"),
+        graphics.text(this.font, Component.translatable("gui.guaniao.camera_parameter.aperture"),
                 this.rightLeft + 10, y0 + 6, TEXT_PRIMARY, false);
         CameraAperture[] apertures = CameraAperture.values();
         int x0 = this.rightLeft + 7;
@@ -530,11 +534,11 @@ public final class CameraCreativeControlsScreen extends Screen {
         }
     }
 
-    private void renderFocusModeRow(GuiGraphics graphics, int mouseX, int mouseY, int rowHeight) {
+    private void renderFocusModeRow(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rowHeight) {
         int y0 = this.controlsTop + 2 * (rowHeight + 4);
         int y1 = Math.min(this.controlsBottom, y0 + rowHeight);
         renderChoiceRow(graphics, mouseX, mouseY, y0, y1, false);
-        graphics.drawString(this.font, Component.translatable("gui.guaniao.camera_parameter.focus_mode"),
+        graphics.text(this.font, Component.translatable("gui.guaniao.camera_parameter.focus_mode"),
                 this.rightLeft + 10, y0 + 6, TEXT_PRIMARY, false);
         CameraFocusMode[] modes = CameraFocusMode.values();
         int x0 = this.rightLeft + 7;
@@ -551,9 +555,9 @@ public final class CameraCreativeControlsScreen extends Screen {
         }
     }
 
-    private void renderFooter(GuiGraphics graphics) {
+    private void renderFooter(GuiGraphicsExtractor graphics) {
         graphics.fill(this.panelLeft, this.footerTop, this.panelRight, this.panelBottom, 0xF3121518);
-        graphics.hLine(this.panelLeft, this.panelRight, this.footerTop, BORDER_LIGHT);
+        graphics.horizontalLine(this.panelLeft, this.panelRight, this.footerTop, BORDER_LIGHT);
     }
 
     @Override
@@ -775,7 +779,7 @@ public final class CameraCreativeControlsScreen extends Screen {
         }
     }
 
-    private void drawPanel(GuiGraphics graphics, int left, int top, int right, int bottom, int fill) {
+    private void drawPanel(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int fill) {
         graphics.fill(left, top, right, bottom, fill);
         drawBorder(graphics, left, top, right, bottom, BORDER_DARK);
         if (right - left > 4 && bottom - top > 4) {
@@ -783,32 +787,32 @@ public final class CameraCreativeControlsScreen extends Screen {
         }
     }
 
-    private static void drawBorder(GuiGraphics graphics, int left, int top, int right, int bottom, int color) {
-        graphics.hLine(left, right, top, color);
-        graphics.hLine(left, right, bottom, color);
-        graphics.vLine(left, top, bottom, color);
-        graphics.vLine(right, top, bottom, color);
+    private static void drawBorder(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int color) {
+        graphics.horizontalLine(left, right, top, color);
+        graphics.horizontalLine(left, right, bottom, color);
+        graphics.verticalLine(left, top, bottom, color);
+        graphics.verticalLine(right, top, bottom, color);
     }
 
-    private void drawCentered(GuiGraphics graphics, Component text, int x, int y, int width, int height, int color) {
+    private void drawCentered(GuiGraphicsExtractor graphics, Component text, int x, int y, int width, int height, int color) {
         int textWidth = this.font.width(text);
         float scale = textWidth <= width - 4 ? 1.0F : Math.max(0.5F, (width - 4) / (float)Math.max(1, textWidth));
         int scaledWidth = Math.round(textWidth * scale);
-        graphics.pose().pushPose();
-        graphics.pose().translate(x + (width - scaledWidth) / 2.0F, y + (height - 8.0F * scale) / 2.0F, 0.0F);
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(this.font, text, 0, 0, color, false);
-        graphics.pose().popPose();
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x + (width - scaledWidth) / 2.0F, y + (height - 8.0F * scale) / 2.0F);
+        graphics.pose().scale(scale, scale);
+        graphics.text(this.font, text, 0, 0, color, false);
+        graphics.pose().popMatrix();
     }
 
-    private void drawLeftFitted(GuiGraphics graphics, Component text, int x, int y, int width, int color) {
+    private void drawLeftFitted(GuiGraphicsExtractor graphics, Component text, int x, int y, int width, int color) {
         int textWidth = this.font.width(text);
         float scale = textWidth <= width ? 1.0F : Math.max(0.58F, width / (float)Math.max(1, textWidth));
-        graphics.pose().pushPose();
-        graphics.pose().translate(x, y, 0.0F);
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(this.font, text, 0, 0, color, false);
-        graphics.pose().popPose();
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x, y);
+        graphics.pose().scale(scale, scale);
+        graphics.text(this.font, text, 0, 0, color, false);
+        graphics.pose().popMatrix();
     }
 
     private static boolean contains(double x, double y, int left, int top, int right, int bottom) {

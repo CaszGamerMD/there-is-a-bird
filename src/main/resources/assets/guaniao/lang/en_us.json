@@ -1211,5 +1211,6 @@
   "gui.guaniao.camera_help.short.settings": "%s: Settings",
   "gui.guaniao.camera_help.short.filters": "%s: Filters",
   "gui.guaniao.camera_help.short.focus": "%s: Focus",
-  "gui.guaniao.camera_help.resume_short": "After screenshots or switching back, click once to resume."
+  "gui.guaniao.camera_help.resume_short": "After screenshots or switching back, click once to resume.",
+  "gui.guaniao.camera_preview.unavailable": "Live preview requires 26.2 renderer"
 }

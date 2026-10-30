@@ -200,6 +200,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/camera-uv"
           javac -d "$RUNNER_TEMP/camera-uv" src/main/java/EdDYON/guaniao/client/camera/CameraPreviewUv.java tools/port-probes/GuaniaoCameraPreviewUvRegression.java
           java -cp "$RUNNER_TEMP/camera-uv" EdDYON.guaniao.client.camera.GuaniaoCameraPreviewUvRegression
+      - name: Verify native 26.2 author GPU filter process writes only the private framebuffer
+        run: python3 tools/check-camera-private-filter-process-26-2.py
       - name: Verify native 26.2 world-render capture hook and private GPU lifecycle
         run: python3 tools/check-camera-world-frame-26-2.py
       - name: Verify camera offscreen world color and reversed-depth copies on 26.2

@@ -1,6 +1,8 @@
 package EdDYON.guaniao.client.camera;
 
 import EdDYON.guaniao.content.camera.CameraFilter;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -41,6 +43,30 @@ public final class CameraPostChain26 {
         Objects.requireNonNull(minecraft, "minecraft");
         Identifier id = filterId(filter);
         return id == null ? null : minecraft.getShaderManager().getPostChain(id, PRIVATE_MAIN_ALIAS);
+    }
+
+    /**
+     * Run ONLY the original selected filter on our already-copied PRIVATE
+     * framebuffer. Vanilla still supports process(target, allocator) in 26.2,
+     * though its replacement is adding passes to a caller-owned frame graph.
+     *
+     * The pass returns to the graph's minecraft:main alias, which is bound to
+     * THIS private target, never the on-screen GameRenderer.mainRenderTarget().
+     *
+     * @return true only if the complete author filter ran successfully.
+     *         An absent effect is a missing frame, NOT a filter-free preview.
+     */
+    @SuppressWarnings("deprecation")
+    public static boolean processFilterOnPrivate(
+            Minecraft minecraft, CameraFilter filter, RenderTarget privateTarget) {
+        Objects.requireNonNull(privateTarget, "privateTarget");
+        Objects.requireNonNull(minecraft, "minecraft");
+        if (filter == null) return false;
+        if (filter == CameraFilter.NONE) return true;
+        PostChain chain = filter(minecraft, filter);
+        if (chain == null) return false;
+        chain.process(privateTarget, GraphicsResourceAllocator.UNPOOLED);
+        return true;
     }
 
     /**

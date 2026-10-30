@@ -1,6 +1,7 @@
 package EdDYON.guaniao.client.camera;
 
 import EdDYON.guaniao.GuaniaoMod;
+import EdDYON.guaniao.content.camera.CameraFilter;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
@@ -38,8 +39,16 @@ public final class CameraWorldFrame26 {
         try {
             RenderTarget source = minecraft.gameRenderer.mainRenderTarget();
             RenderTarget updated = OFFSCREEN.copyWorld(source);
+            // The original authored GPU shader runs only on the private
+            // copy. NEVER process the visible source RenderTarget.
+            CameraFilter filter = CameraClientCapture.currentFilter();
+            if (updated == null
+                    || !CameraPostChain26.processFilterOnPrivate(minecraft, filter, updated)) {
+                copiedWorld = null;
+                return;
+            }
             copiedWorld = updated;
-            if (updated != null) warned = false;
+            warned = false;
         } catch (RuntimeException exception) {
             reset();
             if (!warned) {
@@ -50,10 +59,10 @@ public final class CameraWorldFrame26 {
     }
 
     /**
-     * The real GPU post-chain renderer may use this PRIVATE copy as input.
-     * Null means no current world frame is available or the camera was closed.
-     * Do not expose this unfiltered color texture to the viewfinder as a
-     * 'successful' filter or photograph.
+     * The native GUI renderer may read this PRIVATE filtered world frame.
+     * Null means there is no authentic completed filter for this world frame.
+     * Nikon optics and live GPU Time uniform updates remain a separate stage;
+     * do not claim a complete preview until those are also wired.
      */
     public static RenderTarget copiedWorld() {
         return copiedWorld;

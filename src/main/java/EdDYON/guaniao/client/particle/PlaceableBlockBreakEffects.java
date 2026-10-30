@@ -193,9 +193,9 @@ public final class PlaceableBlockBreakEffects {
                                    double xSpeed, double ySpeed, double zSpeed, float scale) {
         Particle particle = particles.createParticle(GuaniaoParticleTypes.PLACEABLE_FLECK.get(),
                 x, y, z, xSpeed, ySpeed, zSpeed);
-        if (particle != null) {
-            particle.setColor(color.red, color.green, color.blue);
-            particle.scale(scale);
+        if (particle instanceof net.minecraft.client.particle.SingleQuadParticle quad) {
+            quad.setColor(color.red, color.green, color.blue);
+            quad.scale(scale);
         }
     }
 

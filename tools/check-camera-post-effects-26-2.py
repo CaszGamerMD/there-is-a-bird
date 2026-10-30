@@ -30,7 +30,9 @@ for mode in range(1, 51):
     assert first["fragment_shader"] == "guaniao:post/camera_universal", filename
     assert first["inputs"] == [{"sampler_name": "In", "target": "minecraft:main"}], filename
     assert first["output"] == "guaniao_camera_swap", filename
-    assert first["uniforms"] == {"FilterConfig": [{"name": "FilterMode", "type": "int", "value": mode}]}, filename
+    assert first["uniforms"] == {"FilterConfig": [
+        {"name": "FilterMode", "type": "float", "value": mode},
+        {"name": "Time", "type": "float", "value": 0.0}]}, filename
     assert second["vertex_shader"] == "minecraft:core/screentriangle", filename
     assert second["fragment_shader"] == "minecraft:post/blit", filename
     assert second["inputs"] == [{"sampler_name": "In", "target": "guaniao_camera_swap"}], filename
@@ -43,9 +45,6 @@ for mode in range(1, 51):
 
 assert len(unmigrated) == 50
 assert len(list(NEW.glob("camera_filter_*.json"))) == 50, "Missing or unexpected post-effect resource"
-# The fragment shader is explicitly a separate blocker. Never substitute
-# a no-op fragment while claiming parity with the original 50 filters.
 shader = ROOT / "src/main/resources/assets/guaniao/shaders/post/camera_universal.fsh"
-if not shader.is_file():
-    print("BLOCKER: original universal filter GPU shader not ported; JSON definitions staged only")
-print("PASS: all 50 26.2 post effect resources preserve original two-pass ID and blit wiring")
+assert shader.is_file(), "Original GPU effect shader must be ported"
+print("PASS: all 50 original GPU filters have matching 26.2 float uniforms and authored fragment")

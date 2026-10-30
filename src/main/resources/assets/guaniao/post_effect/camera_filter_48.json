@@ -17,8 +17,13 @@
         "FilterConfig": [
           {
             "name": "FilterMode",
-            "type": "int",
+            "type": "float",
             "value": 48
+          },
+          {
+            "name": "Time",
+            "type": "float",
+            "value": 0
           }
         ]
       }

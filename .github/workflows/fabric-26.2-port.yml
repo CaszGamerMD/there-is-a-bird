@@ -177,6 +177,8 @@ jobs:
           java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify original 32-tap Nikon optics GLSL port and 26.2 sampler/UBO schema
+        run: python3 tools/check-camera-optics-shader-26-2.py
       - name: Verify original viewfinder/thumbnail crop and modern screen access
         run: python3 tools/check-camera-preview-uv-26-2.py
       - name: Run standalone viewfinder/preview UV regression (Java 25)

@@ -36,7 +36,7 @@ assert 'normalized(authored, "geo/", ".geo.json")' in BRIDGE
 assert 'normalized(authored, "animations/", ".animation.json")' in BRIDGE
 assert "Identifier.fromNamespaceAndPath(authored.getNamespace()" in BRIDGE
 
-for stem in ("Kiwi", "Sparrow", "Seagull", "Myna", "LongTailedTit", "NightHeron", "Crow", "Macaw", "Budgerigar", "Columbid", "Cockatoo", "Cockatiel", "Cassowary", "Woodcock"):
+for stem in ("Kiwi", "Sparrow", "Seagull", "Myna", "LongTailedTit", "NightHeron", "Crow", "Macaw", "Budgerigar", "Columbid", "Cockatoo", "Cockatiel", "Cassowary", "Woodcock", "Kestrel"):
     folders = {
         "LongTailedTit": "longtailedtit",
         "NightHeron": "nightheron"
@@ -47,6 +47,15 @@ for stem in ("Kiwi", "Sparrow", "Seagull", "Myna", "LongTailedTit", "NightHeron"
     assert "GuaniaoGeckoAssets.model(" in model, stem
     assert "GuaniaoGeckoAssets.animation(" in model, stem
     assert "BirdMutationRenderData.capture(" in model, stem
+
+# Hummingbird's authored small model and runtime wing animation retain
+# their original resource paths and are copied without editing.
+hummingbird_model = (ROOT / "src/main/java/EdDYON/guaniao/client/entity/hummingbird/HummingbirdModel.java").read_text("utf-8")
+for path in ("geo/hummingbird.geo.json", "textures/entity/hummingbird.png",
+             "animations/hummingbird_runtime.animation.json"):
+    assert path in hummingbird_model, path
+assert "GuaniaoGeckoAssets.model(MODEL)" in hummingbird_model
+assert "GuaniaoGeckoAssets.animation(ANIMATION)" in hummingbird_model
 
 for path in ("client/food/BaggedFriesModel.java",
              "client/camera/NikonD750ItemModel.java",
@@ -59,4 +68,4 @@ for path in ("client/food/BaggedFriesModel.java",
 
 print(f"GECKOLIB 5 RESOURCE PARITY OK: {len(models)} original models and "
       f"{len(animations)} original animations retained byte-for-byte; "
-      "build-time staging, fourteen bird and five static lookups verified")
+      "build-time staging, fifteen mutation bird, hummingbird and five static lookups verified")

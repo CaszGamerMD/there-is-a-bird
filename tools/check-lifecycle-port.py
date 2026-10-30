@@ -83,7 +83,8 @@ for token in (
         "BirdConfigManager.birdsPassThroughLeaves()",
         "BirdConfigManager.aprilFoolsMode()",
         "BirdConfigManager.skyBirdEcologyEnabled()",
-        "GuaniaoNetwork.sendToPlayer("):
+        "ServerPlayNetworking.canSend(player, BirdRuntimeConfigPacket.TYPE)",
+        "ServerPlayNetworking.send(player, new BirdRuntimeConfigPacket("):
     if token not in runtime:
         raise SystemExit(f"Bird runtime config sync missing: {token}")
 

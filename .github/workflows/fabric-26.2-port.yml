@@ -177,6 +177,13 @@ jobs:
           java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify real 26.2 in-world camera mouse input and safety
+        run: python3 tools/check-camera-mouse-input-26-2.py
+      - name: Run standalone shutter release and keyboard-shortcut regression (Java 25)
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-shutter"
+          javac -d "$RUNNER_TEMP/camera-shutter" src/main/java/EdDYON/guaniao/client/camera/CameraShutterInput.java tools/port-probes/GuaniaoCameraShutterInputRegression.java
+          java -cp "$RUNNER_TEMP/camera-shutter" EdDYON.guaniao.client.camera.GuaniaoCameraShutterInputRegression
       - name: Verify Fabric viewfinder tick, continuous focus, disconnect and config cleanup
         run: python3 tools/check-camera-fabric-lifecycle-26-2.py
       - name: Verify camera tooltip parity and Fabric client bootstrap

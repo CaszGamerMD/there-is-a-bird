@@ -382,7 +382,7 @@ kingfisher_renderer_old = original("client/entity/kingfisher/KingfisherRenderer.
 for token in ("FOOT_OFFSET_PIXELS = -0.006486F", "3.75D / 16.0D",
               "0.3D / 16.0D", "rotationDegrees(-pitch)", "2.65F",
               "2.70F", "setDroppingRenderOrigin(", "getActivity() == KingfisherEntity.Activity.DEFECATE",
-              "this.shadowRadius = 0.10F"):
+              "shadowRadius = 0.10F"):
     assert token in kingfisher_renderer_old and token in kingfisher_renderer, token
 for token in ("BirdMutationRenderData.MODEL_SCALE", "new KingfisherHeldFishLayer<>(context, this)",
               "adjustModelBonesForRender(", "KingfisherModel.HEAD_DIP",

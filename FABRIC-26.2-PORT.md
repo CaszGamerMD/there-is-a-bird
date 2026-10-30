@@ -1593,3 +1593,10 @@ Created `CameraOpticsParameters`, a pure-Java immutable snapshot of all seven or
 Minecraft 26.2 removed `Options.hideGui` and relocated the F1 HUD state to `Minecraft.gui.hud`, which exposes `isHidden()` and `toggle()` but no absolute setter. The Nikon clean-capture path now records the player's **actual prior HUD state**, conditionally hides the HUD during the photograph, and conditionally restores the saved state without unnecessary F1 toggles. Existing camera-type and shutter cancellation behavior is unchanged. The obsolete `Minecraft.getOverlay()` checks in the camera input state machine and legacy focus key migration now use `Minecraft.gui.overlay()`, retaining protections while loading screens are active.
 
 Added a true 26.2 compile-only probe of `hud.isHidden()/toggle()` and `gui.overlay()`, together with a source-parity CI check against the original Forge HUD toggle sequence. This removes known compile blockers but does **not** yet connect the 26.2 shader render graph or complete a playable JAR; CI execution is still unverified.
+
+
+## 2026-10-30 — Both camera control screens receive native 26.2 input events
+
+Migrated the existing **filter library** and **creative lens/exposure controls** screen input hooks from obsolete `mouseClicked(x,y,button)`, `mouseDragged(x,y,button,dx,dy)`, `mouseScrolled(x,y,amount)` and `keyPressed(key,scanCode,modifiers)` methods to Minecraft 26.2's `MouseButtonEvent`, `KeyEvent` and 4-parameter scrolling contract. Screen opening/closing now uses `Minecraft.gui.screen()/setScreen()`. The original picker tab choices, random-filter shortcut, keyboard navigation, confirm/cancel behavior, lens/mode toggles, drag-to-focus controls and aperture scrolling stay intact; super input dispatch now uses the actual 26.2 events. Added a compile-only `Screen` API proof and CI source parity check for both classes.
+
+**Still to migrate:** these two screens' legacy `GuiGraphics` immediate rendering, their preview blits, and the camera's old Forge GPU post-chain. This commit fixes input/navigation APIs without claiming the full screens are usable in Minecraft yet. No playable JAR or change to `main`.

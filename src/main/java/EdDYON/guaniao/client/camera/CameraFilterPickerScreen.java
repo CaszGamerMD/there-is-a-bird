@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -78,11 +80,11 @@ public final class CameraFilterPickerScreen extends Screen {
         if (!CameraClientCapture.isViewfinderOpen() || CameraClientCapture.isCleanCapturePending()) {
             return;
         }
-        if (minecraft.screen instanceof CameraFilterPickerScreen picker) {
+        if (minecraft.gui.screen() instanceof CameraFilterPickerScreen picker) {
             picker.confirmAndClose();
             return;
         }
-        minecraft.setScreen(new CameraFilterPickerScreen(CameraClientCapture.currentFilter()));
+        minecraft.gui.setScreen(new CameraFilterPickerScreen(CameraClientCapture.currentFilter()));
     }
 
     @Override
@@ -105,7 +107,7 @@ public final class CameraFilterPickerScreen extends Screen {
         super.tick();
         if (!CameraClientCapture.isViewfinderOpen() || CameraClientCapture.isCleanCapturePending()) {
             this.finished = true;
-            Minecraft.getInstance().setScreen(null);
+            Minecraft.getInstance().gui.setScreen(null);
         }
     }
 
@@ -233,13 +235,13 @@ public final class CameraFilterPickerScreen extends Screen {
     private void confirmAndClose() {
         this.finished = true;
         CameraClientCapture.commitFilter(this.highlighted);
-        Minecraft.getInstance().setScreen(null);
+        Minecraft.getInstance().gui.setScreen(null);
     }
 
     private void cancelAndClose() {
         this.finished = true;
         CameraClientCapture.restorePreviewFilter(this.original);
-        Minecraft.getInstance().setScreen(null);
+        Minecraft.getInstance().gui.setScreen(null);
     }
 
     @Override
@@ -634,9 +636,12 @@ public final class CameraFilterPickerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         CameraFilterCategory[] categories = CameraFilterCategory.values();
@@ -699,7 +704,7 @@ public final class CameraFilterPickerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
         if (delta == 0.0D) {
             return true;
         }
@@ -708,9 +713,11 @@ public final class CameraFilterPickerScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
         if (keyCode == GLFW.GLFW_KEY_TAB) {
-            return super.keyPressed(keyCode, scanCode, modifiers);
+            return super.keyPressed(event);
         }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             cancelAndClose();
@@ -760,6 +767,6 @@ public final class CameraFilterPickerScreen extends Screen {
             moveSelection(1);
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 }

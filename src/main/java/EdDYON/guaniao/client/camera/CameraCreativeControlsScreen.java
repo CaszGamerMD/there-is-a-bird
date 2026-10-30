@@ -8,6 +8,8 @@ import EdDYON.guaniao.content.camera.CameraState;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -78,11 +80,11 @@ public final class CameraCreativeControlsScreen extends Screen {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof CameraCreativeControlsScreen controls) {
+        if (minecraft.gui.screen() instanceof CameraCreativeControlsScreen controls) {
             controls.confirmAndClose();
             return;
         }
-        minecraft.setScreen(new CameraCreativeControlsScreen(CameraClientCapture.currentState()));
+        minecraft.gui.setScreen(new CameraCreativeControlsScreen(CameraClientCapture.currentState()));
     }
 
     @Override
@@ -115,7 +117,7 @@ public final class CameraCreativeControlsScreen extends Screen {
         super.tick();
         if (!CameraClientCapture.isViewfinderOpen() || CameraClientCapture.isCleanCapturePending()) {
             this.finished = true;
-            Minecraft.getInstance().setScreen(null);
+            Minecraft.getInstance().gui.setScreen(null);
             return;
         }
         if (this.working.focusMode() == CameraFocusMode.AF_C) {
@@ -555,10 +557,13 @@ public final class CameraCreativeControlsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (super.mouseClicked(mouseX, mouseY, button)) return true;
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
+        if (super.mouseClicked(event, doubleClick)) return true;
         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         Page[] pages = Page.values();
@@ -583,7 +588,10 @@ public final class CameraCreativeControlsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.page == Page.PARAMETERS) {
             int rowHeight = parameterRowHeight();
             int row = (int)((mouseY - this.controlsTop) / (rowHeight + CHOICE_ROW_GAP));
@@ -591,7 +599,7 @@ public final class CameraCreativeControlsScreen extends Screen {
                 return clickParameter(mouseX, mouseY);
             }
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     private boolean clickLens(double mouseX, double mouseY) {
@@ -677,7 +685,7 @@ public final class CameraCreativeControlsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
         if (delta == 0.0D) {
             return true;
         }
@@ -698,16 +706,18 @@ public final class CameraCreativeControlsScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
         if (keyCode == GLFW.GLFW_KEY_TAB) {
-            return super.keyPressed(keyCode, scanCode, modifiers);
+            return super.keyPressed(event);
         }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             cancelAndClose();
             return true;
         }
         if ((keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) && getFocused() != null) {
-            return super.keyPressed(keyCode, scanCode, modifiers);
+            return super.keyPressed(event);
         }
         if (CameraKeyMappings.OPEN_CREATIVE_CONTROLS.matches(keyCode, scanCode)
                 || keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
@@ -730,12 +740,12 @@ public final class CameraCreativeControlsScreen extends Screen {
             return true;
         }
         if (keyCode == GLFW.GLFW_KEY_LEFT || keyCode == GLFW.GLFW_KEY_UP) {
-            return mouseScrolled(0.0D, 0.0D, 1.0D);
+            return mouseScrolled(0.0D, 0.0D, 0.0D, 1.0D);
         }
         if (keyCode == GLFW.GLFW_KEY_RIGHT || keyCode == GLFW.GLFW_KEY_DOWN) {
-            return mouseScrolled(0.0D, 0.0D, -1.0D);
+            return mouseScrolled(0.0D, 0.0D, 0.0D, -1.0D);
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     private void setWorking(CameraState next) {
@@ -746,14 +756,14 @@ public final class CameraCreativeControlsScreen extends Screen {
     private void confirmAndClose() {
         this.finished = true;
         CameraClientCapture.commitState(this.working);
-        Minecraft.getInstance().setScreen(null);
+        Minecraft.getInstance().gui.setScreen(null);
     }
 
     private void cancelAndClose() {
         this.finished = true;
         CameraClientCapture.restorePreviewState(this.original);
         restorePreferences();
-        Minecraft.getInstance().setScreen(null);
+        Minecraft.getInstance().gui.setScreen(null);
     }
 
     private void restorePreferences() {

@@ -26,4 +26,24 @@ final class FrameWorkbenchPreview3DFactory {
         return new FrameWorkbenchPreview3DState(mesh,wood,trim,lining,
                 yaw,pitch,x0,y0,x1,y1,scale,scissor);
     }
+    /**
+     * The caller supplies the real downloaded photograph's Identifier and
+     * pixel dimensions after its 26.2 texture cache has been migrated.
+     * Null means the film has no image; it does NOT synthesize fake artwork.
+     */
+    static FrameWorkbenchPreview3DState captureWithPhoto(FrameDesign design,
+            float yaw,float pitch,int x0,int y0,int x1,int y1,float scale,
+            @Nullable ScreenRectangle scissor,@Nullable net.minecraft.resources.Identifier texture,
+            int imageWidth,int imageHeight) {
+        var basic=capture(design,yaw,pitch,x0,y0,x1,y1,scale,scissor);
+        if(texture==null || imageWidth<=0 || imageHeight<=0) return basic;
+        var fitted=FrameWorkbenchPhotoGeometry.build(basic.mesh(),design.rotation(),0,
+                imageWidth,imageHeight,design.fit()==FrameDesign.PhotoFit.COVER,
+                design.zoomPercent(),design.offsetX(),design.offsetY());
+        if(fitted.isEmpty())return basic;
+        var photo=new FrameWorkbenchPreview3DState.Photo(texture,fitted,1.0F);
+        return new FrameWorkbenchPreview3DState(basic.mesh(),basic.wood(),basic.trim(),
+                basic.lining(),photo,yaw,pitch,x0,y0,x1,y1,scale,scissor);
+    }
+
 }

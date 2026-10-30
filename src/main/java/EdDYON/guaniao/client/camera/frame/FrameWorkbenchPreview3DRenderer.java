@@ -68,6 +68,14 @@ public final class FrameWorkbenchPreview3DRenderer
                         pose, collector, light, trim.red(), trim.green(),
                         trim.blue(), 1.0F, trim.translucent());
             }
+            // The photo is clipped to every actual window cell, not the
+            // frame's bounding rectangle. It lives just behind the front
+            // wooden edge, over the recessed lining (original z offsets).
+            if (state.photo() != null) {
+                var photo = state.photo();
+                FrameWorkbenchPhotoSubmitter.submit(photo.quads(), photo.texture(),
+                        pose, collector, light, photo.alpha());
+            }
         } finally {
             pose.popPose();
         }

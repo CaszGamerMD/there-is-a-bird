@@ -1036,3 +1036,36 @@ animation handling; other Forge/Minecraft 26.2 migration work remains.
 No in-game rendering or full Java compilation has been verified due
 to GitHub Actions failing before runner allocation. Keep this as a
 draft and do not redistribute original copyrighted assets.
+
+
+## Held-item renderer checkpoint (2026-10-29)
+
+The Fabric client entrypoint now registers **15 of 19 original bird renderers** in
+`GuaniaoFabricEntityRenderers`. The newest migrated species are Crow, Seagull
+and Night Heron. Unlike earlier, simpler renderer conversions, these three
+carry live item stacks on animated GeckoLib bones.
+
+- Crow keeps the original `mouth_anchor`, 0.8x item scale, deterministic
+  two-axis pose variations, pose seed and falling-back-to-entity-ID hash.
+- Seagull keeps the `foot_right` attachment and authored 0.46x item scale,
+  rather than moving its food to the beak.
+- Night Heron keeps the `fish_anchor` bill location, only renders edible
+  fish, and retains the distinct smaller/surface-forward delivery pose.
+- All three use GeckoLib 5 render-state snapshots and deferred per-bone item
+  submission, not the retired Forge/GeckoLib 4 immediate buffer hook.
+- The original shadow radii, per-bird mutation size snapshots, texture
+  selection, authored model files and animation JSON are unchanged.
+- `check-geckolib-bird-renderstate.py` now guards all 15 registrations,
+  mutation scales and the carry-pose constants against `origin/main`.
+  `GuaniaoHeldItemRenderProof` additionally checks the real GeckoLib 5
+  item-model snapshot and submission API when Gradle's isolated verification
+  task can run.
+
+**Still not release-ready.** Hummingbird, Kestrel, Kingfisher and Umbrella
+Cockatoo still need full renderer conversions, including custom Molang, owner
+perching, bone tracking and animation effects. Many unrelated Forge source
+files still block `compileJava`, and actual client and dedicated-server
+behavior remains untested. The GitHub Actions runs observed at this checkpoint
+are failing *before any job steps start* (zero step summaries, no usable log),
+so a passing source-level check cannot currently be claimed from CI. No
+playable JAR has been produced, and private assets must not be published.

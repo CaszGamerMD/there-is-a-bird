@@ -990,7 +990,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
             this.viewPitch=Mth.clamp(this.viewPitch+(float)(dragY/this.uiScale),-75,75);
             return true;
         }
-        return super.mouseDragged(this.localX(mouseX),this.localY(mouseY),button,dragX/this.uiScale,dragY/this.uiScale);
+        return super.mouseDragged(new MouseButtonEvent(this.localX(mouseX),this.localY(mouseY),event.buttonInfo()),dragX/this.uiScale,dragY/this.uiScale);
     }
 
     private void paintCell(int x,int y) {if(this.strokeErase) this.strokeMask[y]&=~(1<<x);else this.strokeMask[y]|=1<<x;}

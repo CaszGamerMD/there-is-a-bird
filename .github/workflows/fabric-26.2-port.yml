@@ -177,6 +177,8 @@ jobs:
           java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify Fabric viewfinder tick, continuous focus, disconnect and config cleanup
+        run: python3 tools/check-camera-fabric-lifecycle-26-2.py
       - name: Verify camera tooltip parity and Fabric client bootstrap
         run: python3 tools/check-camera-tooltip-port.py
       - name: Verify all 21 original recipes survive the 26.2 datapack schema

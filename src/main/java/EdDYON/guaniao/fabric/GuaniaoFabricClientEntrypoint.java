@@ -7,6 +7,8 @@ import EdDYON.guaniao.network.BirdRuntimeConfigPacket;
 import EdDYON.guaniao.client.camera.PhotoClientRepository;
 import EdDYON.guaniao.client.camera.PhotographTextureCache;
 import EdDYON.guaniao.client.camera.CameraKeyMappings;
+import EdDYON.guaniao.client.camera.CameraClientCapture;
+import EdDYON.guaniao.config.BirdConfigManager;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import EdDYON.guaniao.network.PhotoCaptureResultPacket;
@@ -45,10 +47,18 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             PhotographTextureCache.pumpUploads();
             PhotographTextureCache.tickHeldPhotographs();
+            // Original Forge END tick: held-camera loss and continuous AF-C focus
+            // must update before processing viewfinder camera shortcuts.
+            CameraClientCapture.tickViewfinder();
             CameraKeyMappings.tick();
         });
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
-                PhotographTextureCache.clear());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            // Restore zoom sensitivity, abort any incomplete shutter upload
+            // and drop private texture data before leaving the server.
+            CameraClientCapture.disconnect();
+            PhotographTextureCache.clear();
+            BirdConfigManager.loadOrCreateDefaults();
+        });
         PrankFoodClientEvents.registerCallbacks();
         FeatherFanClientEvents.registerCallbacks();
         GuaniaoFabricEntityRenderers.register();

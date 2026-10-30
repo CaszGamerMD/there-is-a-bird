@@ -24,8 +24,21 @@ visual_anchor = "    private static void spawnHitEffect("
 assert old_fx[:old_fx.index("    public static IClientBlockExtensions baggedFries()")].replace(
     "import net.minecraftforge.client.extensions.common.IClientBlockExtensions;\n", ""
 ).replace("import net.minecraft.world.phys.HitResult;\n", "") == new_fx[:new_fx.index("    /**")]
-assert old_fx[old_fx.index(visual_anchor):] == new_fx[new_fx.index(visual_anchor):], (
-    "A particle color/count/motion/shape formula changed"
+# The only changed visual call is the mandatory 26.2 Particle ->
+# SingleQuadParticle type guard: base Particle no longer owns setColor().
+old_visual = old_fx[old_fx.index(visual_anchor):]
+new_visual = new_fx[new_fx.index(visual_anchor):]
+old_color = """        if (particle != null) {
+            particle.setColor(color.red, color.green, color.blue);
+            particle.scale(scale);
+        }"""
+new_color = """        if (particle instanceof net.minecraft.client.particle.SingleQuadParticle quad) {
+            quad.setColor(color.red, color.green, color.blue);
+            quad.scale(scale);
+        }"""
+assert old_color in old_visual and new_color in new_visual
+assert old_visual.replace(old_color, new_color) == new_visual, (
+    "An authored particle color/count/motion/shape formula changed"
 )
 assert "IClientBlockExtensions" not in new_fx and "net.minecraftforge" not in new_fx
 for key in ("renderHit(", "renderDestroy(", "kindFor(BlockState state)",
@@ -50,6 +63,27 @@ for path, (function, species) in blocks.items():
     assert "net.minecraftforge.client.extensions.common.IClientBlockExtensions" not in changed, path
     assert "PlaceableBlockBreakEffects" not in changed, path
     assert "instanceof " + species in new_fx, species
+
+old_particle = original("client/particle/PlaceableBreakFleckParticle.java")
+new_particle = current("client/particle/PlaceableBreakFleckParticle.java")
+for marker in ("this.hasPhysics = true;", "this.gravity = 0.62F;",
+               "this.friction = 0.76F;",
+               "this.lifetime = 11 + level.random.nextInt(9);",
+               "this.quadSize = 0.045F + level.random.nextFloat() * 0.045F;",
+               "this.roll = level.random.nextFloat() * Mth.TWO_PI;",
+               "this.oRoll = this.roll;",
+               "this.xd *= 0.58D;", "this.zd *= 0.58D;",
+               "this.spinSpeed *= 0.72F;",
+               "float fadeStart = this.lifetime * 0.65F;"):
+    assert marker in old_particle and marker in new_particle, marker
+for marker in ("extends SingleQuadParticle", "SingleQuadParticle.Layer.TRANSLUCENT",
+               "RandomSource random", "TextureAtlasSprite sprite",
+               "sprites.get(random)", "new PlaceableBreakFleckParticle("):
+    assert marker in new_particle, marker
+assert "extends TextureSheetParticle" in old_particle
+assert "TextureSheetParticle" not in new_particle.replace("removed TextureSheetParticle", "")
+assert "getRenderType()" not in new_particle
+assert "quad.setColor(color.red, color.green, color.blue);" in new_fx
 
 mixin = current("mixin/ClientBlockBreakParticlesMixin.java")
 config = json.loads((ROOT / "src/main/resources/guaniao.mixins.json").read_text("utf-8"))

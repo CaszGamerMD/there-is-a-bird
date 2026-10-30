@@ -89,7 +89,7 @@ public class UmbrellaCockatooModel extends GeoModel<UmbrellaCockatooEntity> {
                     super.getBakedAnimation(bird, "animation.idle_diff_2"), loaded.hold(2));
             var perched = CockatooOwnerPerchAnimation.create(
                     super.getBakedAnimation(bird, "animation.idle"),
-                    getBakedModel(getModelResource(new GeoRenderState.Impl())));
+                    getBakedModel(GuaniaoGeckoAssets.model(UmbrellaCockatooDefinition.MODEL)));
             curves = loaded;
             displayResidual = residual;
             ownerPerch = perched;

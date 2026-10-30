@@ -7,7 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.SimpleMenuProvider;
+
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -29,7 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 
 /** The workshop retains one private work area per visiting player. */
 public final class FrameWorkbenchBlock extends BaseEntityBlock {
@@ -84,9 +84,23 @@ public final class FrameWorkbenchBlock extends BaseEntityBlock {
                                  InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof FrameWorkbenchBlockEntity bench) {
-            NetworkHooks.openScreen(serverPlayer, new SimpleMenuProvider(
-                    (id, inventory, ignored) -> new FrameWorkbenchMenu(id, inventory, bench),
-                    Component.translatable("gui.guaniao.frame_workbench.title")), pos);
+            serverPlayer.openMenu(new net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider<BlockPos>() {
+                @Override
+                public BlockPos getScreenOpeningData(ServerPlayer player) {
+                    return pos.immutable();
+                }
+
+                @Override
+                public Component getDisplayName() {
+                    return Component.translatable("gui.guaniao.frame_workbench.title");
+                }
+
+                @Override
+                public FrameWorkbenchMenu createMenu(int containerId, net.minecraft.world.entity.player.Inventory inventory,
+                                                     Player ignored) {
+                    return new FrameWorkbenchMenu(containerId, inventory, bench);
+                }
+            });
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

@@ -54,7 +54,12 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
     private boolean closed;
 
     public FrameWorkbenchMenu(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
-        this(containerId, inventory, buffer.readBlockPos(), null);
+        this(containerId, inventory, buffer.readBlockPos());
+    }
+
+    /** Fabric extended-menu opening datum, with the same original block position. */
+    public FrameWorkbenchMenu(int containerId, Inventory inventory, BlockPos pos) {
+        this(containerId, inventory, pos, null);
     }
 
     public FrameWorkbenchMenu(int containerId, Inventory inventory, ContainerLevelAccess access) {

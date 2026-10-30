@@ -32,6 +32,7 @@ import EdDYON.guaniao.registry.GuaniaoCreativeTabs;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoFeatures;
 import EdDYON.guaniao.registry.GuaniaoItems;
+import EdDYON.guaniao.registry.GuaniaoMenuTypes;
 import EdDYON.guaniao.registry.GuaniaoParticleTypes;
 import EdDYON.guaniao.registry.GuaniaoRecipeSerializers;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
@@ -59,6 +60,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         GuaniaoEntityTypes.ENTITY_TYPES.registerAll();
         GuaniaoEntityAttributes.registerAll();
         GuaniaoItems.ITEMS.registerAll();
+        GuaniaoMenuTypes.MENU_TYPES.registerAll();
         BirdDroppingUtil.registerCompostables();
         GuaniaoRecipeSerializers.RECIPE_SERIALIZERS.registerAll();
         GuaniaoFeatures.FEATURES.registerAll();

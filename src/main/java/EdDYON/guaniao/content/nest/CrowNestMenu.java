@@ -40,7 +40,12 @@ public class CrowNestMenu extends AbstractContainerMenu {
     private int syncedEggCount;
 
     public CrowNestMenu(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
-        this(containerId, inventory, findNest(inventory, buffer.readBlockPos()), true);
+        this(containerId, inventory, buffer.readBlockPos());
+    }
+
+    /** Fabric 26.2 ExtendedMenuType client factory: same authoritative block pos. */
+    public CrowNestMenu(int containerId, Inventory inventory, BlockPos pos) {
+        this(containerId, inventory, findNest(inventory, pos), true);
     }
 
     public CrowNestMenu(int containerId, Inventory inventory, CrowNestBlockEntity nest) {

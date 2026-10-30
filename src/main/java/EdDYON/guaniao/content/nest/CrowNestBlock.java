@@ -28,8 +28,8 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.world.SimpleMenuProvider;
-import net.minecraftforge.network.NetworkHooks;
+
+
 import org.jetbrains.annotations.Nullable;
 import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 
@@ -131,10 +131,23 @@ public class CrowNestBlock extends BaseEntityBlock {
 
     private InteractionResult openSearchScreen(Level level, BlockPos pos, Player player, CrowNestBlockEntity nest) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
-            NetworkHooks.openScreen(serverPlayer,
-                    new SimpleMenuProvider((containerId, inventory, ignored) -> new CrowNestMenu(containerId, inventory, nest),
-                            Component.translatable("gui.guaniao.crow_nest.title")),
-                    buffer -> buffer.writeBlockPos(pos));
+            serverPlayer.openMenu(new net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider<BlockPos>() {
+                @Override
+                public BlockPos getScreenOpeningData(ServerPlayer player) {
+                    return pos.immutable();
+                }
+
+                @Override
+                public Component getDisplayName() {
+                    return Component.translatable("gui.guaniao.crow_nest.title");
+                }
+
+                @Override
+                public CrowNestMenu createMenu(int containerId, net.minecraft.world.entity.player.Inventory inventory,
+                                              Player ignored) {
+                    return new CrowNestMenu(containerId, inventory, nest);
+                }
+            });
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

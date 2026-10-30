@@ -11,6 +11,10 @@ import EdDYON.guaniao.network.PhotoDownloadChunkPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import EdDYON.guaniao.network.FrameWorkSnapshotPacket;
 import EdDYON.guaniao.content.camera.frame.FrameWorkbenchMenu;
+import EdDYON.guaniao.registry.GuaniaoMenuTypes;
+import EdDYON.guaniao.client.nest.CrowNestScreen;
+import EdDYON.guaniao.client.camera.frame.FrameWorkbenchScreen;
+import net.minecraft.client.gui.screens.MenuScreens;
 import EdDYON.guaniao.client.config.BirdConfigClient;
 import EdDYON.guaniao.network.OpenBirdConfigPacket;
 import net.fabricmc.api.ClientModInitializer;
@@ -23,6 +27,8 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         PrankFoodClientEvents.registerCallbacks();
         FeatherFanClientEvents.registerCallbacks();
         GuaniaoFabricEntityRenderers.register();
+        MenuScreens.register(GuaniaoMenuTypes.CROW_NEST.get(), CrowNestScreen::new);
+        MenuScreens.register(GuaniaoMenuTypes.FRAME_WORKBENCH.get(), FrameWorkbenchScreen::new);
         ClientPlayNetworking.registerGlobalReceiver(BirdRuntimeConfigPacket.TYPE,
                 (packet, context) -> packet.applyOnClient());
         ClientPlayNetworking.registerGlobalReceiver(PhotoCaptureResultPacket.TYPE,

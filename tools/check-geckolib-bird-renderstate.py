@@ -395,6 +395,53 @@ for token in ("BirdMutationRenderData.MODEL_SCALE", "new KingfisherHeldFishLayer
 assert "software.bernie" not in kingfisher_renderer
 assert "MultiBufferSource" not in kingfisher_renderer
 
+# Umbrella Cockatoo: validate the last renderer and its expression continuity,
+# owner-head rotation, per-bird pose snapshot, and derived animation paths.
+umbrella_model = current("client/entity/umbrellacockatoo/UmbrellaCockatooModel.java")
+umbrella_renderer = current("client/entity/umbrellacockatoo/UmbrellaCockatooRenderer.java")
+umbrella_original_renderer = original("client/entity/umbrellacockatoo/UmbrellaCockatooRenderer.java")
+umbrella_original_model = original("client/entity/umbrellacockatoo/UmbrellaCockatooModel.java")
+for token in ("getModelRenderScale()", "this.shadowRadius = 0.20F;",
+              "ownerPosition.add(bird.ownerPerchOffset(", "owner.yBodyRotO",
+              "owner.yHeadRotO", "owner.xRotO", "Mth.rotLerp("):
+    assert token in umbrella_original_renderer and token in umbrella_renderer, token
+for token in ("samplePose(", "getExpressionLevel()", "getCockatooAnimationTick()",
+              "needsDisplayReference()", "getHeadRoll()",
+              "expressions.clear()", "resourceVersion = version"):
+    assert token in umbrella_original_model and token in umbrella_model, token
+for token in ("BirdMutationRenderData.MODEL_SCALE", "BirdMutationRenderData.capture(",
+              "GuaniaoGeckoAssets.model(UmbrellaCockatooDefinition.MODEL)",
+              "GuaniaoGeckoAssets.animation(UmbrellaCockatooDefinition.ANIMATION)",
+              "getBakedAnimation(", "CockatooOwnerPerchAnimation.create(",
+              "CockatooDisplayResidual.create(", "EXPRESSION_POSE"):
+    assert token in umbrella_model, token
+for token in ("DataTickets.ENTITY_BODY_YAW", "OWNER_RENDER_OFFSET",
+              "OWNER_PITCH", "super.getRenderOffset(state)",
+              "super.applyRotations(", "adjustModelBonesForRender(",
+              "UmbrellaCockatooModel.EXPRESSION_POSE",
+              "CockatooPoseComposer.apply(snapshots, frame)"):
+    assert token in umbrella_renderer, token
+for name in ("CockatooPoseComposer", "CockatooDisplayResidual", "CockatooOwnerPerchAnimation"):
+    now = current("client/entity/umbrellacockatoo/" + name + ".java")
+    assert "software.bernie" not in now
+    assert "com.geckolib." in now
+pose_composer = current("client/entity/umbrellacockatoo/CockatooPoseComposer.java")
+for token in ("BoneSnapshots", "headRoll * 0.35",
+              "Math.toRadians(r.x())", "Math.toRadians(r.y())",
+              "Math.toRadians(r.z())", "setTranslateX(",
+              "setTranslateY(", "setTranslateZ("):
+    assert token in pose_composer, token
+residual = current("client/entity/umbrellacockatoo/CockatooDisplayResidual.java")
+perch = current("client/entity/umbrellacockatoo/CockatooOwnerPerchAnimation.java")
+assert 'NAME = "animation.idle_diff_2_residual"' in residual
+assert "reference.bone(bone.boneName())" in residual
+assert "source.keyframeMarkers()" in residual
+assert "source.loopType()" in residual
+assert "getUsedVariables()" in residual
+assert 'NAME = "animation.owner_perch"' in perch
+assert "model.boneLookup().get().keySet()" in perch
+assert "new Constant(value)" in perch
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -417,9 +464,10 @@ registered = {
     "KESTREL": "Kestrel",
     "HUMMINGBIRD": "Hummingbird",
     "KINGFISHER": "Kingfisher",
+    "UMBRELLA_COCKATOO": "UmbrellaCockatoo",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 15 mutation bird models plus hummingbird, 18 renderer registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 15 mutation bird models plus hummingbird, 19 renderer registrations, unmodified mutation color formulas")

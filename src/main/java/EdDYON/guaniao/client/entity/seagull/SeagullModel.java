@@ -22,6 +22,8 @@ public class SeagullModel extends GeoModel<SeagullEntity> {
 
     @Override
     public void addAdditionalStateData(SeagullEntity animatable, Object relatedObject, GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
         BirdMutationRenderData.capture(renderState,
                 BirdMutationTextureFactory.textureFor(SeagullDefinition.TEXTURE, animatable));
     }

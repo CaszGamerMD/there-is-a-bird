@@ -22,6 +22,8 @@ public class CrowModel extends GeoModel<CrowEntity> {
 
     @Override
     public void addAdditionalStateData(CrowEntity animatable, Object relatedObject, GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
         BirdMutationRenderData.capture(renderState,
                 BirdMutationTextureFactory.textureFor(animatable.getTextureResource(), animatable));
     }

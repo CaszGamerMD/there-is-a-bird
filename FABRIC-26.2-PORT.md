@@ -1069,3 +1069,26 @@ behavior remains untested. The GitHub Actions runs observed at this checkpoint
 are failing *before any job steps start* (zero step summaries, no usable log),
 so a passing source-level check cannot currently be claimed from CI. No
 playable JAR has been produced, and private assets must not be published.
+
+
+### Kestrel in-progress: GeckoLib 5 model and talon layer
+
+The next renderer is underway, but **Kestrel is not yet counted among the 15
+registered bird renderers**. Its model now captures the actual mutation
+texture, individual render scale and `hasExtendedTalons()` signal in
+GeckoLib 5 per-bird render state. Its carried-item layer now snapshots the
+carried item through GeckoLib 5 and submits it on the animated `root` bone.
+The original 0.018/-0.095 offset, 90/135-degree angles and 0.46 scale are
+unchanged, with parity checks committed.
+
+Still required before registering Kestrel: recreate the original post-animation
+leg/root extended-talon resets using bone snapshots, preserve owner head-riding
+render offsets and pitch, flight pitch and bank, and name visibility when
+learning fetch. None of these behaviors should be silently discarded just to
+raise the renderer count.
+
+As of the latest observed workflow run, the private Fabric compile job fails
+before GitHub allocates a runner (runner_id 0, zero job steps). This is a CI
+scheduling/availability failure, **not** a Gradle compiler diagnostic.
+Check GitHub Actions billing/limits and runner availability separately;
+without a runner, no source-level build or JAR validation has happened.

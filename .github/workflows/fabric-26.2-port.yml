@@ -318,6 +318,11 @@ jobs:
           distribution: temurin
           java-version: "25"
       - uses: gradle/actions/setup-gradle@v4
+      - name: Compile migrated registry/renderer subset (focused diagnostic)
+        continue-on-error: true
+        run: |
+          chmod +x gradlew
+          ./gradlew verifyRegistriesPort --no-daemon --stacktrace --console=plain
       - name: Compile Fabric port (diagnostic; no artifacts)
         run: |
           chmod +x gradlew

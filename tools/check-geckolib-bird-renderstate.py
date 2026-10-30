@@ -71,8 +71,8 @@ for stem, converted_renderer in MODELS.items():
     # Kingfisher names its render-pass variable "pass"; verify the exact
     # multiplication and super call irrespective of the local variable name.
     assert re.search(
-        r"super\\.scaleModelForRender\\((?:renderPassInfo|pass), "
-        r"widthScale \\* scale, heightScale \\* scale\\)", renderer
+        r"super\.scaleModelForRender\((?:renderPassInfo|pass), "
+        r"widthScale \* scale, heightScale \* scale\)", renderer
     ), (species, "original per-bird scale multiplier changed")
     assert "software.bernie" not in renderer
     # Equivalent 'shadowRadius' and 'this.shadowRadius' forms are both valid.

@@ -46,6 +46,8 @@ jobs:
         run: python3 tools/check-bird-synced-data-port.py
       - name: Verify authored projectile and photograph entity gameplay after 26.2 API updates
         run: python3 tools/check-bird-projectile-entity-api.py
+      - name: Verify Fabric-native Frame Workbench material picker parity
+        run: python3 tools/check-frame-material-palette-26-2.py
       - name: Verify Frame Workbench input, outline tools and original 3D features preserved
         run: python3 tools/check-frame-workbench-gui-26-2.py
       - name: Verify Crow Nest screen GUI extractor and original masked loot layout

@@ -14,6 +14,7 @@ MODELS = {
     "longtailedtit/LongTailedTit": True,
     "seagull/Seagull": True,
     "nightheron/NightHeron": True,
+    "kestrel/Kestrel": False,  # renderer still legacy; model and talon layer staged
     "crow/Crow": True,
     "macaw/Macaw": True,
     "budgerigar/Budgerigar": True,
@@ -257,6 +258,29 @@ assert "software.bernie" not in heron
 assert "new NightHeronHeldFishLayer<>(context, this)" in current(
     "client/entity/nightheron/NightHeronRenderer.java")
 
+# Staged Kestrel model preserves extended-talon pose data and the talon item,
+# but its owner-head render offset and pitch are not yet ported or registered.
+kestrel_model = current("client/entity/kestrel/KestrelModel.java")
+kestrel_original_model = original("client/entity/kestrel/KestrelModel.java")
+assert "hasExtendedTalons()" in kestrel_original_model
+for token in ("DataTicket<Boolean> EXTENDED_TALONS",
+              "animatable.hasExtendedTalons()",
+              "BirdMutationRenderData.MODEL_SCALE",
+              "GuaniaoGeckoAssets.model(KestrelDefinition.MODEL)",
+              "GuaniaoGeckoAssets.animation(KestrelDefinition.ANIMATION)"):
+    assert token in kestrel_model, token
+kestrel_old_layer = original("client/entity/kestrel/KestrelHeldItemLayer.java")
+kestrel_layer = current("client/entity/kestrel/KestrelHeldItemLayer.java")
+for token in ('"root"', "0.018D, -0.095D", "90.0F",
+              "135.0F", "0.46F", "getCarriedItem()"):
+    assert token in kestrel_old_layer and token in kestrel_layer, token
+for token in ("BlockAndItemGeoLayer", "getRelevantBones(",
+              "addRenderData(", "RenderData.item(",
+              "super.submitItemStackRender(",
+              "RenderUtil.createRenderStateForItem("):
+    assert token in kestrel_layer, token
+assert "software.bernie" not in kestrel_layer + kestrel_model
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -281,4 +305,4 @@ for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 14 model texture snapshots, 15 renderer scales and client registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 15 model texture snapshots, 15 renderer scales and client registrations, unmodified mutation color formulas")

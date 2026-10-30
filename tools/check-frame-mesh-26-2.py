@@ -15,6 +15,9 @@ geom=(ROOT/(BASE+"FrameWorkbenchMeshGeometry.java")).read_text("utf-8")
 submit=(ROOT/(BASE+"FrameWorkbenchMeshSubmitter.java")).read_text("utf-8")
 state=(ROOT/(BASE+"FrameWorkbenchPreview3DState.java")).read_text("utf-8")
 renderer=(ROOT/(BASE+"FrameWorkbenchPreview3DRenderer.java")).read_text("utf-8")
+resolver=(ROOT/(BASE+"FrameWorkbenchMaterialResolver.java")).read_text("utf-8")
+factory=(ROOT/(BASE+"FrameWorkbenchPreview3DFactory.java")).read_text("utf-8")
+adapter=(ROOT/(BASE+"FrameWorkbenchMeshFromDesign.java")).read_text("utf-8")
 client=(ROOT/"src/main/java/EdDYON/guaniao/fabric/GuaniaoFabricClientEntrypoint.java").read_text("utf-8")
 workflow=(ROOT/".github/workflows/fabric-26.2-port.yml").read_text("utf-8")
 gradle=(ROOT/"build.gradle").read_text("utf-8")
@@ -53,6 +56,35 @@ for token in ("extends PictureInPictureRenderer<FrameWorkbenchPreview3DState>",
               "getTranslateY(int height, int guiScale)", "LightCoordsUtil.FULL_BRIGHT"):
     assert token in renderer,token
 assert "PictureInPictureRendererRegistry.register(context -> new FrameWorkbenchPreview3DRenderer());" in client
+for token in (
+    "getModelManager().getBlockStateModelSet()",
+    ".getParticleMaterial(state).sprite()",
+    "client.getBlockColors().getTintSource(state,0)",
+    "sprite.transparency().hasTranslucent()",
+    "Blocks.OAK_PLANKS.defaultBlockState()",
+    "item instanceof BlockItem block",
+    "Blocks.WHITE_WOOL.defaultBlockState()",
+    "paper ? 0.96F : 1.0F",
+    "paper ? 0.86F : 1.0F",
+    'path.equals("block/tinted_glass")',
+    "block.getBlock() instanceof AbstractGlassBlock",
+):
+    assert token in resolver, token
+assert "net.minecraftforge." not in resolver
+for token in (
+    "FrameWorkbenchMeshFromDesign.build(design,glass)",
+    "FrameWorkbenchMaterialResolver.isGlass(design.liningMaterial())",
+    "FrameWorkbenchMaterialResolver.surface(design.frameMaterial())",
+    "FrameWorkbenchMaterialResolver.surface(design.trimMaterial())",
+    "FrameWorkbenchMaterialResolver.surface(design.liningMaterial())",
+    "new FrameWorkbenchPreview3DState(mesh,wood,trim,lining,",
+):
+    assert token in factory, token
+for token in ("design.mask()", "design.windowMask()", "design.widthPixels()",
+              "design.heightPixels()", "design.depthPixels()",
+              "!design.trimMaterial().equals(AIR)"):
+    assert token in adapter, token
+assert "FrameWorkbenchMaterialResolver.java" in gradle
 assert "GuaniaoFrameMeshGeometryRegression" in workflow
 for cls in ("FrameWorkbenchMeshGeometry","FrameWorkbenchMeshSubmitter",
             "FrameWorkbenchPreview3DState","FrameWorkbenchPreview3DRenderer"):

@@ -1,4 +1,3 @@
-import com.mojang.datafixers.util.Pair;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
 import net.minecraft.core.BlockPos;

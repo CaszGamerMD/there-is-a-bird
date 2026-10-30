@@ -78,6 +78,9 @@ for token in ("mouseClicked(MouseButtonEvent event,boolean doubleClick)",
               "extractContents(net.minecraft.client.gui.GuiGraphicsExtractor graphics",
               "this.extractDefaultSprite(graphics)"):
     assert token in screen,token
+assert "super(menu,inventory,title,PANEL_WIDTH,PANEL_HEIGHT);" in screen
+assert "this.imageWidth=PANEL_WIDTH;" not in screen
+assert "this.imageHeight=PANEL_HEIGHT;" not in screen
 for obsolete in ("mouseClicked(double mouseX,double mouseY,int button)",
                  "mouseDragged(double mouseX,double mouseY,int button",
                  "mouseReleased(double mouseX,double mouseY,int button)",

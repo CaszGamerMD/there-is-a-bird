@@ -177,6 +177,13 @@ jobs:
           java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify all original dynamic Nikon lens settings map to 26.2 uniform block
+        run: python3 tools/check-camera-optics-parameters-26-2.py
+      - name: Run standalone dynamic camera optics regression (Java 25)
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-optics-params"
+          javac -d "$RUNNER_TEMP/camera-optics-params" src/main/java/EdDYON/guaniao/content/camera/CameraFilterCategory.java src/main/java/EdDYON/guaniao/content/camera/CameraFilter.java src/main/java/EdDYON/guaniao/content/camera/CameraLens.java src/main/java/EdDYON/guaniao/content/camera/CameraFocusMode.java src/main/java/EdDYON/guaniao/content/camera/CameraAperture.java src/main/java/EdDYON/guaniao/content/camera/CameraShootingMode.java src/main/java/EdDYON/guaniao/content/camera/CameraState.java src/main/java/EdDYON/guaniao/client/camera/CameraOpticsParameters.java tools/port-probes/GuaniaoCameraOpticsParametersRegression.java
+          java -cp "$RUNNER_TEMP/camera-optics-params" EdDYON.guaniao.client.camera.GuaniaoCameraOpticsParametersRegression
       - name: Verify original 32-tap Nikon optics GLSL port and 26.2 sampler/UBO schema
         run: python3 tools/check-camera-optics-shader-26-2.py
       - name: Verify original viewfinder/thumbnail crop and modern screen access

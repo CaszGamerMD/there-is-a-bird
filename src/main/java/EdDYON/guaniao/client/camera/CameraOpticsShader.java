@@ -18,7 +18,6 @@ import net.minecraftforge.client.event.RegisterShadersEvent;
 
 /** Full-screen optical pass: depth of field plus the selected lens distortion. */
 public final class CameraOpticsShader {
-    private static final float NEAR_PLANE = 0.05F;
     private static ShaderInstance shader;
 
     private CameraOpticsShader() {
@@ -40,7 +39,10 @@ public final class CameraOpticsShader {
             return false;
         }
         boolean depthOfField = CameraClientPreferences.depthOfFieldEnabled();
-        if (!depthOfField && state.lens().distortion() == 0.0F) {
+        float farPlane = Minecraft.getInstance().gameRenderer.getDepthFar();
+        CameraOpticsParameters parameters = CameraOpticsParameters.fromCamera(
+                state, farPlane, depthOfField);
+        if (!parameters.needsOpticsPass()) {
             return false;
         }
 
@@ -49,15 +51,15 @@ public final class CameraOpticsShader {
         shader.setSampler("DiffuseSampler", source.getColorTextureId());
         shader.setSampler("DepthSampler", source.getDepthTextureId());
         setUniform("OutSize", destination.width, destination.height);
-        setUniform("NearPlane", NEAR_PLANE);
-        // Depth reconstruction must use the same projection as the world render.
-        float farPlane = Minecraft.getInstance().gameRenderer.getDepthFar();
-        setUniform("FarPlane", farPlane);
-        setUniform("FocusDistance", (float)state.focusDistance());
-        setUniform("Aperture", state.aperture().fStop());
-        setUniform("FocalLength", (float)state.focalLength());
-        setUniform("DofMultiplier", depthOfField ? state.lens().depthOfFieldMultiplier() : 0.0F);
-        setUniform("LensDistortion", state.lens().distortion());
+        // Original settings now come from one immutable frame snapshot.
+        // The new post shader consumes these seven values as OpticsConfig.
+        setUniform("NearPlane", parameters.nearPlane());
+        setUniform("FarPlane", parameters.farPlane());
+        setUniform("FocusDistance", parameters.focusDistance());
+        setUniform("Aperture", parameters.aperture());
+        setUniform("FocalLength", parameters.focalLength());
+        setUniform("DofMultiplier", parameters.dofMultiplier());
+        setUniform("LensDistortion", parameters.lensDistortion());
 
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);

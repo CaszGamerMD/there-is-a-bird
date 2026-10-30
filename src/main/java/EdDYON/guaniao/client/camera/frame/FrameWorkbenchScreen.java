@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.function.Consumer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -591,6 +592,39 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
             default -> SoundEvents.ITEM_FRAME_ADD_ITEM;
         };
         this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(sound,stage==4 ? 1.25F : 1.05F,0.22F));
+    }
+
+    /**
+     * 26.2's real GUI extraction callback. The authored frame geometry is
+     * now submitted to a depth-buffered PiP instead of being drawn directly
+     * via the removed graphics.pose()/bufferSource() machinery.
+     *
+     * The legacy 1.20.1 immediate-mode rendering methods remain below while
+     * the staged photo texture cache, workshop birds and remaining 2D GUI
+     * are ported. Do not delete them or claim this screen compiles yet.
+     */
+    @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partialTick) {
+        super.extractRenderState(graphics,mouseX,mouseY,partialTick);
+        this.extractPreview3D(graphics);
+    }
+
+    private void extractPreview3D(GuiGraphicsExtractor graphics) {
+        if(this.paletteKind!=null || this.outlineEditor!=null || this.isWorkshopVisible()
+                || this.editShape || this.invalidOutline || !this.design.hasArea())return;
+        // A photograph is NEVER silently replaced by a blank frame.
+        // Wire captureWithPhoto after PhotographTextureCache's 26.2 port.
+        if(PhotographData.hasImage(this.previewStack))return;
+
+        int x0=Math.round(this.originX+79*this.uiScale);
+        int y0=Math.round(this.originY+41*this.uiScale);
+        int x1=Math.round(this.originX+231*this.uiScale);
+        int y1=Math.round(this.originY+191*this.uiScale);
+        if(x1<=x0 || y1<=y0)return;
+        var state=FrameWorkbenchPreview3DFactory.capture(this.design,
+                this.page==3 ? 0.0F : this.viewYaw,
+                this.page==3 ? 0.0F : this.viewPitch,
+                x0,y0,x1,y1,this.previewScale()*this.uiScale,null);
+        FrameWorkbenchPipBridge.submit(graphics,state);
     }
 
     @Override public void render(GuiGraphics graphics,int mouseX,int mouseY,float partialTick) {

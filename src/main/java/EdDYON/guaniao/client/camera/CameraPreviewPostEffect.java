@@ -61,7 +61,7 @@ public final class CameraPreviewPostEffect {
         cleanCapturePrepared = false;
 
         Minecraft minecraft = Minecraft.getInstance();
-        CameraFilterPickerScreen picker = minecraft.screen instanceof CameraFilterPickerScreen screen ? screen : null;
+        CameraFilterPickerScreen picker = minecraft.gui.screen() instanceof CameraFilterPickerScreen screen ? screen : null;
         if (picker == null) {
             closeThumbnails();
         }
@@ -144,12 +144,9 @@ public final class CameraPreviewPostEffect {
             return;
         }
 
-        float u0 = (float)left / guiWidth;
-        float u1 = (float)right / guiWidth;
-        float vTop = 1.0F - (float)top / guiHeight;
-        float vBottom = 1.0F - (float)bottom / guiHeight;
-
-        drawPreviewTarget(graphics, previewTarget, left, top, right, bottom, u0, vBottom, u1, vTop);
+        CameraPreviewUv.Uv uv = CameraPreviewUv.lens(left, top, right, bottom, guiWidth, guiHeight);
+        drawPreviewTarget(graphics, previewTarget, left, top, right, bottom,
+                uv.u0(), uv.vBottom(), uv.u1(), uv.vTop());
     }
 
     /** Draws a center-cropped copy of the current filtered world into an arbitrary UI rectangle. */
@@ -158,26 +155,10 @@ public final class CameraPreviewPostEffect {
             return;
         }
 
-        float sourceAspect = previewTarget.width / (float)Math.max(1, previewTarget.height);
-        float destinationAspect = (right - left) / (float)Math.max(1, bottom - top);
-        float u0 = 0.0F;
-        float u1 = 1.0F;
-        float vBottom = 0.0F;
-        float vTop = 1.0F;
-
-        if (sourceAspect > destinationAspect) {
-            float visibleWidth = destinationAspect / sourceAspect;
-            float crop = (1.0F - visibleWidth) * 0.5F;
-            u0 = crop;
-            u1 = 1.0F - crop;
-        } else if (sourceAspect < destinationAspect) {
-            float visibleHeight = sourceAspect / destinationAspect;
-            float crop = (1.0F - visibleHeight) * 0.5F;
-            vBottom = crop;
-            vTop = 1.0F - crop;
-        }
-
-        drawPreviewTarget(graphics, previewTarget, left, top, right, bottom, u0, vBottom, u1, vTop);
+        CameraPreviewUv.Uv uv = CameraPreviewUv.centerCrop(
+                previewTarget.width, previewTarget.height, right - left, bottom - top);
+        drawPreviewTarget(graphics, previewTarget, left, top, right, bottom,
+                uv.u0(), uv.vBottom(), uv.u1(), uv.vTop());
     }
 
     /** Draws the real filtered world thumbnail prepared for one item in the active picker category. */

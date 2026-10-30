@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -24,7 +26,7 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
                           Wood wood, Trim trim, Mat mat, PhotographFrameStyle.Ornament ornament,
                           int corners, int borderCells, int depthPixels, PhotoFit fit,
                           int zoomPercent, int offsetX, int offsetY, int rotation, List<Decoration> decorations,
-                          ResourceLocation frameMaterial, ResourceLocation trimMaterial, ResourceLocation liningMaterial) {
+                          Identifier frameMaterial, Identifier trimMaterial, Identifier liningMaterial) {
     public static final String TAG = "FrameDesign";
     public static final int GRID = 32;
     public static final int MIN_SIZE = 0;
@@ -165,13 +167,17 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
 
     @Nullable
     public static FrameDesign read(ItemStack stack) {
-        CompoundTag tag = stack.getTagElement(TAG);
-        return tag == null ? null : fromTag(tag);
+        // Retain the exact original nested FrameDesign compound save format.
+        CompoundTag custom = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        return custom.get(TAG) instanceof CompoundTag tag ? fromTag(tag) : null;
     }
 
     public static void write(ItemStack stack, FrameDesign design) {
         Objects.requireNonNull(design);
-        if (!stack.isEmpty()) stack.addTagElement(TAG, design.toTag());
+        if (!stack.isEmpty()) {
+            CustomData.update(DataComponents.CUSTOM_DATA, stack,
+                    custom -> custom.put(TAG, design.toTag()));
+        }
     }
 
     public CompoundTag toTag() {
@@ -204,22 +210,27 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
 
     @Nullable
     public static FrameDesign fromTag(CompoundTag tag) {
-        int version = tag.getInt("Version");
-        if ((version < 1 || version > 3) || !tag.contains("Mask", Tag.TAG_INT_ARRAY)) return null;
+        int version = tag.getIntOr("Version",0);
+        if ((version < 1 || version > 3) || !isTag(tag, "Mask", Tag.TAG_INT_ARRAY)) return null;
         try {
-            PhotographFrameStyle.Ornament ornament = required(ornamentFromId(tag.getString("Ornament")));
-            int corners = tag.getInt("Corners");
+            PhotographFrameStyle.Ornament ornament = required(ornamentFromId(tag.getStringOr("Ornament","")));
+            int corners = tag.getIntOr("Corners",0);
             List<Decoration> decorations = version == 1 ? legacyDecorations(ornament, corners) : readDecorations(tag);
-            FrameDesign design = new FrameDesign(tag.getInt("Width"), tag.getInt("Height"), required(Template.fromId(tag.getString("Template"))),
-                    tag.getIntArray("Mask"), required(Wood.fromId(tag.getString("Wood"))), required(Trim.fromId(tag.getString("Trim"))),
-                    required(Mat.fromId(tag.getString("Mat"))), ornament,
-                    corners, tag.getInt("Border"), tag.getInt("Depth"), required(PhotoFit.fromId(tag.getString("Fit"))),
-                    tag.getInt("Zoom"), tag.getInt("OffsetX"), tag.getInt("OffsetY"), tag.getInt("Rotation"), decorations);
-            return version < 3 ? design : design.withMaterials(resourceId(tag.getString("FrameMaterial")),
-                    resourceId(tag.getString("TrimMaterial")), resourceId(tag.getString("LiningMaterial")));
+            FrameDesign design = new FrameDesign(tag.getIntOr("Width",0), tag.getIntOr("Height",0), required(Template.fromId(tag.getStringOr("Template",""))),
+                    tag.getIntArray("Mask").orElseGet(() -> new int[0]), required(Wood.fromId(tag.getStringOr("Wood",""))), required(Trim.fromId(tag.getStringOr("Trim",""))),
+                    required(Mat.fromId(tag.getStringOr("Mat",""))), ornament,
+                    corners, tag.getIntOr("Border",0), tag.getIntOr("Depth",0), required(PhotoFit.fromId(tag.getStringOr("Fit",""))),
+                    tag.getIntOr("Zoom",0), tag.getIntOr("OffsetX",0), tag.getIntOr("OffsetY",0), tag.getIntOr("Rotation",0), decorations);
+            return version < 3 ? design : design.withMaterials(resourceId(tag.getStringOr("FrameMaterial","")),
+                    resourceId(tag.getStringOr("TrimMaterial","")), resourceId(tag.getStringOr("LiningMaterial","")));
         } catch (IllegalArgumentException exception) {
             return null;
         }
+    }
+
+    private static boolean isTag(CompoundTag tag, String key, int id) {
+        Tag entry = tag.get(key);
+        return entry != null && entry.getId() == id;
     }
 
     private static <T> T required(@Nullable T value) {
@@ -230,11 +241,11 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
     private static List<Decoration> readDecorations(CompoundTag tag) {
         if (!(tag.get("Decorations") instanceof ListTag points)
                 || points.size() > MAX_DECORATIONS
-                || (!points.isEmpty() && points.getElementType() != Tag.TAG_COMPOUND)) {
+                || (!points.isEmpty() && points.stream().anyMatch(point -> point.getId() != Tag.TAG_COMPOUND))) {
             throw new IllegalArgumentException("Invalid frame decorations");
         }
         List<Decoration> result = new ArrayList<>(points.size());
-        for (int i = 0; i < points.size(); i++) result.add(Decoration.fromTag(points.getCompound(i)));
+        for (int i = 0; i < points.size(); i++) result.add(Decoration.fromTag(points.getCompoundOrEmpty(i)));
         return List.copyOf(result);
     }
 
@@ -250,12 +261,12 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
     }
 
     /** Coordinates use the full frame bounds, with the origin at its top left. */
-    public record Decoration(DecorationType type, int x, int y, int size, int rotation, boolean locked, ResourceLocation itemId) {
+    public record Decoration(DecorationType type, int x, int y, int size, int rotation, boolean locked, Identifier itemId) {
         public Decoration(DecorationType type, int x, int y, int size, int rotation, boolean locked) {
             this(type, x, y, size, rotation, locked, legacyDecorationItem(type));
         }
 
-        public Decoration(ResourceLocation itemId, int x, int y, int size, int rotation, boolean locked) {
+        public Decoration(Identifier itemId, int x, int y, int size, int rotation, boolean locked) {
             this(DecorationType.LEAF, x, y, size, rotation, locked, itemId);
         }
         public Decoration {
@@ -276,16 +287,16 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
         }
 
         public static Decoration fromTag(CompoundTag tag) {
-            if (!tag.contains("Type", Tag.TAG_STRING) || !tag.contains("X", Tag.TAG_INT)
-                    || !tag.contains("Y", Tag.TAG_INT) || !tag.contains("Size", Tag.TAG_INT)
-                    || !tag.contains("Rotation", Tag.TAG_INT) || !tag.contains("Locked", Tag.TAG_BYTE)
-                    || tag.getByte("Locked") < 0 || tag.getByte("Locked") > 1) {
+            if (!isTag(tag, "Type", Tag.TAG_STRING) || !isTag(tag, "X", Tag.TAG_INT)
+                    || !isTag(tag, "Y", Tag.TAG_INT) || !isTag(tag, "Size", Tag.TAG_INT)
+                    || !isTag(tag, "Rotation", Tag.TAG_INT) || !isTag(tag, "Locked", Tag.TAG_BYTE)
+                    || tag.getByteOr("Locked",(byte)-1) < 0 || tag.getByteOr("Locked",(byte)-1) > 1) {
                 throw new IllegalArgumentException("Invalid decoration fields");
             }
-            DecorationType type = required(DecorationType.fromId(tag.getString("Type")));
-            return new Decoration(type, tag.getInt("X"), tag.getInt("Y"), tag.getInt("Size"),
-                    tag.getInt("Rotation"), tag.getBoolean("Locked"), tag.contains("Item", Tag.TAG_STRING)
-                    ? resourceId(tag.getString("Item")) : legacyDecorationItem(type));
+            DecorationType type = required(DecorationType.fromId(tag.getStringOr("Type","")));
+            return new Decoration(type, tag.getIntOr("X",0), tag.getIntOr("Y",0), tag.getIntOr("Size",0),
+                    tag.getIntOr("Rotation",0), tag.getBooleanOr("Locked",false), isTag(tag, "Item", Tag.TAG_STRING)
+                    ? resourceId(tag.getStringOr("Item","")) : legacyDecorationItem(type));
         }
     }
 
@@ -345,9 +356,9 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
             int ornament = buffer.readUnsignedByte(), corners = buffer.readUnsignedByte(), border = buffer.readUnsignedByte();
             int depth = buffer.readUnsignedByte(), fit = buffer.readUnsignedByte(), zoom = buffer.readUnsignedShort();
             int offsetX = buffer.readByte(), offsetY = buffer.readByte(), rotation = buffer.readUnsignedByte();
-            ResourceLocation frameMaterial = version >= 3 ? resourceId(buffer.readUtf(MAX_RESOURCE_ID_LENGTH)) : materialId(Wood.values()[wood]);
-            ResourceLocation trimMaterial = version >= 3 ? resourceId(buffer.readUtf(MAX_RESOURCE_ID_LENGTH)) : materialId(Trim.values()[trim]);
-            ResourceLocation liningMaterial = version >= 3 ? resourceId(buffer.readUtf(MAX_RESOURCE_ID_LENGTH)) : materialId(Mat.values()[mat]);
+            Identifier frameMaterial = version >= 3 ? resourceId(buffer.readUtf(MAX_RESOURCE_ID_LENGTH)) : materialId(Wood.values()[wood]);
+            Identifier trimMaterial = version >= 3 ? resourceId(buffer.readUtf(MAX_RESOURCE_ID_LENGTH)) : materialId(Trim.values()[trim]);
+            Identifier liningMaterial = version >= 3 ? resourceId(buffer.readUtf(MAX_RESOURCE_ID_LENGTH)) : materialId(Mat.values()[mat]);
             List<Decoration> decorations;
             if (version == 1) {
                 decorations = legacyDecorations(PhotographFrameStyle.Ornament.values()[ornament], corners);
@@ -359,7 +370,7 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
                     int type = buffer.readUnsignedByte(), x = buffer.readUnsignedShort(), y = buffer.readUnsignedShort();
                     int size = buffer.readUnsignedByte(), turn = buffer.readUnsignedByte(), locked = buffer.readUnsignedByte();
                     if (locked > 1) return null;
-                    ResourceLocation item = version >= 3 ? resourceId(buffer.readUtf(MAX_RESOURCE_ID_LENGTH)) : legacyDecorationItem(DecorationType.values()[type]);
+                    Identifier item = version >= 3 ? resourceId(buffer.readUtf(MAX_RESOURCE_ID_LENGTH)) : legacyDecorationItem(DecorationType.values()[type]);
                     points.add(new Decoration(DecorationType.values()[type], x, y, size, turn, locked == 1, item));
                 }
                 decorations = points;
@@ -435,11 +446,11 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
                 + Arrays.hashCode(this.mask);
     }
 
-    public FrameDesign withFrameMaterial(ResourceLocation id) { return withMaterials(id, this.trimMaterial, this.liningMaterial); }
-    public FrameDesign withTrimMaterial(ResourceLocation id) { return withMaterials(this.frameMaterial, id, this.liningMaterial); }
-    public FrameDesign withLiningMaterial(ResourceLocation id) { return withMaterials(this.frameMaterial, this.trimMaterial, id); }
+    public FrameDesign withFrameMaterial(Identifier id) { return withMaterials(id, this.trimMaterial, this.liningMaterial); }
+    public FrameDesign withTrimMaterial(Identifier id) { return withMaterials(this.frameMaterial, id, this.liningMaterial); }
+    public FrameDesign withLiningMaterial(Identifier id) { return withMaterials(this.frameMaterial, this.trimMaterial, id); }
 
-    private FrameDesign withMaterials(ResourceLocation frame, ResourceLocation trim, ResourceLocation lining) {
+    private FrameDesign withMaterials(Identifier frame, Identifier trim, Identifier lining) {
         return new FrameDesign(this.widthPixels, this.heightPixels, this.template, this.mask, this.wood, this.trim, this.mat,
                 this.ornament, this.corners, this.borderCells, this.depthPixels, this.fit, this.zoomPercent,
                 this.offsetX, this.offsetY, this.rotation, this.decorations, frame, trim, lining);
@@ -450,25 +461,25 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
     /** Registry checks apply when crafting, not while loading old saves with absent optional mods. */
     public boolean hasAvailableMaterials() {
         if (!isBlockMaterial(this.frameMaterial)
-                || (!this.trimMaterial.equals(new ResourceLocation("minecraft", "air")) && !isBlockMaterial(this.trimMaterial))
-                || (!this.liningMaterial.equals(new ResourceLocation("minecraft", "paper")) && !isBlockMaterial(this.liningMaterial))) return false;
+                || (!this.trimMaterial.equals(Identifier.fromNamespaceAndPath("minecraft", "air")) && !isBlockMaterial(this.trimMaterial))
+                || (!this.liningMaterial.equals(Identifier.fromNamespaceAndPath("minecraft", "paper")) && !isBlockMaterial(this.liningMaterial))) return false;
         for (Decoration point : this.decorations) {
-            if (!BuiltInRegistries.ITEM.containsKey(point.itemId) || BuiltInRegistries.ITEM.get(point.itemId) == Items.AIR) return false;
+            if (!BuiltInRegistries.ITEM.containsKey(point.itemId) || BuiltInRegistries.ITEM.getValue(point.itemId) == Items.AIR) return false;
         }
         return true;
     }
 
-    public static boolean isBlockMaterial(ResourceLocation id) {
+    public static boolean isBlockMaterial(Identifier id) {
         return BuiltInRegistries.ITEM.containsKey(id)
-                && BuiltInRegistries.ITEM.get(id) instanceof BlockItem;
+                && BuiltInRegistries.ITEM.getValue(id) instanceof BlockItem;
     }
 
-    private static ResourceLocation materialId(Wood wood) {
+    private static Identifier materialId(Wood wood) {
         return BuiltInRegistries.ITEM.getKey(wood.materialItem());
     }
 
-    private static ResourceLocation materialId(Trim trim) {
-        return new ResourceLocation("minecraft", switch (trim) {
+    private static Identifier materialId(Trim trim) {
+        return Identifier.fromNamespaceAndPath("minecraft", switch (trim) {
             case NONE -> "air";
             case COPPER -> "copper_block";
             case IRON -> "iron_block";
@@ -478,12 +489,12 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
         });
     }
 
-    private static ResourceLocation materialId(Mat mat) {
-        return mat == Mat.NONE ? new ResourceLocation("minecraft", "paper") : BuiltInRegistries.ITEM.getKey(mat.materialItem());
+    private static Identifier materialId(Mat mat) {
+        return mat == Mat.NONE ? Identifier.fromNamespaceAndPath("minecraft", "paper") : BuiltInRegistries.ITEM.getKey(mat.materialItem());
     }
 
-    public static ResourceLocation legacyDecorationItem(DecorationType type) {
-        return new ResourceLocation("minecraft", switch (type) {
+    public static Identifier legacyDecorationItem(DecorationType type) {
+        return Identifier.fromNamespaceAndPath("minecraft", switch (type) {
             case LEAF -> "oak_leaves";
             case FEATHER -> "feather";
             case FLOWER -> "poppy";
@@ -499,16 +510,16 @@ public record FrameDesign(int widthPixels, int heightPixels, Template template, 
         });
     }
 
-    private static ResourceLocation resourceId(String value) {
+    private static Identifier resourceId(String value) {
         if (value == null || value.isEmpty() || value.length() > MAX_RESOURCE_ID_LENGTH) {
             throw new IllegalArgumentException("Invalid frame resource ID length");
         }
-        ResourceLocation id = ResourceLocation.tryParse(value);
+        Identifier id = Identifier.tryParse(value);
         if (id == null) throw new IllegalArgumentException("Invalid frame resource ID");
         return id;
     }
 
-    private static void validateResourceId(ResourceLocation id) {
+    private static void validateResourceId(Identifier id) {
         if (id == null || id.toString().length() > MAX_RESOURCE_ID_LENGTH) {
             throw new IllegalArgumentException("Invalid frame resource ID");
         }

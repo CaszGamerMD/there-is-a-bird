@@ -13,7 +13,7 @@ public final class BirdNoteLootModifier {
     public static void registerCallbacks() {
         LootTableEvents.MODIFY_DROPS.register((holder, context, generatedLoot) -> {
             holder.unwrapKey().ifPresent(key -> {
-                ItemStack note = BirdNoteContent.roll(context, key.location());
+                ItemStack note = BirdNoteContent.roll(context, key.identifier());
                 if (!note.isEmpty()) {
                     generatedLoot.add(note);
                 }

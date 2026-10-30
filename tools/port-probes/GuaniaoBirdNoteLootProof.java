@@ -19,7 +19,7 @@ public final class GuaniaoBirdNoteLootProof {
 
     private static void apply(Holder<LootTable> holder, LootContext context, List<ItemStack> drops) {
         holder.unwrapKey().ifPresent(key -> {
-            Identifier tableId = key.location();
+            Identifier tableId = key.identifier();
             if (tableId.getPath().startsWith("chests/")) {
                 context.getRandom();
             }

@@ -29,7 +29,7 @@ new_modifier = now("content/note/BirdNoteLootModifier.java")
 assert "BirdNoteContent.roll(context)" in old_modifier
 assert "LootTableEvents.MODIFY_DROPS.register(" in new_modifier
 assert "holder.unwrapKey().ifPresent(key ->" in new_modifier
-assert "BirdNoteContent.roll(context, key.location())" in new_modifier
+assert "BirdNoteContent.roll(context, key.identifier())" in new_modifier
 assert "generatedLoot.add(note)" in old_modifier and "generatedLoot.add(note)" in new_modifier
 assert "net.minecraftforge" not in new_modifier
 # Runtime loot callbacks are registered together by the Fabric replacement

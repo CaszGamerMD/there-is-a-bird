@@ -200,6 +200,13 @@ jobs:
           mkdir -p "$RUNNER_TEMP/camera-uv"
           javac -d "$RUNNER_TEMP/camera-uv" src/main/java/EdDYON/guaniao/client/camera/CameraPreviewUv.java tools/port-probes/GuaniaoCameraPreviewUvRegression.java
           java -cp "$RUNNER_TEMP/camera-uv" EdDYON.guaniao.client.camera.GuaniaoCameraPreviewUvRegression
+      - name: Verify camera offscreen world color and reversed-depth copies on 26.2
+        run: python3 tools/check-camera-offscreen-26-2.py
+      - name: Run standalone camera framebuffer sizing regression
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-framebuffer"
+          javac -d "$RUNNER_TEMP/camera-framebuffer" src/main/java/EdDYON/guaniao/client/camera/CameraFramebufferSize.java tools/port-probes/GuaniaoCameraFramebufferSizeRegression.java
+          java -cp "$RUNNER_TEMP/camera-framebuffer" EdDYON.guaniao.client.camera.GuaniaoCameraFramebufferSizeRegression
       - name: Verify native 26.2 post-chain resource lookup for 50 filters and Nikon optics
         run: python3 tools/check-camera-postchain-lookup-26-2.py
       - name: Verify all 50 authored universal camera GPU filters survive 26.2 GLSL migration

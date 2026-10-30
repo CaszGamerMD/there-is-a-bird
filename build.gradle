@@ -95,6 +95,8 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
         // Three independent Frame Workbench GUI pieces can be compiled now
         // without the still-unported workshop mesh and 3D bird pipeline.
         include 'EdDYON/guaniao/client/camera/CameraPostChain26.java'
+        include 'EdDYON/guaniao/client/camera/CameraFramebufferSize.java'
+        include 'EdDYON/guaniao/client/camera/CameraOffscreenTarget26.java'
         include 'EdDYON/guaniao/content/camera/CameraFilterCategory.java'
         include 'EdDYON/guaniao/content/camera/CameraFilter.java'
         include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchBackdrop.java'

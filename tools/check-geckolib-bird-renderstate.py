@@ -15,7 +15,7 @@ MODELS = {
     "seagull/Seagull": True,
     "nightheron/NightHeron": True,
     "kestrel/Kestrel": True,
-    "kingfisher/Kingfisher": False,  # eating/fish staged; dropping bone tracking not yet migrated
+    "kingfisher/Kingfisher": True,
     "crow/Crow": True,
     "macaw/Macaw": True,
     "budgerigar/Budgerigar": True,
@@ -351,9 +351,8 @@ assert "MolangParser.INSTANCE" not in hummingbird_molang
 assert "HummingbirdMolangQueries.register();" in current("fabric/GuaniaoFabricEntityRenderers.java")
 assert "software.bernie" not in hummingbird_model + hummingbird_layer + hummingbird_renderer
 
-# Kingfisher remains UNREGISTERED until GeckoLib 5 body-bone tracking
-# preserves the real-world defecation particle origin. The rest of the
-# authored fish handling and body dip was ported without simplifying timing.
+# Kingfisher now uses GeckoLib 5 per-body-bone rendering for dropping origin.
+# Protect the original dip/swallow timing and animated anchor.
 kingfisher_old = original("client/entity/kingfisher/KingfisherModel.java")
 kingfisher_model = current("client/entity/kingfisher/KingfisherModel.java")
 for key in ("pulse(tick, 11, 5)", "pulse(tick, 22, 5)",
@@ -376,7 +375,25 @@ for key in ("BlockAndItemGeoLayer", "RenderData.item(", "ItemDisplayContext.NONE
             "RenderUtil.createRenderStateForItem(", "super.submitItemStackRender("):
     assert key in kingfisher_layer
 assert "software.bernie" not in kingfisher_layer + kingfisher_model
-assert "GuaniaoEntityTypes.KINGFISHER.get()" not in current("fabric/GuaniaoFabricEntityRenderers.java")
+assert "GuaniaoEntityTypes.KINGFISHER.get()" in current("fabric/GuaniaoFabricEntityRenderers.java")
+
+kingfisher_renderer = current("client/entity/kingfisher/KingfisherRenderer.java")
+kingfisher_renderer_old = original("client/entity/kingfisher/KingfisherRenderer.java")
+for token in ("FOOT_OFFSET_PIXELS = -0.006486F", "3.75D / 16.0D",
+              "0.3D / 16.0D", "rotationDegrees(-pitch)", "2.65F",
+              "2.70F", "setDroppingRenderOrigin(", "getActivity() == KingfisherEntity.Activity.DEFECATE",
+              "this.shadowRadius = 0.10F"):
+    assert token in kingfisher_renderer_old and token in kingfisher_renderer, token
+for token in ("BirdMutationRenderData.MODEL_SCALE", "new KingfisherHeldFishLayer<>(context, this)",
+              "adjustModelBonesForRender(", "KingfisherModel.HEAD_DIP",
+              "KingfisherModel.BODY_DIP", 'snapshots.get("head")',
+              'snapshots.get("upbody")', "preRenderPass(", 'getBone("body")',
+              "pass.addPerBoneRender(bone,", "RenderUtil.extractPoseFromRoot(",
+              "getPreRenderMatrixState()", "getGeckolibData(DROPPING_SOURCE)",
+              "getGeckolibData(DROPPING_POSITION)", "posed.renderState().getPartialTick()"):
+    assert token in kingfisher_renderer, token
+assert "software.bernie" not in kingfisher_renderer
+assert "MultiBufferSource" not in kingfisher_renderer
 
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
@@ -399,9 +416,10 @@ registered = {
     "NIGHT_HERON": "NightHeron",
     "KESTREL": "Kestrel",
     "HUMMINGBIRD": "Hummingbird",
+    "KINGFISHER": "Kingfisher",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 15 mutation bird models plus hummingbird, 17 renderer registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 15 mutation bird models plus hummingbird, 18 renderer registrations, unmodified mutation color formulas")

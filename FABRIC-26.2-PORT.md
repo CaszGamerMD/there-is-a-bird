@@ -1124,3 +1124,43 @@ GitHub Actions jobs on this branch have been failing before a runner starts,
 independently of the Java migration. Kingfisher and Umbrella Cockatoo
 remain the two bird-renderer blockers; the larger Forge gameplay/client
 migration also remains incomplete.
+
+
+## 2026-10-29 — 19 of 19 Fabric bird renderers registered (source-level)
+
+All nineteen original bird species now have GeckoLib 5 renderer registrations.
+The final two source conversions are Kingfisher and Umbrella Cockatoo.
+
+- **Kingfisher**: original 0.10 shadow and -0.006486-pixel sole correction;
+  individual mutation texture and scale; whole-body dive flight pitch; original
+  two handling dips and swallow lift; progressively shrinking head-held fish;
+  and the animated dropping origin measured from the actual `body` bone with
+  GeckoLib 5's per-bone render callback. Only a real client visual test can
+  verify that the new deferred matrix convention exactly matches the 4.x
+  emitter; the entity's fallback source-side dropping offset remains intact.
+- **Umbrella Cockatoo**: 0.20 shadow, individual texture/scale, owner head
+  offset/yaw/pitch, authored head-roll and per-entity emotion history. The
+  original sampled emotion channels are added to `BoneSnapshots` rather than
+  changing global cached `GeoBone` state. The two original derived clips
+  (`animation.idle_diff_2_residual` and `animation.owner_perch`) are
+  rebuilt from GeckoLib 5's immutable baked animation data on reload, with
+  explicit neutral channels to clear earlier flight transforms.
+- A Kestrel method override visibility mismatch was corrected to match the
+  GeckoLib 5 renderer superclass.
+- `tools/check-geckolib-bird-renderstate.py` now checks all 19 Fabric
+  registrations, their original positional/animation decisions and the final
+  derived-clip helper API shapes. `tools/check-geckolib-assets-26.2.py`
+  checks all 17 mutation-model paths plus Hummingbird. Authored assets were
+  **not** changed.
+- `tools/port-probes/GuaniaoFinalBirdRendererProof.java` was added to
+  `verifyRegistriesPort` as an isolated Java 25 / GeckoLib 5 compile probe
+  for per-bone rendering and immutable synthesized animation objects.
+
+**This is NOT yet a successful build or test JAR.** Many non-renderer Java
+files still use Forge, obsolete Minecraft mappings and prior GeckoLib hooks.
+Neither full `compileJava`, Fabric client startup nor dedicated-server startup
+has been verified. The latest GitHub Actions Fabric run (41000616520) again
+failed before executing any job step, so there are no compiler diagnostics.
+Restoring a working runner or collecting Java 25 local compile output is the
+next actionable requirement, followed by full feature and visual parity tests.
+Keep the original copyrighted media and resulting test artifacts private.

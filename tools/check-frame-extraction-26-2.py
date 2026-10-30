@@ -26,7 +26,11 @@ for marker in (
     "renderable.extractRenderState(graphics,localX,localY,partialTick);",
     "FrameWorkbenchPreview3DFactory.capture(this.design,",
     "FrameWorkbenchPipBridge.submit(graphics,state);",
-    "PhotographData.hasImage(this.previewStack))return;",
+    # Not a placeholder: wait for the authentic downloaded image.
+    "PhotographTextureCache.readyImageFor(this.previewStack)",
+    "if(hasPhoto && readyPhoto==null)return;",
+    "FrameWorkbenchPreview3DFactory.captureWithPhoto(this.design,",
+    "readyPhoto.texture(),readyPhoto.width(),readyPhoto.height()",
     "FrameCraftingProgress2D.extract(graphics,",
     "FrameWorkshopBird.progressFood(this.activeWorkSeed)",
     "FrameWorkshopBird.progressFood(this.progressBirdClock.seed())",

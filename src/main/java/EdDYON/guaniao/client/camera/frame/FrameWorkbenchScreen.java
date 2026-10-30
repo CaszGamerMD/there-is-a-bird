@@ -322,18 +322,23 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
     private static Component label(String key,Object value) {return text(key,value);}
 
     private Button button(int x,int y,int width,int height,Component message,Runnable action) {
-        Button button=new Button(x,y,width,height,message,ignored->action.run(),narration->narration.get()) {
-            @Override public void renderString(GuiGraphics graphics,Font font,int color) {
-                // Vanilla's marquee scissors use screen coordinates. This screen
-                // scales a virtual canvas, so use a bounded label without scissoring.
+        Button button=new Button.Plain(x,y,width,height,message,ignored->action.run(),
+                narration->narration.get()) {
+            @Override protected void extractContents(net.minecraft.client.gui.GuiGraphicsExtractor graphics,
+                                                      int mouseX,int mouseY,float partialTick) {
+                // 26.2 uses GUI extraction. Preserve the author's bounded labels
+                // on a fractional-scale virtual canvas rather than vanilla scissoring.
+                this.extractDefaultSprite(graphics);
+                Font font=FrameWorkbenchScreen.this.font;
                 String label=this.getMessage().getString();
                 int available=Math.max(0,this.getWidth()-4);
                 if(font.width(label)>available) {
                     String suffix="…";
                     label=font.plainSubstrByWidth(label,Math.max(0,available-font.width(suffix)))+suffix;
                 }
-                graphics.drawCenteredString(font,label,this.getX()+this.getWidth()/2,
-                        this.getY()+(this.getHeight()-8)/2,color);
+                graphics.centeredText(font,label,this.getX()+this.getWidth()/2,
+                        this.getY()+(this.getHeight()-8)/2,
+                        this.active ? 0xFFFFFFFF : 0xFFA0A0A0);
             }
         };
         return this.addRenderableWidget(button);

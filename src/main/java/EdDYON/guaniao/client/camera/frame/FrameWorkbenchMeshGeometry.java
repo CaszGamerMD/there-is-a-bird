@@ -106,8 +106,9 @@ public final class FrameWorkbenchMeshGeometry {
                     rimStart=-1;
                 }
                 // Trim stops where an exterior edge becomes an inner window edge.
-                if(outside && trimStart<0)trimStart=cell;
-                if(!outside && trimStart>=0) {
+                boolean trimmed=hasTrim && outside;
+                if(trimmed && trimStart<0)trimStart=cell;
+                if(!trimmed && trimStart>=0) {
                     Bounds b=boundaryBounds(side,line,trimStart,cell,w,h);
                     Bounds rim=boundaryRim(b,side,thickness);
                     trim.add(face(rim.x0,rim.y0,front+.001F,rim.x1,rim.y1,front+.001F,0));

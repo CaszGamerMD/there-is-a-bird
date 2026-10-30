@@ -1164,3 +1164,33 @@ failed before executing any job step, so there are no compiler diagnostics.
 Restoring a working runner or collecting Java 25 local compile output is the
 next actionable requirement, followed by full feature and visual parity tests.
 Keep the original copyrighted media and resulting test artifacts private.
+
+
+## 2026-10-29 — Restore Fabric 26.2 custom-menu wiring
+
+- The two original Forge `IForgeMenuType` registrations (`crow_nest` and
+  `frame_workbench`) have been replaced with Fabric 26.2
+  `ExtendedMenuType<Menu, BlockPos>`, preserving both registry IDs.
+- A `RegistryFriendlyByteBuf` stream codec writes/reads the exact block
+  position that both original Forge opening packets sent.
+- Both block interactions now open an `ExtendedMenuProvider<BlockPos>`
+  directly on the server. The original menu display names, server-side
+  `CrowNestBlockEntity` automatic rummaging, and per-player persistent
+  `FrameWorkbenchBlockEntity` job sessions remain in place.
+- Client factories now use an explicit `BlockPos` overload, while their
+  existing buffered constructors remain available; the original server-side
+  block-entity constructors remain unchanged.
+- The Fabric initializer flushes the new menu registry. The client initializer
+  registers `CrowNestScreen` and `FrameWorkbenchScreen` with vanilla
+  `MenuScreens`.
+- `tools/check-extended-menus-port.py` verifies source identity and exact
+  original menu-opening, title and gameplay invariants; the CI workflow
+  includes the check. `GuaniaoExtendedMenuProof.java` is an independent
+  Java 25/Fabric API compile probe for the new menu type and opening codec.
+
+The new registrations are still **uncompiled** and the two screen classes
+require the remainder of their Minecraft 26.2 client GUI migrations. Crow Nest
+still has the original Forge-specific custom block break-particle extension,
+and other placeable features share that extension. Those effects must be
+migrated without removing the authored colored debris effects. This remains
+a private work-in-progress; no usable test JAR has been produced.

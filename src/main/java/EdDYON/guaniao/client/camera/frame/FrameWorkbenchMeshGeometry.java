@@ -225,7 +225,6 @@ public final class FrameWorkbenchMeshGeometry {
     public record Quad(float[] points,float[] uv,float nx,float ny,float nz) { }
     public record OutlineEdge(float x0,float y0,float x1,float y1) { }
     public record Bounds(float x0,float y0,float x1,float y1) { }
-    public record CellRect(int left,int top,int right,int bottom) { }
     public record Mesh(List<Quad> wood,List<Quad> rim,List<Quad> trim,List<Bounds> window,
                        List<Quad> backing,List<Quad> ghostLining,List<OutlineEdge> outline,
                        Bounds windowBounds,float front) {

@@ -177,6 +177,8 @@ jobs:
           java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify all 50 migrated 26.2 post effect JSON resources against original filters
+        run: python3 tools/check-camera-post-effects-26-2.py
       - name: Verify all original 51 author camera filters and pure-Java source identity
         run: python3 tools/check-camera-filter-core-26-2.py
       - name: Run all 51 CPU camera filter regression tests in standalone Java 25

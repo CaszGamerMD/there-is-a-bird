@@ -91,12 +91,12 @@ public final class BirdAdvancements {
     }
 
     public static boolean grant(ServerPlayer player, Identifier advancementId) {
-        AdvancementHolder advancement = player.getServer().getAdvancements().get(advancementId);
+        AdvancementHolder advancement = player.server.getAdvancements().get(advancementId);
         return advancement != null && player.getAdvancements().award(advancement, CRITERION);
     }
 
     public static boolean isDone(ServerPlayer player, Identifier advancementId) {
-        AdvancementHolder advancement = player.getServer().getAdvancements().get(advancementId);
+        AdvancementHolder advancement = player.server.getAdvancements().get(advancementId);
         return advancement != null && player.getAdvancements().getOrStartProgress(advancement).isDone();
     }
 

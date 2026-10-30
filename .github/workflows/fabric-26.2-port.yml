@@ -177,6 +177,13 @@ jobs:
           java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify original photo crop and 26.2 screenshot sampler integration
+        run: python3 tools/check-camera-photo-sampler-26-2.py
+      - name: Run pixel-level camera photograph crop regression in standalone Java
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-sampler"
+          javac -d "$RUNNER_TEMP/camera-sampler" src/main/java/EdDYON/guaniao/client/camera/CameraViewfinderFrame.java src/main/java/EdDYON/guaniao/client/camera/CameraPhotoSampler.java tools/port-probes/GuaniaoCameraPhotoSamplerRegression.java
+          java -cp "$RUNNER_TEMP/camera-sampler" EdDYON.guaniao.client.camera.GuaniaoCameraPhotoSamplerRegression
       - name: Verify 26.2 world FOV hook preserves Nikon zoom and clean shutter
         run: python3 tools/check-camera-fov-26-2.py
       - name: Verify original Escape, screenshot and shortcut keyboard event port

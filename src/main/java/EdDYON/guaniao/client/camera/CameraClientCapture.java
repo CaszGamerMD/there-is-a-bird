@@ -454,20 +454,10 @@ public final class CameraClientCapture {
         Minecraft minecraft = Minecraft.getInstance();
         int guiWidth = minecraft.getWindow().getGuiScaledWidth();
         int guiHeight = minecraft.getWindow().getGuiScaledHeight();
-        CameraViewfinderFrame.Pixels crop = CameraViewfinderFrame.layout(
-                guiWidth, guiHeight, minecraft.font.lineHeight).pixels(
-                guiWidth, guiHeight, image.getWidth(), image.getHeight());
-        int[] pixels = new int[size * size];
-
-        for (int y = 0; y < size; y++) {
-            int sampleY = crop.top() + Math.min(crop.height() - 1, (int)((y + 0.5D) * crop.height() / size));
-            for (int x = 0; x < size; x++) {
-                int sampleX = crop.left() + Math.min(crop.width() - 1, (int)((x + 0.5D) * crop.width() / size));
-                pixels[y * size + x] = image.getPixelRGBA(sampleX, sampleY);
-            }
-        }
-
-        return pixels;
+        return CameraPhotoSampler.cropSquare(
+                guiWidth, guiHeight, minecraft.font.lineHeight,
+                image.getWidth(), image.getHeight(), size,
+                image::getPixelRGBA);
     }
 
     private static void beginCleanCapture(InteractionHand hand, double fov) {

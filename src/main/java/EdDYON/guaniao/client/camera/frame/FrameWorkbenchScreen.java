@@ -17,6 +17,9 @@ import java.util.Locale;
 import java.util.function.Consumer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
@@ -764,7 +767,8 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         return (int)((y-PALETTE_Y)/PALETTE_STEP)*PALETTE_COLUMNS+(int)((x-PALETTE_X)/PALETTE_STEP);
     }
 
-    private boolean modalClick(double x,double y,int button) {
+    private boolean modalClick(double x,double y,MouseButtonEvent event,boolean doubleClick) {
+        int button=event.button();
         if(this.paletteKind!=null && button==0) {
             int cell=this.paletteCell(x,y),index=this.palettePage*PALETTE_PAGE_SIZE+cell;
             if(cell>=0) {
@@ -776,7 +780,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         // Do not call AbstractContainerScreen's slot handler while a modal is open.
         // Its slots remain backed by the same server menu, but cannot be clicked through.
         for(GuiEventListener child:this.children()) {
-            if(child.mouseClicked(x,y,button)) {
+            if(child.mouseClicked(new MouseButtonEvent(x,y,event.buttonInfo()),doubleClick)) {
                 this.setFocused(child);if(button==0)this.setDragging(true);return true;
             }
         }
@@ -905,12 +909,13 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
     private double decorationX(double x) {return 500+(x-155)/(this.previewScale()*Math.max(1,this.design.widthPixels())/16.0)*1000;}
     private double decorationY(double y) {return 500+(y-116)/(this.previewScale()*Math.max(1,this.design.heightPixels())/16.0)*1000;}
 
-    @Override public boolean mouseClicked(double mouseX,double mouseY,int button) {
+    @Override public boolean mouseClicked(MouseButtonEvent event,boolean doubleClick) {
+        double mouseX=event.x(),mouseY=event.y();int button=event.button();
         double x=this.localX(mouseX),y=this.localY(mouseY);
         if(this.isCraftingUi() && y<212)return true;
         // Commit a numeric edit before another control's click changes the design.
         if(this.getFocused() instanceof FrameNumberControl control && !control.isMouseOver(x,y))this.setFocused(null);
-        if(this.paletteKind!=null || this.outlineEditor!=null)return this.modalClick(x,y,button);
+        if(this.paletteKind!=null || this.outlineEditor!=null)return this.modalClick(x,y,event,doubleClick);
         if(this.editShape && inCanvas(x,y) && (button==0 || button==1)) {
             this.painting=true;this.strokeErase=this.eraser || button==1;
             this.strokeMask=this.workingMask==null ? this.design.mask() : this.workingMask.clone();
@@ -934,19 +939,20 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
             return true;
         }
         if(!this.editShape && inPreview(x,y) && button==0) {this.turning=true;return true;}
-        return super.mouseClicked(x,y,button);
+        return super.mouseClicked(new MouseButtonEvent(x,y,event.buttonInfo()),doubleClick);
     }
 
-    @Override public boolean mouseDragged(double mouseX,double mouseY,int button,double dragX,double dragY) {
-        if(this.isCraftingUi())return super.mouseDragged(this.localX(mouseX),this.localY(mouseY),button,dragX/this.uiScale,dragY/this.uiScale);
+    @Override public boolean mouseDragged(MouseButtonEvent event,double dragX,double dragY) {
+        double mouseX=event.x(),mouseY=event.y();
+        if(this.isCraftingUi())return super.mouseDragged(new MouseButtonEvent(this.localX(mouseX),this.localY(mouseY),event.buttonInfo()),dragX/this.uiScale,dragY/this.uiScale);
         if(this.paletteKind!=null || this.outlineEditor!=null) {
             if(this.outlineEditor!=null && this.outlineEditor.drag(this.localX(mouseX),this.localY(mouseY),dragX/this.uiScale,dragY/this.uiScale))return true;
-            return this.getFocused()!=null && this.getFocused().mouseDragged(this.localX(mouseX),this.localY(mouseY),button,dragX/this.uiScale,dragY/this.uiScale);
+            return this.getFocused()!=null && this.getFocused().mouseDragged(new MouseButtonEvent(this.localX(mouseX),this.localY(mouseY),event.buttonInfo()),dragX/this.uiScale,dragY/this.uiScale);
         }
         // Container screens consume drags for inventory slots instead of routing
         // them to ordinary child widgets. Forward only an active value slider.
         if(this.getFocused() instanceof FrameNumberControl control && control.isSliding()) {
-            return control.mouseDragged(this.localX(mouseX),this.localY(mouseY),button,dragX/this.uiScale,dragY/this.uiScale);
+            return control.mouseDragged(new MouseButtonEvent(this.localX(mouseX),this.localY(mouseY),event.buttonInfo()),dragX/this.uiScale,dragY/this.uiScale);
         }
         if(this.draggingDecoration) {
             FrameDesign.Decoration piece=this.selectedDecoration();
@@ -982,14 +988,15 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
 
     private void paintCell(int x,int y) {if(this.strokeErase) this.strokeMask[y]&=~(1<<x);else this.strokeMask[y]|=1<<x;}
 
-    @Override public boolean mouseReleased(double mouseX,double mouseY,int button) {
+    @Override public boolean mouseReleased(MouseButtonEvent event) {
+        double mouseX=event.x(),mouseY=event.y();
         if(this.paletteKind!=null || this.outlineEditor!=null) {
             if(this.outlineEditor!=null)this.outlineEditor.release();
-            if(this.getFocused()!=null)this.getFocused().mouseReleased(this.localX(mouseX),this.localY(mouseY),button);
+            if(this.getFocused()!=null)this.getFocused().mouseReleased(new MouseButtonEvent(this.localX(mouseX),this.localY(mouseY),event.buttonInfo()));
             this.setDragging(false);return true;
         }
         if(this.getFocused() instanceof FrameNumberControl control && control.isSliding()) {
-            control.mouseReleased(this.localX(mouseX),this.localY(mouseY),button);this.setDragging(false);return true;
+            control.mouseReleased(new MouseButtonEvent(this.localX(mouseX),this.localY(mouseY),event.buttonInfo()));this.setDragging(false);return true;
         }
         if(this.draggingDecoration) {
             this.draggingDecoration=false;
@@ -1003,11 +1010,12 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
             return true;
         }
         if(this.turning) {this.turning=false;return true;}
-        return super.mouseReleased(this.localX(mouseX),this.localY(mouseY),button);
+        return super.mouseReleased(new MouseButtonEvent(this.localX(mouseX),this.localY(mouseY),event.buttonInfo()));
     }
 
     @Override public void mouseMoved(double mouseX,double mouseY) {super.mouseMoved(this.localX(mouseX),this.localY(mouseY));}
-    @Override public boolean mouseScrolled(double mouseX,double mouseY,double amount) {
+    @Override public boolean mouseScrolled(double mouseX,double mouseY,double scrollX,double scrollY) {
+        double amount=scrollY;
         if(this.isCraftingUi())return true;
         double x=this.localX(mouseX),y=this.localY(mouseY);
         if(this.paletteKind!=null) {
@@ -1020,23 +1028,24 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
             this.viewZoom=Mth.clamp(this.viewZoom+(float)amount*0.1F,0.6F,1.3F);
             return true;
         }
-        return super.mouseScrolled(x,y,amount);
+        return super.mouseScrolled(x,y,scrollX,scrollY);
     }
-    @Override public boolean keyPressed(int key,int scan,int modifiers) {
-        if(this.isCraftingUi())return key==256 || this.minecraft.options.keyInventory.matches(key,scan) ? super.keyPressed(key,scan,modifiers) : true;
+    @Override public boolean keyPressed(KeyEvent event) {
+        int key=event.key();
+        if(this.isCraftingUi())return key==256 || this.minecraft.options.keyInventory.matches(event) ? super.keyPressed(event) : true;
         if(this.paletteKind!=null || this.outlineEditor!=null) {
             if(key==256) {this.closeModal();return true;}
-            if(this.getFocused()!=null && this.getFocused().keyPressed(key,scan,modifiers))return true;
+            if(this.getFocused()!=null && this.getFocused().keyPressed(event))return true;
             return true;
         }
-        if(this.getFocused() instanceof FrameNumberControl control && control.isEditing() && key!=256)return control.keyPressed(key,scan,modifiers);
-        if(this.nameBox!=null && this.nameBox.isFocused() && key!=256) return this.nameBox.keyPressed(key,scan,modifiers) || this.nameBox.canConsumeInput();
+        if(this.getFocused() instanceof FrameNumberControl control && control.isEditing() && key!=256)return control.keyPressed(event);
+        if(this.nameBox!=null && this.nameBox.isFocused() && key!=256) return this.nameBox.keyPressed(event) || this.nameBox.canConsumeInput();
         if(this.page==3 && key==261 && this.selectedDecoration()!=null) {this.deleteDecoration();return true;}
-        return super.keyPressed(key,scan,modifiers);
+        return super.keyPressed(event);
     }
 
-    @Override public boolean charTyped(char character,int modifiers) {
-        return this.isCraftingUi() || super.charTyped(character,modifiers);
+    @Override public boolean charTyped(CharacterEvent event) {
+        return this.isCraftingUi() || super.charTyped(event);
     }
 
 }

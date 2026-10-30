@@ -14,7 +14,7 @@ MODELS = {
     "longtailedtit/LongTailedTit": True,
     "seagull/Seagull": True,
     "nightheron/NightHeron": True,
-    "kestrel/Kestrel": False,  # renderer still legacy; model and talon layer staged
+    "kestrel/Kestrel": True,
     "crow/Crow": True,
     "macaw/Macaw": True,
     "budgerigar/Budgerigar": True,
@@ -258,8 +258,8 @@ assert "software.bernie" not in heron
 assert "new NightHeronHeldFishLayer<>(context, this)" in current(
     "client/entity/nightheron/NightHeronRenderer.java")
 
-# Staged Kestrel model preserves extended-talon pose data and the talon item,
-# but its owner-head render offset and pitch are not yet ported or registered.
+# GeckoLib 5 Kestrel retains original owner head-perching and flight pose,
+# while extended-talon root and leg resets run after authored animation.
 kestrel_model = current("client/entity/kestrel/KestrelModel.java")
 kestrel_original_model = original("client/entity/kestrel/KestrelModel.java")
 assert "hasExtendedTalons()" in kestrel_original_model
@@ -281,6 +281,30 @@ for token in ("BlockAndItemGeoLayer", "getRelevantBones(",
     assert token in kestrel_layer, token
 assert "software.bernie" not in kestrel_layer + kestrel_model
 
+# All Kestrel pose inputs are snapshotted before the deferred render pass.
+original_kestrel_renderer = original("client/entity/kestrel/KestrelRenderer.java")
+kestrel_renderer = current("client/entity/kestrel/KestrelRenderer.java")
+for marker in ("shouldShowName(", "isLearningFetchItem()",
+               "getRenderOffset(", "ownerPosition.add(bird.ownerHeadOffset(",
+               "owner.yHeadRotO", "owner.xRotO", "bird.isFlying()",
+               "bird.flightBank(partialTick)", "Mth.rotLerp(", "Mth.lerp(",
+               "this.shadowRadius = 0.18F;"):
+    assert marker in original_kestrel_renderer and marker in kestrel_renderer, marker
+for marker in ("DataTicket<Vec3> OWNER_RENDER_OFFSET", "DataTicket<Boolean> OWNER_PERCHED",
+               "DataTicket<Boolean> FLIGHT_ACTIVE", "DataTicket<Float> PITCH",
+               "DataTicket<Float> BANK", "DataTickets.ENTITY_BODY_YAW",
+               "getGeckolibData(OWNER_RENDER_OFFSET)",
+               "super.getRenderOffset(renderState)", "super.applyRotations(",
+               "super.adjustModelBonesForRender(",
+               "getOrDefaultGeckolibData(KestrelModel.EXTENDED_TALONS, false)",
+               'snapshots.get("root")', '"leg_left"', '"leg_right"',
+               "bone.setTranslateY(0)", "bone.setRotX(0)",
+               "bone.setScaleY(1)", "widthScale * scale, heightScale * scale",
+               "new KestrelHeldItemLayer<>(context, this)"):
+    assert marker in kestrel_renderer, marker
+assert "software.bernie" not in kestrel_renderer
+assert "net.minecraftforge" not in kestrel_renderer
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -300,9 +324,10 @@ registered = {
     "CROW": "Crow",
     "SEAGULL": "Seagull",
     "NIGHT_HERON": "NightHeron",
+    "KESTREL": "Kestrel",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 15 model texture snapshots, 15 renderer scales and client registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 15 model texture snapshots, 16 renderer scales and client registrations, unmodified mutation color formulas")

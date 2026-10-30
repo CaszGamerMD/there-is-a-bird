@@ -72,8 +72,8 @@ for stem, converted_renderer in MODELS.items():
     assert "software.bernie" not in renderer
     # Equivalent 'shadowRadius' and 'this.shadowRadius' forms are both valid.
     # Compare the actual authored radius, not an incidental Java qualifier.
-    before_radius = re.search(r"(?:this\\.)?shadowRadius = [^;]+;", original_renderer)
-    after_radius = re.search(r"(?:this\\.)?shadowRadius = [^;]+;", renderer)
+    before_radius = re.search(r"(?:this\.)?shadowRadius = [^;]+;", original_renderer)
+    after_radius = re.search(r"(?:this\.)?shadowRadius = [^;]+;", renderer)
     assert before_radius and after_radius, (species, "missing shadow radius")
     assert before_radius.group(0).removeprefix("this.") == after_radius.group(0).removeprefix("this."), (species, "shadow radius changed")
 

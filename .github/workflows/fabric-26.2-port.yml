@@ -46,6 +46,13 @@ jobs:
         run: python3 tools/check-bird-synced-data-port.py
       - name: Verify authored projectile and photograph entity gameplay after 26.2 API updates
         run: python3 tools/check-bird-projectile-entity-api.py
+      - name: Verify 26.2 frame mesh formulas and registered 3D renderer
+        run: python3 tools/check-frame-mesh-26-2.py
+      - name: Run standalone original 32x32 frame geometry tests (real Java 25)
+        run: |
+          mkdir -p "$RUNNER_TEMP/frame-mesh"
+          javac -d "$RUNNER_TEMP/frame-mesh" src/main/java/EdDYON/guaniao/client/camera/frame/FrameWorkbenchMeshGeometry.java tools/port-probes/GuaniaoFrameMeshGeometryRegression.java
+          java -cp "$RUNNER_TEMP/frame-mesh" GuaniaoFrameMeshGeometryRegression
       - name: Verify crafting bird meadow sprites and placement fidelity
         run: python3 tools/check-frame-meadow-26-2.py
       - name: Verify Frame Workbench deferred 3D submission API bridge

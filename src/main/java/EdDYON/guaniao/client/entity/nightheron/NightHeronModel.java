@@ -21,6 +21,8 @@ extends GeoModel<NightHeronEntity> {
 
     @Override
     public void addAdditionalStateData(NightHeronEntity animatable, Object relatedObject, GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
         BirdMutationRenderData.capture(renderState,
                 BirdMutationTextureFactory.textureFor(NightHeronDefinition.TEXTURE, animatable));
     }

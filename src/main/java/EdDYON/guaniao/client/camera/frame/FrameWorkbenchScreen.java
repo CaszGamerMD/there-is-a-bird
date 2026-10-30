@@ -28,7 +28,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -63,7 +63,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
     private float viewYaw=-15,viewPitch=7,viewZoom=1,uiScale=1;
     private int originX,originY;
     private boolean editShape,eraser,painting,turning,touched,invalidOutline,draggingDecoration;
-    private ResourceLocation decorationItem=new ResourceLocation("minecraft","feather");
+    private Identifier decorationItem=Identifier.fromNamespaceAndPath("minecraft","feather");
     private FrameMaterialPalette.Kind paletteKind;
     private FrameMaterialPalette.Category paletteCategory=FrameMaterialPalette.Category.ALL;
     private List<FrameMaterialPalette.Category> paletteCategories=List.of();
@@ -181,7 +181,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         materialButton(158,this.design.liningMaterial(),FrameMaterialPalette.Kind.LINING);
     }
 
-    private void materialButton(int y,ResourceLocation id,FrameMaterialPalette.Kind kind) {
+    private void materialButton(int y,Identifier id,FrameMaterialPalette.Kind kind) {
         ItemStack stack=FrameMaterialPalette.stack(id);
         button(244,y,132,22,stack.isEmpty() ? text("none") : stack.getHoverName(),()->this.openPalette(kind));
     }
@@ -214,7 +214,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
             this.updatePaletteButtons();
         });
         this.updatePaletteButtons();
-        if(this.paletteKind==FrameMaterialPalette.Kind.TRIM) button(144,264,100,20,text("none"),()->this.choosePalette(new ResourceLocation("minecraft","air")));
+        if(this.paletteKind==FrameMaterialPalette.Kind.TRIM) button(144,264,100,20,text("none"),()->this.choosePalette(Identifier.fromNamespaceAndPath("minecraft","air")));
     }
 
     private void refreshPaletteEntries() {
@@ -228,7 +228,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         if(this.paletteNext!=null)this.paletteNext.active=(this.palettePage+1)*PALETTE_PAGE_SIZE<this.paletteEntries.size();
     }
 
-    private void choosePalette(ResourceLocation id) {
+    private void choosePalette(Identifier id) {
         FrameMaterialPalette.Kind kind=this.paletteKind;this.paletteKind=null;
         if(kind==FrameMaterialPalette.Kind.FRAME) this.apply(this.design.withFrameMaterial(id));
         else if(kind==FrameMaterialPalette.Kind.TRIM) this.apply(this.design.withTrimMaterial(id));
@@ -265,7 +265,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
     private void decorationWidgets() {
         if(this.invalidOutline) return;
         FrameDesign.Decoration selected=this.selectedDecoration();
-        ResourceLocation id=selected==null ? this.decorationItem : selected.itemId();
+        Identifier id=selected==null ? this.decorationItem : selected.itemId();
         button(244,48,132,22,FrameMaterialPalette.stack(id).getHoverName(),()->this.openPalette(FrameMaterialPalette.Kind.STICKER));
         button(244,74,64,20,text("add_decoration"),this::addDecoration).active=this.design.decorations().size()<16;
         button(312,74,64,20,text("delete"),this::deleteDecoration).active=selected!=null;
@@ -356,7 +356,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         edit.accept(tag);
         FrameDesign updated=FrameDesign.fromTag(tag);
         if(updated==null) {
-            this.workingMask=tag.getIntArray("Mask");this.invalidOutline=true;this.editShape=true;this.page=0;
+            this.workingMask=tag.getIntArray("Mask").orElseGet(this.design::mask);this.invalidOutline=true;this.editShape=true;this.page=0;
             this.showStatus("invalid_shape");this.buildWidgets();return;
         }
         this.workingMask=null;this.invalidOutline=false;
@@ -441,7 +441,9 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         if(source.isEmpty())source=this.menu.getSlot(FrameWorkbenchMenu.OUTPUT_SLOT).getItem();
         if(source.isEmpty() && this.workSnapshotReady)source=this.craftingPreview;
         this.previewStack=new ItemStack(GuaniaoItems.PHOTOGRAPH.get());
-        if(source.hasTag()) this.previewStack.setTag(source.getTag().copy());
+        // Keep photograph ownership, image and optional-mod components intact.
+        // Legacy getTag/setTag disappeared in 26.2's component-only ItemStack.
+        if(!source.isEmpty())this.previewStack.applyComponents(source.getComponentsPatch());
         FrameDesign.write(this.previewStack,this.design);
     }
 

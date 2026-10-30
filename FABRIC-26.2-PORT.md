@@ -1338,3 +1338,71 @@ observer and progress birds), then migrate the last
 handling. Only then is a visual end-to-end test meaningful.
 The earlier Forge-only source outside the Workbench also still needs
 migration. **No complete Fabric 26.2 test JAR is available yet.**
+
+
+## 2026-10-30 — Exact authored 3D frame surface pipeline and NBT migration
+
+**Extracted the ACTUAL original frame geometry algorithms.**
+`FrameWorkbenchMeshGeometry` contains the exact `FrameDesign.rectangles`,
+`FrameDesignRenderer.addBoundaryRuns`, `boundaryBounds`,
+`boundaryRim`, `outline`, `occupied`, `bounds`,
+`face`, `liningFace`, and `tile` algorithms (with only the
+`FrameDesign.CellRect` type name relocated). The new isolated builder
+takes the original 32 bitmap rows, window rows, frame dimensions,
+depth, trim and glass mode. It retains front+rear backing, all normal
+vectors, merged inner/exterior edges, trim, glass UVs, and texture tiling.
+Source-equivalence was checked against the original 1.20.1 methods.
+This is **not** a bounding-box or generic-frame substitute.
+
+**Deferred 3D rendering implemented for original frame surfaces.**
+`FrameWorkbenchMeshSubmitter` calls the Minecraft 26.2
+`SubmitNodeCollector.submitCustomGeometry` API, preserving texture
+coordinates, normals, lighting, color and alpha. IMPORTANT:
+26.2 `TextureAtlasSprite.getU/getV` accepts normalized 0–1 UV
+coordinates; multiplying by 16 here would corrupt frame textures.
+`FrameWorkbenchPreview3DRenderer` is a real registered
+`PictureInPictureRenderer` with its own depth target, centered pose,
+user yaw/pitch, rear/front lining, actual wood frame, shaded inner
+rim and optional trim. `FrameWorkbenchPreview3DState` carries the
+deferred snapshot, and `FrameWorkbenchMeshFromDesign` maps an
+original `FrameDesign` into this preserved mesh.
+
+**Original block materials restored through 26.2 APIs.**
+`FrameWorkbenchMaterialResolver` chooses the real block from the
+current item registry (including other installed mods), resolves its
+baked block-particle sprite through
+`Minecraft.getModelManager().getBlockStateModelSet()`, applies
+the vanilla block tint and the original paper shade, and checks
+translucency/glass (including the vanilla-glass sprite fallback).
+Missing optional-mod blocks use oak planks.
+`FrameWorkbenchPreview3DFactory` combines this live material
+data and mesh/angles into the new render state.
+
+**FrameDesign data API port.** The immutable 39-kB
+`FrameDesign` class now uses `Identifier`, Optional-aware 26.2
+NBT field access, and `CustomData.update(DataComponents.CUSTOM_DATA)`
+instead of removed raw ItemStack NBT getters/setters. The saved
+`FrameDesign` NBT compound, version-3 field names, value limits,
+mask decomposition, and binary packet field order stay unchanged;
+`FrameWorkbenchScreen` now copies existing photograph item components
+via `applyComponents(source.getComponentsPatch())` instead of discarding
+photo ownership and modded data. A real 26.2 data-component API
+compile-only probe and source parity test have been added to CI.
+
+**Verification planned in private CI:** `check-frame-mesh-26-2.py`
+compares geometry algorithms with the original sources and checks
+live materials, registered PiP and state creation.
+`GuaniaoFrameMeshGeometryRegression.java` is a standalone Java 25
+test that actually constructs solid, windowed and irregular 3D masks
+and checks UVs/normals, trim and invalid input; it is compiled/run
+before Gradle in the workflow. These tests are **committed but have
+NOT executed** while the GitHub Actions job has zero runner/steps.
+
+**Still blocked:** connect `FrameWorkbenchPreview3DFactory.capture()`
+and `FrameWorkbenchPipBridge.submit()` from the fully migrated
+`FrameWorkbenchScreen.extractContents`. The screen's old
+`GuiGraphics`/3D pose calls remain unported. The original photo
+texture/crop, printable sticker decorations, staged assembly, observer
+bird and independent progress bird still require deferred render-state
+migration. These are **not** silently dropped: their original
+source remains in the branch. No private playable test JAR yet.

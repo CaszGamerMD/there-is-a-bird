@@ -1470,3 +1470,12 @@ and deferred texture submission. Many legacy Forge classes remain.
 The private GitHub Actions job still has not reached a runner,
 so the new Java API proofs and regression tests are committed
 but have not executed; compilation and a JAR cannot be claimed.
+
+
+## 2026-10-30 — Original photograph textures wired into the 26.2 3D Workbench
+
+The Fabric Workbench preview now requests **real decoded JPEG pixel dimensions and the registered photo texture** from `PhotographTextureCache.readyImageFor`, then submits them via `FrameWorkbenchPreview3DFactory.captureWithPhoto` and the existing original window-clipping geometry. If an image has not downloaded yet, the preview does not counterfeit a blank frame. The authored photo ID/hash keys, transfer queue, fit, rotation, zoom, offsets and window mask are unchanged.
+
+The cache's retired OpenGL `GL11`, `ResourceLocation`, `TextureUtil.prepareImage` and immediate texture upload were replaced with Minecraft 26.2 `Identifier` and backend-independent `DynamicTexture`. It retains the original 256-slot maximum, 60-second idle eviction, two-upload pacing and generation cancellation. As 26.2 `DynamicTexture` retains decoded `NativeImage` pixels as well as GPU storage, a 512-MiB resident native-pixel budget now evicts least-recently-used entries rather than retaining more than the original intended memory budget. The Fabric client entrypoint now pumps two uploads and preloads only held photos each client tick, clearing the texture cache on disconnect. Two uploads per **client tick** replaces the original two per **render frame** pending performance verification.
+
+A new `tools/check-photo-texture-cache-26-2.py` source regression gate is included in private CI. **Not yet compiled or gameplay-verified:** Actions jobs still fail before any runner step. The other original Forge camera and photograph renderers, remaining workshop 3D GeckoLib pieces, and broader build integration remain pending. Validate photo download, texture reload, cropping, logout invalidation and Vulkan/OpenGL upload when a genuine client test is possible. No test JAR is available. `main` is unchanged.

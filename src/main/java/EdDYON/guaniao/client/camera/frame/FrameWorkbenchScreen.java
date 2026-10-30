@@ -2,6 +2,7 @@ package EdDYON.guaniao.client.camera.frame;
 
 import EdDYON.guaniao.content.camera.PhotographFrameStyle;
 import EdDYON.guaniao.content.camera.PhotographData;
+import EdDYON.guaniao.client.camera.PhotographTextureCache;
 import EdDYON.guaniao.content.camera.frame.FrameDesign;
 import EdDYON.guaniao.content.camera.frame.FrameWorkbenchMenu;
 import EdDYON.guaniao.network.CraftFramePacket;
@@ -788,19 +789,26 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
     private void extractPreview3D(GuiGraphicsExtractor graphics) {
         if(this.paletteKind!=null || this.outlineEditor!=null || this.isWorkshopVisible()
                 || this.editShape || this.invalidOutline || !this.design.hasArea())return;
-        // A photograph is NEVER silently replaced by a blank frame.
-        // Wire captureWithPhoto after PhotographTextureCache's 26.2 port.
-        if(PhotographData.hasImage(this.previewStack))return;
+        // An image-bearing frame must not render an empty substitute while
+        // its real JPEG is still downloading or decoding.
+        boolean hasPhoto=PhotographData.hasImage(this.previewStack);
+        var readyPhoto=hasPhoto ? PhotographTextureCache.readyImageFor(this.previewStack) : null;
+        if(hasPhoto && readyPhoto==null)return;
 
         int x0=Math.round(this.originX+79*this.uiScale);
         int y0=Math.round(this.originY+41*this.uiScale);
         int x1=Math.round(this.originX+231*this.uiScale);
         int y1=Math.round(this.originY+191*this.uiScale);
         if(x1<=x0 || y1<=y0)return;
-        var state=FrameWorkbenchPreview3DFactory.capture(this.design,
-                this.page==3 ? 0.0F : this.viewYaw,
-                this.page==3 ? 0.0F : this.viewPitch,
-                x0,y0,x1,y1,this.previewScale()*this.uiScale,null);
+        float yaw=this.page==3 ? 0.0F : this.viewYaw;
+        float pitch=this.page==3 ? 0.0F : this.viewPitch;
+        float scale=this.previewScale()*this.uiScale;
+        var state=readyPhoto==null
+                ? FrameWorkbenchPreview3DFactory.capture(this.design,
+                        yaw,pitch,x0,y0,x1,y1,scale,null)
+                : FrameWorkbenchPreview3DFactory.captureWithPhoto(this.design,
+                        yaw,pitch,x0,y0,x1,y1,scale,null,
+                        readyPhoto.texture(),readyPhoto.width(),readyPhoto.height());
         FrameWorkbenchPipBridge.submit(graphics,state);
     }
 

@@ -55,6 +55,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/frame-photo"
           javac -d "$RUNNER_TEMP/frame-photo" src/main/java/EdDYON/guaniao/client/camera/frame/FrameWorkbenchMeshGeometry.java src/main/java/EdDYON/guaniao/client/camera/frame/FrameWorkbenchPhotoGeometry.java tools/port-probes/GuaniaoFramePhotoGeometryRegression.java
           java -cp "$RUNNER_TEMP/frame-photo" GuaniaoFramePhotoGeometryRegression
+      - name: Verify real photo cache, dimension handoff and 26.2 GPU lifecycle
+        run: python3 tools/check-photo-texture-cache-26-2.py
       - name: Verify 26.2 frame mesh formulas and registered 3D renderer
         run: python3 tools/check-frame-mesh-26-2.py
       - name: Run standalone original 32x32 frame geometry tests (real Java 25)

@@ -1,0 +1,21 @@
+# Temporary standalone diagnostic of GitHub-hosted runner provisioning.
+# No checkout, dependencies, Java, Gradle, secrets or repository code.
+name: Fabric runner smoke diagnostic
+on:
+  push:
+    branches:
+      - port/fabric-26.2
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  host-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Confirm hosted runner started
+        run: |
+          echo "RUNNER_ASSIGNED"
+          echo "OS: $RUNNER_OS"
+          echo "Runner: $RUNNER_NAME"
+          uname -a

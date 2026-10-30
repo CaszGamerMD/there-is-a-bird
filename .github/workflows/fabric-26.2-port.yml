@@ -48,6 +48,13 @@ jobs:
         run: python3 tools/check-bird-projectile-entity-api.py
       - name: Verify saved FrameDesign data and exact original binary wire format
         run: python3 tools/check-frame-design-components-26-2.py
+      - name: Verify original window-masked photo fit, rotation and UV geometry
+        run: python3 tools/check-frame-photo-26-2.py
+      - name: Run standalone photo clipping geometry regression in real Java 25
+        run: |
+          mkdir -p "$RUNNER_TEMP/frame-photo"
+          javac -d "$RUNNER_TEMP/frame-photo" src/main/java/EdDYON/guaniao/client/camera/frame/FrameWorkbenchMeshGeometry.java src/main/java/EdDYON/guaniao/client/camera/frame/FrameWorkbenchPhotoGeometry.java tools/port-probes/GuaniaoFramePhotoGeometryRegression.java
+          java -cp "$RUNNER_TEMP/frame-photo" GuaniaoFramePhotoGeometryRegression
       - name: Verify 26.2 frame mesh formulas and registered 3D renderer
         run: python3 tools/check-frame-mesh-26-2.py
       - name: Run standalone original 32x32 frame geometry tests (real Java 25)

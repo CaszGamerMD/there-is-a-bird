@@ -52,7 +52,7 @@ for marker in (
     "FrameDesign.erode(mask,this.design.borderCells())",
     "this.outlineConfirm.active=this.outlineEditor.valid();",
     'text("seconds_remaining",',
-    'text("work_stage."',
+    '"work_stage."+stage',
     "this.readyFlashTicks>0"):
     assert marker in old and marker in new,marker
 

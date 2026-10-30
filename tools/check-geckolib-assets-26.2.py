@@ -36,10 +36,11 @@ assert 'normalized(authored, "geo/", ".geo.json")' in BRIDGE
 assert 'normalized(authored, "animations/", ".animation.json")' in BRIDGE
 assert "Identifier.fromNamespaceAndPath(authored.getNamespace()" in BRIDGE
 
-for stem in ("Kiwi", "Sparrow", "Seagull", "Myna", "LongTailedTit", "NightHeron", "Crow", "Macaw", "Budgerigar", "Columbid", "Cockatoo", "Cockatiel", "Cassowary", "Woodcock", "Kestrel", "Kingfisher"):
+for stem in ("Kiwi", "Sparrow", "Seagull", "Myna", "LongTailedTit", "NightHeron", "Crow", "Macaw", "Budgerigar", "Columbid", "Cockatoo", "Cockatiel", "Cassowary", "Woodcock", "Kestrel", "Kingfisher", "UmbrellaCockatoo"):
     folders = {
         "LongTailedTit": "longtailedtit",
-        "NightHeron": "nightheron"
+        "NightHeron": "nightheron",
+        "UmbrellaCockatoo": "umbrellacockatoo"
     }
     folder = folders.get(stem, stem.lower())
     model = (ROOT / ("src/main/java/EdDYON/guaniao/client/entity/"
@@ -68,4 +69,4 @@ for path in ("client/food/BaggedFriesModel.java",
 
 print(f"GECKOLIB 5 RESOURCE PARITY OK: {len(models)} original models and "
       f"{len(animations)} original animations retained byte-for-byte; "
-      "build-time staging, sixteen mutation bird, hummingbird and five static lookups verified")
+      "build-time staging, seventeen mutation bird, hummingbird and five static lookups verified")

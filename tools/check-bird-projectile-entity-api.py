@@ -21,6 +21,14 @@ def expected_port(source, photograph):
     source = source.replace("this.getEntityData().define(", "builder.define(")
     source = re.sub(r"\.isClientSide\b(?!\s*\()", ".isClientSide()", source)
     source = re.sub(r"\bhasImpulse\b", "needsSync", source)
+    # Minecraft 26.2 moved both vanilla mob classes; this is an import-only
+    # namespace migration and does not alter bird-dropping hit behavior.
+    source = source.replace(
+        "import net.minecraft.world.entity.animal.IronGolem;",
+        "import net.minecraft.world.entity.animal.golem.IronGolem;")
+    source = source.replace(
+        "import net.minecraft.world.entity.npc.Villager;",
+        "import net.minecraft.world.entity.npc.villager.Villager;")
     if photograph:
         source = source.replace("import net.minecraft.resources.ResourceLocation;",
                                 "import net.minecraft.resources.Identifier;")

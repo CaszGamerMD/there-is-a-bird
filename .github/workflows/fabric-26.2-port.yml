@@ -177,6 +177,8 @@ jobs:
           java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
       - name: Verify first-use camera help screen retains original 26.2 layout and controls
         run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify 26.2 world FOV hook preserves Nikon zoom and clean shutter
+        run: python3 tools/check-camera-fov-26-2.py
       - name: Verify original Escape, screenshot and shortcut keyboard event port
         run: python3 tools/check-camera-keyboard-input-26-2.py
       - name: Verify real 26.2 in-world camera mouse input and safety

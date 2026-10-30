@@ -19,7 +19,8 @@
     "ClientBlockBreakParticlesMixin",
     "GuaniaoGuiRenderStateAccess",
     "GuaniaoCameraMouseInputMixin",
-    "GuaniaoCameraKeyboardInputMixin"
+    "GuaniaoCameraKeyboardInputMixin",
+    "GuaniaoCameraFieldOfViewMixin"
   ],
   "server": [],
   "injectors": {

@@ -28,7 +28,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.ViewportEvent;
 import org.lwjgl.glfw.GLFW;
 import java.util.UUID;
 
@@ -377,16 +376,16 @@ public final class CameraClientCapture {
         CameraViewfinderOverlay.render(graphics, currentState);
     }
 
-    public static void modifyFov(ViewportEvent.ComputeFov event) {
-        if (!event.usedConfiguredFov()) {
-            return;
-        }
-
-        if (viewfinderOpen) {
-            event.setFOV(currentFov());
-        } else if (cleanCapturePending) {
-            event.setFOV(pendingCaptureFov);
-        }
+    /**
+     * Used only by Camera.calculateFov's world projection.
+     * The older Forge ComputeFov.usedConfiguredFov() guard maps to this
+     * specific 26.2 world-FOV method, not to Camera.calculateHudFov().
+     * Inactive cameras leave vanilla's computed value unchanged.
+     */
+    public static float overrideWorldFov(float vanillaFov) {
+        if (viewfinderOpen) return (float) currentFov();
+        if (cleanCapturePending) return (float) pendingCaptureFov;
+        return vanillaFov;
     }
 
     public static void onRenderTickStart() {

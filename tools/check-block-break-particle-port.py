@@ -65,8 +65,8 @@ for path, (function, species) in blocks.items():
     # Some authored block classes are referenced by fully-qualified names
     # instead of imports. Check the actual instanceof type, not its spelling.
     assert re.search(
-        r"\\binstanceof\\s+(?:EdDYON\\.guaniao\\.[\\w.]+\\.)?"
-        + re.escape(species) + r"\\b", new_fx
+        r"\binstanceof\s+(?:EdDYON\.guaniao\.[\w.]+\.)?"
+        + re.escape(species) + r"\b", new_fx
     ), species
 
 old_particle = original("client/particle/PlaceableBreakFleckParticle.java")

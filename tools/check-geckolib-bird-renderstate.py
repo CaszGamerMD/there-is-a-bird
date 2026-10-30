@@ -13,7 +13,7 @@ MODELS = {
     "myna/Myna": True,
     "longtailedtit/LongTailedTit": True,
     "seagull/Seagull": True,
-    "nightheron/NightHeron": False,
+    "nightheron/NightHeron": True,
     "crow/Crow": True,
     "macaw/Macaw": True,
     "budgerigar/Budgerigar": True,
@@ -233,6 +233,30 @@ for species, name, anchor, radius, constants in (
 assert "new CrowHeldFoodLayer<>(context, this)" in current("client/entity/crow/CrowRenderer.java")
 assert "new SeagullHeldFoodLayer<>(context, this)" in current("client/entity/seagull/SeagullRenderer.java")
 
+# The heron's delivery fish is deliberately smaller, with a shallower bill pose.
+heron_old = original("client/entity/nightheron/NightHeronHeldFishLayer.java")
+heron = current("client/entity/nightheron/NightHeronHeldFishLayer.java")
+for token in (
+    '"fish_anchor"', "MOUTH_ANCHOR_Y = 14.35D / 16.0D",
+    "MOUTH_ANCHOR_Z = -12.85D / 16.0D", "BASE_X_ROTATION = 90.0F",
+    "BASE_Z_ROTATION = 145.0F", "X_ROTATION_VARIATION = 4.0F",
+    "Z_ROTATION_VARIATION = 22.0F", "ITEM_SCALE = 0.55F",
+    "DELIVERY_ANCHOR_Y = 14.05D / 16.0D",
+    "DELIVERY_ANCHOR_Z = -13.35D / 16.0D",
+    "DELIVERY_SCALE = 0.34F", "hasDeliveryFish()", "getHeldFishPoseSeed()",
+    "NightHeronEntity.isEdibleFishItem(stack)", "seededUnit(",
+):
+    assert token in heron_old and token in heron, token
+for token in ("BlockAndItemGeoLayer", "getRelevantBones(", "addRenderData(",
+              "RenderData.item(", "super.submitItemStackRender(",
+              "RenderUtil.createRenderStateForItem(", "ItemDisplayContext.NONE",
+              "ItemDisplayContext.GROUND", "DataTicket<Boolean> DELIVERY",
+              "DataTicket<Integer> POSE_SEED"):
+    assert token in heron, token
+assert "software.bernie" not in heron
+assert "new NightHeronHeldFishLayer<>(context, this)" in current(
+    "client/entity/nightheron/NightHeronRenderer.java")
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -251,9 +275,10 @@ registered = {
     "WOODCOCK": "Woodcock",
     "CROW": "Crow",
     "SEAGULL": "Seagull",
+    "NIGHT_HERON": "NightHeron",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 14 model texture snapshots, 14 renderer scales and client registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 14 model texture snapshots, 15 renderer scales and client registrations, unmodified mutation color formulas")

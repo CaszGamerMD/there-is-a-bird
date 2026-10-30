@@ -108,5 +108,11 @@ final class FrameMaterialPalette {
         if(kind==Kind.LINING && item==Items.PAPER) return true;
         return item instanceof BlockItem block && block.getBlock().defaultBlockState().getRenderShape()!=RenderShape.INVISIBLE;
     }
-    static ItemStack stack(Identifier id) {return new ItemStack(BuiltInRegistries.ITEM.getValue(id));}
+    static ItemStack stack(Identifier id) {
+        // A saved design may refer to an optional mod that's no longer installed.
+        // Preserve the editor's original missing-material fallback instead of
+        // making the palette crash while browsing that design.
+        Item item=BuiltInRegistries.ITEM.getValue(id);
+        return new ItemStack(item==null ? Items.AIR : item);
+    }
 }

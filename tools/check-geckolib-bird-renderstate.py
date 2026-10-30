@@ -12,9 +12,9 @@ MODELS = {
     "sparrow/Sparrow": True,
     "myna/Myna": True,
     "longtailedtit/LongTailedTit": True,
-    "seagull/Seagull": False,
+    "seagull/Seagull": True,
     "nightheron/NightHeron": False,
-    "crow/Crow": False,
+    "crow/Crow": True,
     "macaw/Macaw": True,
     "budgerigar/Budgerigar": True,
 }
@@ -201,6 +201,38 @@ for token in ("root.setScale(", "wing.skipRender(flying)", "wing.skipChildrenRen
 assert "this.shadowRadius = 0.16F;" in woodcock_renderer
 assert "software.bernie" not in woodcock_model + woodcock_renderer
 
+# Preserve GeckoLib 4's authored carried-item positions and food pose seeds.
+# GeckoLib 5 must snapshot item-model render data before its per-bone submit.
+for species, name, anchor, radius, constants in (
+    ("crow", "Crow", "mouth_anchor", "0.17F", (
+        "MOUTH_ANCHOR_Y = 12.475D / 16.0D",
+        "MOUTH_ANCHOR_Z = -8.95D / 16.0D",
+        "BASE_X_ROTATION = 90.0F", "BASE_Z_ROTATION = 150.0F",
+        "X_ROTATION_VARIATION = 5.0F", "Z_ROTATION_VARIATION = 35.0F",
+        "ITEM_SCALE = 0.80F", "getHeldFoodPoseSeed()", "seededUnit(",
+    )),
+    ("seagull", "Seagull", "foot_right", "0.20F", (
+        "poseStack.translate(0.0D, 0.015D, -0.018D)",
+        "Axis.XP.rotationDegrees(90.0F)",
+        "Axis.ZP.rotationDegrees(145.0F)",
+        "poseStack.scale(0.46F, 0.46F, 0.46F)",
+    )),
+):
+    path = f"client/entity/{species}/{name}HeldFoodLayer.java"
+    before, now = original(path), current(path)
+    renderer = current(f"client/entity/{species}/{name}Renderer.java")
+    assert anchor in before and anchor in now, species
+    assert f"this.shadowRadius = {radius};" in renderer
+    for token in ("BlockAndItemGeoLayer", "getRelevantBones(", "addRenderData(",
+                  "RenderData.item(", "super.submitItemStackRender(",
+                  "ItemDisplayContext.GROUND", "RenderUtil.createRenderStateForItem("):
+        assert token in now, (species, token)
+    assert "software.bernie" not in now and "MultiBufferSource" not in now
+    for constant in constants:
+        assert constant in before and constant in now, (species, constant)
+assert "new CrowHeldFoodLayer<>(context, this)" in current("client/entity/crow/CrowRenderer.java")
+assert "new SeagullHeldFoodLayer<>(context, this)" in current("client/entity/seagull/SeagullRenderer.java")
+
 registry = current("fabric/GuaniaoFabricEntityRenderers.java")
 client = current("fabric/GuaniaoFabricClientEntrypoint.java")
 assert "GuaniaoFabricEntityRenderers.register();" in client
@@ -217,9 +249,11 @@ registered = {
     "COCKATIEL": "Cockatiel",
     "CASSOWARY": "Cassowary",
     "WOODCOCK": "Woodcock",
+    "CROW": "Crow",
+    "SEAGULL": "Seagull",
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
 assert registry.count("EntityRendererRegistry.register(") == len(registered)
 assert "net.minecraftforge" not in registry
-print("GECKOLIB 5 BIRD STATE PARITY OK: 14 model texture snapshots, 12 renderer scales and client registrations, unmodified mutation color formulas")
+print("GECKOLIB 5 BIRD STATE PARITY OK: 14 model texture snapshots, 14 renderer scales and client registrations, unmodified mutation color formulas")

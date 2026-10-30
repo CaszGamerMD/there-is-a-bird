@@ -1,47 +1,45 @@
 package EdDYON.guaniao.client.entity.kestrel;
 
+import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.kestrel.KestrelDefinition;
 import EdDYON.guaniao.content.bird.kestrel.KestrelEntity;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.core.animation.AnimationState;
+import com.geckolib.constant.dataticket.DataTicket;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
+import net.minecraft.resources.Identifier;
 
+/**
+ * Capture each kestrel's visuals before GeckoLib 5 submits a render pass.
+ * Extended talons must override the authored retracting-flight clips at render time.
+ */
 public final class KestrelModel extends GeoModel<KestrelEntity> {
+    public static final DataTicket<Boolean> EXTENDED_TALONS =
+            DataTicket.create("guaniao_kestrel_extended_talons", Boolean.class);
+
     @Override
-    public void setCustomAnimations(KestrelEntity bird, long instanceId, AnimationState<KestrelEntity> state) {
-        super.setCustomAnimations(bird, instanceId, state);
-        if (bird.hasExtendedTalons()) {
-            // Flight clips retract the legs by 64-94 degrees. Contact needs the
-            // same extended-foot anchor used by the server, including blends.
-            for (String name : new String[]{"leg_left", "leg_right"}) {
-                this.getBone(name).ifPresent(bone -> {
-                    bone.setRotX(0);
-                    bone.setPosY(0);
-                });
-            }
-            this.getBone("root").ifPresent(bone -> {
-                bone.setPosX(0);
-                bone.setPosY(0);
-                bone.setPosZ(0);
-                bone.setRotX(0);
-                bone.setScaleY(1);
-            });
-        }
+    public Identifier getModelResource(GeoRenderState renderState) {
+        return GuaniaoGeckoAssets.model(KestrelDefinition.MODEL);
     }
 
     @Override
-    public ResourceLocation getModelResource(KestrelEntity animatable) {
-        return KestrelDefinition.MODEL;
+    public Identifier getTextureResource(GeoRenderState renderState) {
+        return BirdMutationRenderData.texture(renderState, KestrelDefinition.TEXTURE);
     }
 
     @Override
-    public ResourceLocation getTextureResource(KestrelEntity animatable) {
-        return BirdMutationTextureFactory.textureFor(KestrelDefinition.TEXTURE, animatable);
+    public Identifier getAnimationResource(KestrelEntity animatable) {
+        return GuaniaoGeckoAssets.animation(KestrelDefinition.ANIMATION);
     }
 
     @Override
-    public ResourceLocation getAnimationResource(KestrelEntity animatable) {
-        return KestrelDefinition.ANIMATION;
+    public void addAdditionalStateData(KestrelEntity animatable, Object relatedObject,
+                                       GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
+        BirdMutationRenderData.capture(renderState,
+                BirdMutationTextureFactory.textureFor(KestrelDefinition.TEXTURE, animatable));
+        renderState.addGeckolibData(EXTENDED_TALONS, animatable.hasExtendedTalons());
     }
 }

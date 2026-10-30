@@ -4,15 +4,15 @@ import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.camera.PhotographData;
 import EdDYON.guaniao.content.camera.PhotoAuthorText;
 import java.io.IOException;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.locale.Language;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
 public class PhotographScreen extends Screen {
     private final ItemStack photograph;
@@ -50,8 +50,8 @@ public class PhotographScreen extends Screen {
     }
 
     @Override
-    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics);
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        // Extract the original photo mat before the native screen widgets.
         int textureWidth = Math.max(1, PhotographData.width(this.photograph));
         int textureHeight = Math.max(1, PhotographData.height(this.photograph));
         int x = this.imageX;
@@ -65,7 +65,7 @@ public class PhotographScreen extends Screen {
         graphics.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0xFF1A1D20);
         graphics.fill(x, y, x + size, y + size, 0xFF2A2A2A);
 
-        ResourceLocation texture = PhotographTextureCache.readyTextureFor(this.photograph);
+        Identifier texture = PhotographTextureCache.readyTextureFor(this.photograph);
         if (texture != null) {
             blitFullTexture(graphics, texture, x, y, size, textureWidth, textureHeight);
         }
@@ -77,7 +77,7 @@ public class PhotographScreen extends Screen {
                     this.captionY, 0xB4C1C6);
         }
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.extractContents(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -85,38 +85,33 @@ public class PhotographScreen extends Screen {
         return false;
     }
 
-    private void drawCenteredLabel(GuiGraphics graphics, Component label, int y, int color) {
+    private void drawCenteredLabel(GuiGraphicsExtractor graphics, Component label, int y, int color) {
         FormattedText text = label;
         if (this.font.width(text) > this.imageSize) {
             String suffix = "…";
             text = FormattedText.composite(this.font.substrByWidth(text, Math.max(0, this.imageSize - this.font.width(suffix))),
                     Component.literal(suffix));
         }
-        graphics.drawString(this.font, Language.getInstance().getVisualOrder(text),
+        graphics.text(this.font, Language.getInstance().getVisualOrder(text),
                 this.width / 2 - this.font.width(text) / 2, y, color, false);
     }
 
     private static void blitFullTexture(
-            GuiGraphics graphics,
-            ResourceLocation texture,
+            GuiGraphicsExtractor graphics,
+            Identifier texture,
             int x,
             int y,
             int imageSize,
             int textureWidth,
             int textureHeight
     ) {
-        graphics.pose().pushPose();
-        try {
-            graphics.pose().translate(x, y, 0.0F);
-            graphics.pose().scale(
-                    imageSize / (float) textureWidth,
-                    imageSize / (float) textureHeight,
-                    1.0F
-            );
-            graphics.blit(texture, 0, 0, 0, 0, textureWidth, textureHeight, textureWidth, textureHeight);
-        } finally {
-            graphics.pose().popPose();
-        }
+        // UV range [0,1] in both directions preserves the complete image.
+        // This intentionally stretches a non-square JPEG into the original
+        // square view instead of cropping or supplying replacement pixels.
+        if (textureWidth <= 0 || textureHeight <= 0) return;
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture,
+                x, y, 0.0F, 0.0F,
+                imageSize, imageSize, imageSize, imageSize);
     }
 
     private void export() {

@@ -8,6 +8,6 @@ public final class PhotographClientActions {
     }
 
     public static void openScreen(ItemStack stack) {
-        Minecraft.getInstance().setScreen(new PhotographScreen(stack));
+        Minecraft.getInstance().gui.setScreen(new PhotographScreen(stack));
     }
 }

@@ -98,6 +98,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
         include 'EdDYON/guaniao/client/camera/frame/FrameOutlineEditor.java'
         include 'EdDYON/guaniao/client/camera/frame/FrameNumberControl.java'
         include 'EdDYON/guaniao/client/camera/frame/FrameMaterialPalette.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameCraftingMeadow.java'
         include 'EdDYON/guaniao/mixin/GuaniaoGuiRenderStateAccess.java'
         include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchPipBridge.java'
         // The real initializer depends on unported gameplay classes and is checked by full compileJava.

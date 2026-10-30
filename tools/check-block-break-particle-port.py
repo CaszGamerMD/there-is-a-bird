@@ -62,7 +62,12 @@ for path, (function, species) in blocks.items():
     assert "initializeClient(" not in changed, path
     assert "net.minecraftforge.client.extensions.common.IClientBlockExtensions" not in changed, path
     assert "PlaceableBlockBreakEffects" not in changed, path
-    assert "instanceof " + species in new_fx, species
+    # Some authored block classes are referenced by fully-qualified names
+    # instead of imports. Check the actual instanceof type, not its spelling.
+    assert re.search(
+        r"\\binstanceof\\s+(?:EdDYON\\.guaniao\\.[\\w.]+\\.)?"
+        + re.escape(species) + r"\\b", new_fx
+    ), species
 
 old_particle = original("client/particle/PlaceableBreakFleckParticle.java")
 new_particle = current("client/particle/PlaceableBreakFleckParticle.java")

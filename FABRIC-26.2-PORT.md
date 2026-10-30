@@ -1092,3 +1092,35 @@ before GitHub allocates a runner (runner_id 0, zero job steps). This is a CI
 scheduling/availability failure, **not** a Gradle compiler diagnostic.
 Check GitHub Actions billing/limits and runner availability separately;
 without a runner, no source-level build or JAR validation has happened.
+
+
+## Next checkpoint: 17/19 renderer registrations and Kingfisher staged (2026-10-29)
+
+The Kestrel renderer is now registered on Fabric. It captures owner-head
+position, body yaw and pitch for owner perching, preserves flight pitch/bank
+when away from the owner, restores the original extended-talon leg and root
+bone transforms *after* authored animation, and retains the fetch-learning
+nameplate and the root-held item.
+
+The Hummingbird renderer is also registered, with the original tiny size,
+0.06 shadow radius, owner-head position and pitch, seven head-perch support
+bones, and head-local garden item. The eight original Molang expressions
+for flight time, wing stroke, forward/backward/lateral blending, wing pitch,
+wing yaw bias and visual bank now come from GeckoLib 5 per-actor queries
+rather than overwriting process-global values from the last animated bird.
+
+Kingfisher is **partially migrated but not registered**. Its GeckoLib 5 model
+now captures the original two bill-handling dips and later swallow lift
+without changing the keyframe pulse equations; the held-fish layer keeps
+the original size, tilt, head anchor and fully-swallowed visibility cutoff.
+The legacy renderer remains until the per-bone defecation anchor can be
+translated faithfully into GeckoLib 5's deferred bone-position listener.
+Disabling this effect merely to increase the renderer count is not an option.
+
+Source parity checks cover Kestrel pose and food, Hummingbird Molang,
+support bones and garden item, Kingfisher eating/fish and all the new asset
+lookup bridges. **Compilation and in-game testing are still unverified.**
+GitHub Actions jobs on this branch have been failing before a runner starts,
+independently of the Java migration. Kingfisher and Umbrella Cockatoo
+remain the two bird-renderer blockers; the larger Forge gameplay/client
+migration also remains incomplete.

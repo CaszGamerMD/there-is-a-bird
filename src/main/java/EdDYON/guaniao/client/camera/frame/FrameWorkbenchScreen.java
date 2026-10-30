@@ -85,9 +85,9 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
     private Button craftButton;
 
     public FrameWorkbenchScreen(FrameWorkbenchMenu menu,Inventory inventory,Component title) {
-        super(menu,inventory,title);
-        this.imageWidth=PANEL_WIDTH;
-        this.imageHeight=PANEL_HEIGHT;
+        // 26.2 AbstractContainerScreen dimensions are constructor-final.
+        // Keep the author's 390x300 virtual workspace and scale it in init.
+        super(menu,inventory,title,PANEL_WIDTH,PANEL_HEIGHT);
     }
 
     @Override protected void init() {

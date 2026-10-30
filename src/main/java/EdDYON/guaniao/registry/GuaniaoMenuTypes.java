@@ -12,7 +12,7 @@ import net.minecraft.world.inventory.MenuType;
 
 /**
  * Keep the original two menu IDs and send the exact block position on open.
- * Fabric 26.2 ExtendedMenuType replaces Forge IForgeMenuType without removing
+ * Fabric 26.2 ExtendedMenuType retains block-position opening without removing
  * the server-authoritative nest search or persistent frame workbench jobs.
  */
 public final class GuaniaoMenuTypes {

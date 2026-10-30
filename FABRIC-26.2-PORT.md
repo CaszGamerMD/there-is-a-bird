@@ -997,3 +997,42 @@ local contributor-only build; if it fails, treat the JAR as not ready.
 The original media distribution restrictions still apply; keep the
 draft PR private and do not release a modified asset-containing JAR
 without the copyright holder's permission.
+
+
+## 2026-10-29 — cassowary and woodcock procedural GeckoLib 5 ports
+
+Two more bird renderers now participate in Fabric client registration:
+**12 of 19 registered bird species**, with **14 GeckoLib bird models**
+migrated at source level (the two columbids share one model).
+
+- **Cassowary**: original gaze remains head-led, with separate
+  `head`, `neckUpper`, and `neckLower` pitch/yaw driven by
+  `getClientGazeWeight()`; the exact 0.001 cutoff and
+  `Mth.DEG_TO_RAD` math are preserved. The six weighted rotations are
+  snapshotted as GeckoLib 5 `DataTicket<Float>` values per bird and
+  added *after* authored bone animation. Eye bones remain untouched.
+  The per-bird scale and 0.493 shadow remain.
+- **Woodcock**: original fixed `root_shape` 0.45× scale is applied
+  after animated bones, retaining the workaround for animation
+  transition size flicker. The separate `wing_left`,
+  `wing_right` and `fly` rigs use the actual per-bird flight
+  flag in a GeckoLib 5 render-state ticket, now implemented through
+  bone snapshots' `skipRender` and `skipChildrenRender` methods.
+  The 0.16 shadow, individual scale and mutation textures are kept.
+- `tools/check-geckolib-bird-renderstate.py` now audits both
+  procedural bone conversions against their original animation
+  decisions and counts 12 unique Fabric bird registrations.
+  `tools/check-geckolib-assets-26.2.py` covers 14 model lookups
+  and byte-preserves all authored model/animation JSON.
+- Added `GuaniaoProceduralBoneProof.java` to the Gradle isolated
+  26.2 API compile checks for `BoneSnapshots`, `DataTicket`,
+  post-animation rotation/scale and wing/child visibility.
+  Confirmed GeckoLib 5 public Java API exposes those methods;
+  **this does not prove the mod compiles**.
+
+**Private JAR remains blocked.** Seven bird renderers have more
+complex held-item layers, owner positioning, procedural poses or Molang
+animation handling; other Forge/Minecraft 26.2 migration work remains.
+No in-game rendering or full Java compilation has been verified due
+to GitHub Actions failing before runner allocation. Keep this as a
+draft and do not redistribute original copyrighted assets.

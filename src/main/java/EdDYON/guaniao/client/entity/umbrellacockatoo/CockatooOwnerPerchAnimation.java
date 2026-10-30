@@ -1,38 +1,49 @@
 package EdDYON.guaniao.client.entity.umbrellacockatoo;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import software.bernie.geckolib.core.animation.Animation;
-import software.bernie.geckolib.loading.object.BakedAnimations;
-import software.bernie.geckolib.util.JsonUtil;
+import com.geckolib.cache.animation.Animation;
+import com.geckolib.cache.animation.BoneAnimation;
+import com.geckolib.cache.animation.Keyframe;
+import com.geckolib.cache.animation.KeyframeStack;
+import com.geckolib.cache.model.BakedGeoModel;
+import com.geckolib.loading.math.value.Constant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-/** An idle derivative that immediately closes the previous flight's untracked channels. */
+/**
+ * Derive a full neutral-channel owner-perch clip from authored idle.
+ * Explicit rotation/position/scale tracks close every previous flight channel.
+ */
 final class CockatooOwnerPerchAnimation {
     static final String NAME = "animation.owner_perch";
+    private CockatooOwnerPerchAnimation() {}
 
-    private CockatooOwnerPerchAnimation() { }
-
-    static Animation create(JsonObject idle, JsonArray geometryBones) {
-        JsonObject pose = idle.deepCopy();
-        JsonObject tracks = pose.getAsJsonObject("bones");
-        for (var element : geometryBones) {
-            String name = element.getAsJsonObject().get("name").getAsString();
-            JsonObject bone = tracks.has(name) ? tracks.getAsJsonObject(name) : new JsonObject();
-            tracks.add(name, bone);
-            if (!bone.has("rotation")) bone.add("rotation", vector(0));
-            if (!bone.has("position")) bone.add("position", vector(0));
-            if (!bone.has("scale")) bone.add("scale", vector(1));
+    static Animation create(Animation idle, BakedGeoModel model) {
+        Map<String, BoneAnimation> original = new HashMap<>();
+        for (BoneAnimation bone : idle.boneAnimations())
+            original.put(bone.boneName(), bone);
+        ArrayList<BoneAnimation> result = new ArrayList<>();
+        for (String name : model.boneLookup().get().keySet()) {
+            BoneAnimation source = original.get(name);
+            result.add(new BoneAnimation(name,
+                    full(source == null ? null : source.rotationKeyFrames(), 0),
+                    full(source == null ? null : source.positionKeyFrames(), 0),
+                    full(source == null ? null : source.scaleKeyFrames(), 1)));
         }
-        JsonObject animations = new JsonObject();
-        animations.add(NAME, pose);
-        return JsonUtil.GEO_GSON.fromJson(animations, BakedAnimations.class).getAnimation(NAME);
+        return Animation.create(NAME, idle.length(), idle.loopType(),
+                result.toArray(new BoneAnimation[0]), idle.keyframeMarkers());
     }
 
-    private static JsonObject vector(int value) {
-        JsonArray values = new JsonArray();
-        for (int axis = 0; axis < 3; axis++) values.add(value);
-        JsonObject vector = new JsonObject();
-        vector.add("vector", values);
-        return vector;
+    private static KeyframeStack full(KeyframeStack source, int neutral) {
+        if (source == null) return neutral(neutral);
+        KeyframeStack fallback = neutral(neutral);
+        return new KeyframeStack(source.xKeyframes().length == 0 ? fallback.xKeyframes() : source.xKeyframes(),
+                source.yKeyframes().length == 0 ? fallback.yKeyframes() : source.yKeyframes(),
+                source.zKeyframes().length == 0 ? fallback.zKeyframes() : source.zKeyframes());
+    }
+
+    private static KeyframeStack neutral(int value) {
+        Keyframe key = new Keyframe(0, 0, new Constant(value), new Constant(value));
+        return new KeyframeStack(new Keyframe[]{key}, new Keyframe[]{key}, new Keyframe[]{key});
     }
 }

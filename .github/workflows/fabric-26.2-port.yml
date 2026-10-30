@@ -159,6 +159,13 @@ jobs:
           python3 tools/check-26-2-advancement-codecs.py
       - name: Verify Fabric 26.2 camera key registrations and preserved old focus-key binding
         run: python3 tools/check-camera-key-mappings-26-2.py
+      - name: Verify 26.2 viewfinder guide/bezel parity and real filtered lens contract
+        run: python3 tools/check-camera-viewfinder-hud-26-2.py
+      - name: Run standalone viewfinder/JPEG bounds regression in Java 25
+        run: |
+          mkdir -p "$RUNNER_TEMP/viewfinder-frame"
+          javac -d "$RUNNER_TEMP/viewfinder-frame" src/main/java/EdDYON/guaniao/client/camera/CameraViewfinderFrame.java tools/port-probes/GuaniaoViewfinderFrameRegression.java
+          java -cp "$RUNNER_TEMP/viewfinder-frame" EdDYON.guaniao.client.camera.GuaniaoViewfinderFrameRegression
       - name: Verify photograph viewer preserves original image, mat and export on Fabric
         run: python3 tools/check-photograph-viewer-26-2.py
       - name: Verify author-equivalent camera focal length and sensitivity migration

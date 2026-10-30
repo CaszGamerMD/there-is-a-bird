@@ -1406,3 +1406,67 @@ texture/crop, printable sticker decorations, staged assembly, observer
 bird and independent progress bird still require deferred render-state
 migration. These are **not** silently dropped: their original
 source remains in the branch. No private playable test JAR yet.
+
+
+## 2026-10-30 — Frame Workbench native 26.2 screen extraction and photograph cropping
+
+The current port has progressed beyond the bare 3D-rendering API proof.
+`FrameWorkbenchScreen.extractRenderState` now invokes the real
+`FrameWorkbenchPreview3DFactory` + `FrameWorkbenchPipBridge` for
+**photo-free** frames. It places the PiP at the original viewport
+(virtual canvas X=79..231, Y=41..191) in screen coordinates, using
+the existing 390x300 centered responsive scale, zoom, user yaw/pitch
+and original orientation restrictions on the decoration page.
+It deliberately does not draw a blank frame as a counterfeit preview
+when a real photograph exists; the photo-texture cache is still pending.
+
+The screen now has a 26.2 `extractContents` stage that translates
+and scales the exact original 390x300 virtual coordinates for **real
+vanilla inventory slots and child widgets**. Full-screen modal
+palettes render their 140 material cells and tooltips in the new GUI
+extractor and suppress inventory slot hover/drawing behind them;
+the outline editor retains its zoom, authored mask and invalid
+selection state. The main Workbench 2D extraction reproduces the
+original wood panels, inventory slot backdrops, editable 32x32 mask,
+grid and labels. This includes the legacy input workaround for scaled
+sliders and pointer events. The previously missed old-style
+`mouseDragged` forwarding was fixed.
+
+**The real photograph layer is now represented by geometry and a
+deferred submission path**, not a generated substitute.
+`FrameWorkbenchPhotoGeometry` preserves the original author code's
+per-window rectangle clipping, contain/cover, rotations, zoom,
+offsets, UVs and relative depth behind the frame's front edge;
+`FrameWorkbenchPhotoSubmitter` emits the photo's real source
+texture through `SubmitNodeCollector.submitCustomGeometry`.
+`FrameWorkbenchPreview3DState.Photo` now carries its image
+identifier/UV snapshots, and
+`FrameWorkbenchPreview3DFactory.captureWithPhoto` prepares it when
+passed an actual photograph texture and dimensions.
+`GuaniaoFramePhotoGeometryRegression` tests solid/no-photo frames,
+letterboxing, cover, rotation, max zoom, offsets, and separated
+windows (which must not blend through their wooden divider).
+`check-frame-photo-26-2.py` guards source parity.
+
+**Crafting-area 2D extraction:** original meadow, native food item,
+scaled food fade, two bite fragments, work-stage labels, countdown
+and ready flash are preserved by `FrameCraftingProgress2D` and
+the screen's `extractCraftingArea2D`; these track the original
+server-authoritative work/progress clocks. The second (independent)
+progress bird is still real 3D GeckoLib content requiring a
+separate deferred renderer: a 2D substitute was not introduced.
+`check-frame-extraction-26-2.py` checks stage/modal/slot
+behavior and original 3D methods remaining in source.
+
+**Remaining before a playable JAR:** screen still contains legacy
+`GuiGraphics` `render`/`renderBg` methods during this staged
+migration; they must be replaced rather than assumed compile-ready.
+The actual `PhotographTextureCache`/photo buffer API needs to
+supply `captureWithPhoto` with the downloaded real image and
+pixel size, after which photo-bearing previews can be queued.
+The full staged construction, bird carrying the frame, observer
+and progress birds, plus photograph stickers require 26.2 GeckoLib
+and deferred texture submission. Many legacy Forge classes remain.
+The private GitHub Actions job still has not reached a runner,
+so the new Java API proofs and regression tests are committed
+but have not executed; compilation and a JAR cannot be claimed.

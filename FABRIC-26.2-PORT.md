@@ -1283,3 +1283,58 @@ animation, visitor bird, frame-to-slot delivery, palette modal, inventory
 slots and interactions; do not remove or replace them with placeholders.
 The ongoing absence of a GitHub Actions runner still prevents Java 25
 compilation and private test JAR validation.
+
+
+## 2026-10-30 — Workbench material picker and the 26.2 deferred-3D bridge
+
+**Author-preserving material picker port:** `FrameMaterialPalette` now uses
+Minecraft's 26.2 `Identifier`, per-item food components and vanilla
+`BlockTags`/`ItemTags` rather than Forge's `Tags` and removed item APIs.
+Its original live item-registry search, modded materials, color families,
+category ordering, ten category labels and saved-design handling remain.
+Missing optional-mod items become a safe empty item instead of crashing.
+The migrated picker is included in `verifyRegistriesPort`, and
+`check-frame-material-palette-26-2.py` compares original selection,
+sorting and category invariants. **The full editor still has dependent 1.20.1
+classes (`FrameDesign`, `FrameDesignRenderer`) to migrate.**
+
+**Verified 26.2 3D architecture before altering the frame meshes:**
+Minecraft's `GuiGraphicsExtractor` records GUI elements, and Fabric
+provides `PictureInPictureRendererRegistry` and
+`PictureInPictureRenderer<PictureInPictureRenderState>` for custom
+offscreen 3D GUI rendering. The new
+`GuaniaoGuiRenderStateAccess` client-only accessor and
+`FrameWorkbenchPipBridge` submit custom render states into the actual
+`GuiRenderState.addPicturesInPictureState` queue. No old immediate
+`GuiGraphics` drawing is used by this bridge.
+`GuaniaoFramePictureInPictureProof.java` exercises the official
+Fabric renderer-registration, bounds, offscreen rendering and
+`SubmitNodeCollector.submitCustomGeometry` APIs in an isolated
+compile-only test. The probe is deliberately **not** registered at runtime:
+there is no fake or simplified frame preview. The bridge and probe are
+included in `verifyRegistriesPort` and source-parity checks in CI.
+
+**Crafting-progress meadow:** `FrameCraftingMeadow` is a separate
+26.2-ready UI-extraction helper. It preserves the original eleven
+grass-side/grass-overlay tiles, four plants, plant sizes and positions,
+and the original grass shade using 26.2's `BlockTintSource`.
+Sprites come from the live block atlas, so resource packs are respected.
+It is included in the isolated compiler gate, with
+`check-frame-meadow-26-2.py` verifying the original geometry and art.
+The existing `FrameCraftingProgress` caller still uses 1.20.1
+rendering until its animated GeckoLib workshop bird is migrated;
+the meadow helper has **not yet** been wired to replace that caller.
+
+**Remaining end-to-end 3D implementation work:** migrate
+`FrameDesignRenderer`'s quad/texture submissions to
+`SubmitNodeCollector.submitCustomGeometry` and the new
+`RenderTypes`; implement and register a real
+`FrameWorkbench` `PictureInPictureRenderer` for the custom
+3D frame, photo texture, depth and user rotation; migrate
+`FrameCraftingAnimation` and `FrameWorkshopBird` GeckoLib
+entity rendering to the same deferred pipeline (including the independent
+observer and progress birds), then migrate the last
+`FrameWorkbenchScreen` render methods and coordinate/scissor
+handling. Only then is a visual end-to-end test meaningful.
+The earlier Forge-only source outside the Workbench also still needs
+migration. **No complete Fabric 26.2 test JAR is available yet.**

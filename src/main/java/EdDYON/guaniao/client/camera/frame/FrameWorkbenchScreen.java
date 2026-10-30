@@ -604,6 +604,64 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
      * are ported. Do not delete them or claim this screen compiles yet.
      */
     /**
+     * 26.2 2D frame canvas and inventory slot backdrop. The original renderBg
+     * below is still retained while the old workshop-bird geometry is staged.
+     * Use the exact original positioning, colors, and wood texture helpers.
+     */
+    private void extractWorkbenchBackdrop(GuiGraphicsExtractor g,int mouseX,int mouseY) {
+        panel(g,0,0,PANEL_WIDTH,PANEL_HEIGHT);
+        recess(g,7,36,65,163,0xFFB8B8B8);
+        FrameWorkbenchBackdrop.render(g,8,37,63,161);
+        recess(g,78,40,154,152,0xFF565656);
+        FrameWorkbenchBackdrop.render(g);
+        recess(g,240,40,140,155,0xFFB8B8B8);
+        recess(g,240,202,140,73,0xFFB8B8B8);
+        FrameWorkbenchBackdrop.render(g,241,203,138,71);
+        slot(g,18,54);
+        panel(g,331,230,30,30);
+        slot(g,FrameWorkbenchMenu.OUTPUT_X,FrameWorkbenchMenu.OUTPUT_Y);
+        for(int row=0;row<3;row++)for(int col=0;col<9;col++)slot(g,18+col*18,212+row*18);
+        for(int col=0;col<9;col++)slot(g,18+col*18,270);
+        if(this.editShape || this.invalidOutline)extractCanvas(g,mouseX,mouseY);
+    }
+
+    private void extractCanvas(GuiGraphicsExtractor g,int mouseX,int mouseY) {
+        int[] mask=this.painting ? this.strokeMask : this.workingMask==null ? this.design.mask() : this.workingMask;
+        int[] inner=FrameDesign.erode(mask,this.design.borderCells());
+        for(int y=0;y<32;y++)for(int x=0;x<32;x++) {
+            boolean filled=(mask[y]&(1<<x))!=0,window=(inner[y]&(1<<x))!=0;
+            int color=filled ? (window ? 0xFFC9C0A6 : 0xFF86613D)
+                    : ((x+y)%2==0 ? 0xFF686868 : 0xFF777777);
+            g.fill(CANVAS_X+x*CELL,CANVAS_Y+y*CELL,CANVAS_X+(x+1)*CELL,CANVAS_Y+(y+1)*CELL,color);
+        }
+        for(int i=0;i<=32;i+=4) {
+            g.fill(CANVAS_X+i*CELL,CANVAS_Y,CANVAS_X+i*CELL+1,CANVAS_Y+128,0x44666666);
+            g.fill(CANVAS_X,CANVAS_Y+i*CELL,CANVAS_X+128,CANVAS_Y+i*CELL+1,0x44666666);
+        }
+        if(inCanvas(mouseX,mouseY)) {
+            int x=(mouseX-CANVAS_X)/CELL,y=(mouseY-CANVAS_Y)/CELL;
+            g.outline(CANVAS_X+x*CELL,CANVAS_Y+y*CELL,CELL,CELL,this.eraser ? 0xFFFF7777 : 0xFFFFFFFF);
+        }
+    }
+
+    private static void panel(GuiGraphicsExtractor g,int x,int y,int width,int height) {
+        g.fill(x,y,x+width,y+height,0xFF161616);
+        g.fill(x+1,y+1,x+width-1,y+height-1,0xFFC6C6C6);
+        g.fill(x+2,y+2,x+width-2,y+4,0xFFFFFFFF);
+        g.fill(x+2,y+2,x+4,y+height-2,0xFFFFFFFF);
+        g.fill(x+4,y+height-4,x+width-2,y+height-2,0xFF555555);
+        g.fill(x+width-4,y+4,x+width-2,y+height-2,0xFF555555);
+    }
+    private static void recess(GuiGraphicsExtractor g,int x,int y,int width,int height,int fill) {
+        g.fill(x,y,x+width,y+height,0xFF373737);
+        g.fill(x+1,y+1,x+width,y+height,0xFFFFFFFF);
+        g.fill(x+1,y+1,x+width-1,y+height-1,fill);
+    }
+    private static void slot(GuiGraphicsExtractor g,int x,int y) {
+        recess(g,x-1,y-1,18,18,0xFF8B8B8B);
+    }
+
+    /**
      * Preserve the original 390x300 virtual canvas for real 26.2 widgets,
      * native inventory slots and the original modal input routing. The
      * superclass extracts slots in our translated local coordinates, while
@@ -623,6 +681,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
                     renderable.extractRenderState(graphics,localX,localY,partialTick);
                 }
             } else {
+                this.extractWorkbenchBackdrop(graphics,localX,localY);
                 super.extractContents(graphics,localX,localY,partialTick);
             }
         } finally {
@@ -855,32 +914,32 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         this.setFocused(null);return true;
     }
 
-    @Override protected void renderLabels(GuiGraphics g,int mouseX,int mouseY) {
-        g.drawString(this.font,this.title,12,7,0x404040,false);
-        g.drawString(this.font,this.playerInventoryTitle,18,202,0x404040,false);
-        g.drawString(this.font,text("photo"),12,42,WOOD_TEXT,false);
+    @Override protected void extractLabels(GuiGraphicsExtractor g,int mouseX,int mouseY) {
+        g.text(this.font,this.title,12,7,0x404040,false);
+        g.text(this.font,this.playerInventoryTitle,18,202,0x404040,false);
+        g.text(this.font,text("photo"),12,42,WOOD_TEXT,false);
 
         if(this.page==1) {
-            g.drawString(this.font,label("wood",""),244,48,0x404040,false);
-            g.drawString(this.font,label("trim",""),244,96,0x404040,false);
-            g.drawString(this.font,label("mat",""),244,144,0x404040,false);
+            g.text(this.font,label("wood",""),244,48,0x404040,false);
+            g.text(this.font,label("trim",""),244,96,0x404040,false);
+            g.text(this.font,label("mat",""),244,144,0x404040,false);
         } else if(this.page==3 && !this.isCraftingUi()) {
-            g.drawString(this.font,text("decoration_count",this.design.decorations().size()),245,207,WOOD_TEXT,false);
+            g.text(this.font,text("decoration_count",this.design.decorations().size()),245,207,WOOD_TEXT,false);
         } else if(this.page==4) {
-            g.drawString(this.font,text("name"),245,46,0x404040,false);
-            g.drawString(this.font,text("library_count",this.library.entries().size()),245,181,0x404040,false);
+            g.text(this.font,text("name"),245,46,0x404040,false);
+            g.text(this.font,text("library_count",this.library.entries().size()),245,181,0x404040,false);
         }
         if(this.invalidOutline || this.statusTicks>0) {
             Component message=this.invalidOutline ? text("invalid_shape") : this.status;
-            g.drawString(this.font,this.font.plainSubstrByWidth(message.getString(),132),244,264,this.invalidOutline ? WOOD_ERROR : WOOD_TEXT,false);
+            g.text(this.font,this.font.plainSubstrByWidth(message.getString(),132),244,264,this.invalidOutline ? WOOD_ERROR : WOOD_TEXT,false);
         } else if(!this.isCraftingUi() && !this.menu.canCraft(this.design)) {
             String reason=this.design.widthPixels()==0 || this.design.heightPixels()==0 ? "zero_size" : this.design.widthPixels()<this.menu.getMinSizePixels() || this.design.heightPixels()<this.menu.getMinSizePixels() || this.design.widthPixels()>this.menu.getMaxSizePixels() || this.design.heightPixels()>this.menu.getMaxSizePixels() ? "size_limit" : this.menu.getSlot(FrameWorkbenchMenu.OUTPUT_SLOT).hasItem() ? null : "migrating";
-            if(reason!=null)g.drawString(this.font,this.font.plainSubstrByWidth(text(reason).getString(),132),244,264,WOOD_ERROR,false);
+            if(reason!=null)g.text(this.font,this.font.plainSubstrByWidth(text(reason).getString(),132),244,264,WOOD_ERROR,false);
         }
     }
 
-    private void rowLabel(GuiGraphics g,int y,String key,String value) {
-        g.drawString(this.font,this.font.plainSubstrByWidth(label(key,value).getString(),88),244,y+6,0x404040,false);
+    private void rowLabel(GuiGraphicsExtractor g,int y,String key,String value) {
+        g.text(this.font,this.font.plainSubstrByWidth(label(key,value).getString(),88),244,y+6,0x404040,false);
     }
 
     private void renderPreview(GuiGraphics g,float partialTick) {

@@ -3,6 +3,7 @@ package EdDYON.guaniao.fabric;
 import EdDYON.guaniao.client.camera.CameraTooltipEvents;
 import EdDYON.guaniao.client.dropping.PrankFoodClientEvents;
 import EdDYON.guaniao.client.fan.FeatherFanClientEvents;
+import EdDYON.guaniao.client.hummingbird.HummingbirdSoundEvents;
 import EdDYON.guaniao.network.BirdRuntimeConfigPacket;
 import EdDYON.guaniao.client.camera.PhotoClientRepository;
 import EdDYON.guaniao.client.camera.PhotographTextureCache;
@@ -80,6 +81,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         });
         PrankFoodClientEvents.registerCallbacks();
         FeatherFanClientEvents.registerCallbacks();
+        HummingbirdSoundEvents.registerCallbacks();
         GuaniaoFabricEntityRenderers.register();
         PictureInPictureRendererRegistry.register(context -> new FrameWorkbenchPreview3DRenderer());
         ParticleProviderRegistry.getInstance().register(GuaniaoParticleTypes.KILL_FEATHER.get(), KillFeatherParticle.Provider::new);
@@ -110,7 +112,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenBirdConfigPacket.TYPE,
                 (packet, context) -> BirdConfigClient.open(packet.data()));
-        // Camera screens, all GeckoLib bird renderers, layers and sound loops
-        // must also be registered before the private build can run.
+        // Camera screens, remaining GeckoLib bird renderers, layers and
+        // the cockatoo call sound loop still need Fabric client hooks.
     }
 }

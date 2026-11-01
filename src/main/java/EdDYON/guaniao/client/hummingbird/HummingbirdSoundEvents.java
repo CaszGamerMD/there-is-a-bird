@@ -1,39 +1,16 @@
 package EdDYON.guaniao.client.hummingbird;
 
-import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.client.event.sound.SoundEngineLoadEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID, value = Dist.CLIENT)
+/** Registers the client sound loop lifecycle with Fabric rather than Forge's event bus. */
 public final class HummingbirdSoundEvents {
     private HummingbirdSoundEvents() { }
 
-    @SubscribeEvent public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) HummingbirdSoundManager.INSTANCE.tick();
-    }
-
-    @SubscribeEvent public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
-        HummingbirdSoundManager.INSTANCE.clear();
-    }
-
-    @SubscribeEvent public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ClientLevel) HummingbirdSoundManager.INSTANCE.clear();
-    }
-
-    // Forge fires sound-engine reloads on the mod bus, including output-device changes.
-    @Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
-    public static final class EngineEvents {
-        private EngineEvents() { }
-
-        @SubscribeEvent public static void onEngineLoad(SoundEngineLoadEvent event) {
-            Minecraft.getInstance().execute(HummingbirdSoundManager.INSTANCE::clear);
-        }
+    public static void registerCallbacks() {
+        ClientTickEvents.END_CLIENT_TICK.register(client -> HummingbirdSoundManager.INSTANCE.tick());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> HummingbirdSoundManager.INSTANCE.clear());
+        // The manager also detects a changed/unloaded client level every tick
+        // and retires inactive playback after a sound-engine restart.
     }
 }

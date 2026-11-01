@@ -40,6 +40,8 @@ def expected_port(source, photograph, dropping):
         # Preserve the collision/visual algorithm while adapting the concrete
         # 26.2 ThrownItemEntity constructor, gravity and typed NBT contract.
         changes = (
+            ("import net.minecraft.world.entity.projectile.ThrowableItemProjectile;",
+             "import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;"),
             ("import net.minecraft.nbt.CompoundTag;\nimport net.minecraft.network.protocol.Packet;\n"
              "import net.minecraft.network.protocol.game.ClientGamePacketListener;",
              "import net.minecraft.core.UUIDUtil;"),

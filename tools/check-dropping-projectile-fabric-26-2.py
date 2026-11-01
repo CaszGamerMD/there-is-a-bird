@@ -42,6 +42,7 @@ for token in (
 ):
     assert token in old and token in new
 for token in (
+    "import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;",
     "new ItemStack(variant == null ? BirdDroppingVariant.ONE.item() : variant.item())",
     "protected double getDefaultGravity()",
     "this.isStripDropping() ? 0.025D : 0.06D",

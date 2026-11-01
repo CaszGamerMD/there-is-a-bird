@@ -34,7 +34,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -974,12 +973,10 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
 
     private PiercingArt getPiercingArt() {
         ItemStack fan = this.getItem();
-        if (EnchantmentHelper.getItemEnchantmentLevel(
-                GuaniaoEnchantments.RIVEN_PLUME.get(), fan) > 0) {
+        if (GuaniaoEnchantments.has(fan, GuaniaoEnchantments.RIVEN_PLUME)) {
             return PiercingArt.RIVEN;
         }
-        if (EnchantmentHelper.getItemEnchantmentLevel(
-                GuaniaoEnchantments.BURIAL_PLUME.get(), fan) > 0) {
+        if (GuaniaoEnchantments.has(fan, GuaniaoEnchantments.BURIAL_PLUME)) {
             return PiercingArt.BURIAL;
         }
         return PiercingArt.NORMAL;

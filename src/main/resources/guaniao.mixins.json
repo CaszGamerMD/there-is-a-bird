@@ -12,6 +12,7 @@
     "WeightedPressurePlateBlockMixin",
     "BirdDeathDropsMixin",
     "BirdSleepSoundMixin",
+    "BurialPlumeAnvilMixin",
     "ItemEntityAgeAccessor",
     "BirdPotentialSpawnsMixin",
     "PrankFoodFinishMixin"

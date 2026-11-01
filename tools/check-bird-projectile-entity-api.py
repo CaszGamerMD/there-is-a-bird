@@ -12,7 +12,7 @@ FILES = (
     "src/main/java/EdDYON/guaniao/content/camera/PhotographEntity.java",
 )
 
-def expected_port(source, photograph, dropping):
+def expected_port(source, photograph, dropping, splat):
     source = source.replace(
         "protected void defineSynchedData()",
         "protected void defineSynchedData(SynchedEntityData.Builder builder)")
@@ -90,6 +90,81 @@ def expected_port(source, photograph, dropping):
         for before, after in changes:
             assert before in source, f"Missing original projectile migration site: {before[:60]}"
             source = source.replace(before, after)
+    if splat:
+        changes = (
+            ("import net.minecraft.core.Direction;",
+             "import net.minecraft.core.Direction;\nimport net.minecraft.core.UUIDUtil;"),
+            ("import net.minecraft.nbt.CompoundTag;\nimport net.minecraft.network.protocol.Packet;\n"
+             "import net.minecraft.network.protocol.game.ClientGamePacketListener;\n", ""),
+            ("import net.minecraft.world.level.Level;",
+             "import net.minecraft.world.level.Level;\nimport net.minecraft.world.level.storage.ValueInput;\n"
+             "import net.minecraft.world.level.storage.ValueOutput;"),
+            ("import net.minecraftforge.network.NetworkHooks;\n", ""),
+            ("import software.bernie.geckolib.animatable.GeoEntity;\n"
+             "import software.bernie.geckolib.core.animatable.GeoAnimatable;\n"
+             "import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;\n"
+             "import software.bernie.geckolib.core.animation.AnimatableManager;\n"
+             "import software.bernie.geckolib.util.GeckoLibUtil;",
+             "import com.geckolib.animatable.GeoEntity;\n"
+             "import com.geckolib.animatable.instance.AnimatableInstanceCache;\n"
+             "import com.geckolib.animatable.manager.AnimatableManager;\n"
+             "import com.geckolib.util.GeckoLibUtil;"),
+            ("GeckoLibUtil.createInstanceCache((GeoAnimatable)this)",
+             "GeckoLibUtil.createInstanceCache(this)"),
+            ("level.random", "level.getRandom()"),
+            ("public boolean hurt(@NotNull DamageSource source, float amount) {\n"
+             "        if (this.isInvulnerableTo(source)) {\n            return false;\n        }\n"
+             "        if (!this.level().isClientSide()) {\n"
+             "            Entity attacker = source.getEntity();\n"
+             "            if (!(attacker instanceof Player player) || !player.isCreative()) {\n"
+             "                this.dropCollectible(BirdDroppingUtil.randomDroppingStack(this.level().random));\n"
+             "            }\n"
+             "            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK, SoundSource.NEUTRAL, 0.5F, 0.9F + this.level().random.nextFloat() * 0.2F);\n"
+             "            this.discard();\n        }\n        return true;\n    }",
+             "public boolean hurtServer(ServerLevel level, @NotNull DamageSource source, float amount) {\n"
+             "        if (this.isInvulnerable()) {\n            return false;\n        }\n"
+             "        Entity attacker = source.getEntity();\n"
+             "        if (!(attacker instanceof Player player) || !player.isCreative()) {\n"
+             "            this.dropCollectible(BirdDroppingUtil.randomDroppingStack(level.getRandom()));\n"
+             "        }\n"
+             "        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK,\n"
+             "                SoundSource.NEUTRAL, 0.5F, 0.9F + level.getRandom().nextFloat() * 0.2F);\n"
+             "        this.discard();\n        return true;\n    }\n\n"
+             "    @Override\n    public boolean hurtClient(DamageSource source) {\n"
+             "        return true;\n    }"),
+            ("public InteractionResult interact(Player player, InteractionHand hand) {",
+             "public InteractionResult interact(Player player, InteractionHand hand, Vec3 hitLocation) {"),
+            ("InteractionResult.sidedSuccess(this.level().isClientSide())",
+             "this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME"),
+            ("brush.hurtAndBreak(1, player, brokenPlayer -> brokenPlayer.broadcastBreakEvent(hand))",
+             "brush.hurtAndBreak(1, player, hand)"),
+            ("ItemEntity itemEntity = this.spawnAtLocation(stack);",
+             "if (!(this.level() instanceof ServerLevel serverLevel)) return;\n"
+             "        ItemEntity itemEntity = this.spawnAtLocation(serverLevel, stack);"),
+            ("addAdditionalSaveData(CompoundTag tag)", "addAdditionalSaveData(ValueOutput tag)"),
+            ("readAdditionalSaveData(CompoundTag tag)", "readAdditionalSaveData(ValueInput tag)"),
+            ('tag.putUUID("AttachedEntity", this.attachedEntityUuid)',
+             'tag.store("AttachedEntity", UUIDUtil.CODEC, this.attachedEntityUuid)'),
+            ('tag.getInt("Age")', 'tag.getIntOr("Age", 0)'),
+            ('tag.getBoolean("StripDropping")', 'tag.getBooleanOr("StripDropping", false)'),
+            ('tag.getInt("MaxAge")', 'tag.getIntOr("MaxAge", MIN_AGE_TICKS)'),
+            ('tag.contains("MaxAge")', 'tag.getInt("MaxAge").isPresent()'),
+            ('tag.getInt("SurfaceDirection")', 'tag.getIntOr("SurfaceDirection", 0)'),
+            ('tag.getLong("AnchorPos")', 'tag.getLongOr("AnchorPos", 0L)'),
+            ('tag.getInt("AttachmentPart")', 'tag.getIntOr("AttachmentPart", 0)'),
+            ('tag.getInt("LocalDirection")', 'tag.getIntOr("LocalDirection", 0)'),
+            ('tag.getFloat("LocalX")', 'tag.getFloatOr("LocalX", 0.0F)'),
+            ('tag.getFloat("LocalY")', 'tag.getFloatOr("LocalY", 0.0F)'),
+            ('tag.getFloat("LocalZ")', 'tag.getFloatOr("LocalZ", 0.0F)'),
+            ('if (tag.hasUUID("AttachedEntity")) {\n'
+             '            this.attachedEntityUuid = tag.getUUID("AttachedEntity");\n        }',
+             'this.attachedEntityUuid = tag.read("AttachedEntity", UUIDUtil.CODEC).orElse(null);'),
+            ('\n    @Override\n    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() {\n'
+             '        return NetworkHooks.getEntitySpawningPacket(this);\n    }\n', ''),
+        )
+        for before, after in changes:
+            assert before in source, f"Missing original splat migration site: {before[:65]}"
+            source = source.replace(before, after)
     # Datapack enchantments are ResourceKeys in 26.2, not Forge-registered
     # Enchantment objects. Keep both original piercing-art decisions unchanged.
     if "private PiercingArt getPiercingArt()" in source:
@@ -110,7 +185,8 @@ for path in FILES:
         text=True).replace("\r\n", "\n")
     current = (ROOT / path).read_text("utf-8").replace("\r\n", "\n")
     expected = expected_port(authored, path.endswith("/PhotographEntity.java"),
-                             path.endswith("/BirdDroppingProjectileEntity.java"))
+                             path.endswith("/BirdDroppingProjectileEntity.java"),
+                             path.endswith("/BirdDroppingSplatEntity.java"))
     assert current == expected, f"{Path(path).name}: original projectile/photo gameplay changed"
     assert "protected void defineSynchedData(SynchedEntityData.Builder builder)" in current
     assert ".isClientSide &&" not in current

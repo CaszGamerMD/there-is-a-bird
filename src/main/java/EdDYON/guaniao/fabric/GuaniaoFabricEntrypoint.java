@@ -4,6 +4,7 @@ import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.config.HummingbirdConfig;
 import EdDYON.guaniao.content.bird.hummingbird.HummingbirdEcologyEvents;
 import EdDYON.guaniao.content.dropping.BirdDroppingUtil;
+import EdDYON.guaniao.content.dropping.PrankEntityAttachments;
 import EdDYON.guaniao.registry.GuaniaoLootModifierSerializers;
 import EdDYON.guaniao.content.dropping.BirdDroppingPressurePlatePulse;
 import EdDYON.guaniao.event.BirdConfigLifecycleEvents;
@@ -59,6 +60,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         GuaniaoFabricNetworking.register();
         BirdFlightLock.registerAttachments();
         BirdEntityAttachments.registerAttachments();
+        PrankEntityAttachments.registerAttachments();
         GuaniaoSoundEvents.registerAll();
         GuaniaoParticleTypes.registerAll();
 

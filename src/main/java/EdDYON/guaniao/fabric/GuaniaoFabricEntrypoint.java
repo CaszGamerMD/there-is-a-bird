@@ -33,6 +33,7 @@ import EdDYON.guaniao.content.bird.flock.BirdFlockManager;
 import EdDYON.guaniao.content.bird.brain.BirdHabitatCache;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronLandingSelector;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronShorelineCache;
+import EdDYON.guaniao.content.bird.sparrow.BreadcrumbSearchCache;
 import EdDYON.guaniao.content.bird.BirdFlockSoundLimiter;
 import EdDYON.guaniao.event.CrowNestLifecycleEvents;
 import EdDYON.guaniao.event.EarthwormRainEvents;
@@ -97,6 +98,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         BirdHabitatCache.registerCallbacks();
         NightHeronLandingSelector.registerCallbacks();
         NightHeronShorelineCache.registerCallbacks();
+        BreadcrumbSearchCache.registerCallbacks();
         BirdFlockSoundLimiter.registerCallbacks();
         HummingbirdEcologyEvents.registerCallbacks();
         BirdPopulationTracker.registerCallbacks();

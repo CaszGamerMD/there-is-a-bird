@@ -110,6 +110,25 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
             "import software.bernie.geckolib.core.animation.*;",
             "import com.geckolib.animation.AnimationController;\nimport com.geckolib.animation.RawAnimation;")
         expected = expected.replace("new AnimationController<>(this, ", "new AnimationController<>(")
+        # Typed ValueInput/ValueOutput serialization and pre-tame veto are
+        # separately guarded by check-hummingbird-persistence-26-2.py. Keep
+        # comparing the rest of the authored bird AI/animation byte-for-byte.
+        expected = expected.replace("import net.minecraft.nbt.CompoundTag;\n", "")
+        expected = expected.replace("import net.minecraft.resources.ResourceLocation;", "import net.minecraft.resources.Identifier;")
+        expected = expected.replace("import net.minecraftforge.event.ForgeEventFactory;\n", "")
+        expected = expected.replace("import net.minecraft.core.BlockPos;\n", "import net.minecraft.core.BlockPos;\nimport net.minecraft.core.UUIDUtil;\n")
+        expected = expected.replace("import net.minecraft.world.level.ServerLevelAccessor;\n",
+                                    "import net.minecraft.world.level.ServerLevelAccessor;\nimport net.minecraft.world.level.storage.ValueInput;\nimport net.minecraft.world.level.storage.ValueOutput;\n")
+        expected = expected.replace("import EdDYON.guaniao.event.BirdPopulationTracker;\n",
+                                    "import EdDYON.guaniao.event.BirdPopulationTracker;\nimport EdDYON.guaniao.event.BirdTamePermissionEvents;\n")
+        expected = expected.replace("import com.geckolib.animatable.instance.AnimatableInstanceCache;\n",
+                                    "import com.geckolib.animatable.instance.AnimatableInstanceCache;\nimport com.geckolib.animatable.manager.AnimatableManager;\n")
+        expected = expected.replace('new ResourceLocation("guaniao", ', 'Identifier.fromNamespaceAndPath("guaniao", ')
+        expected = expected.replace("!ForgeEventFactory.onAnimalTame(this, player)",
+                                    "BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)")
+    if relative.endswith(("/crow/CrowEntity.java", "/kestrel/KestrelEntity.java", "/seagull/SeagullEntity.java")):
+        expected = expected.replace("!net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)",
+                                    "EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)")
 
     # The original cancellable Forge fish-capture event is now an equivalent
     # Fabric callback. Keep the cancellation BEFORE discarding the fish.
@@ -121,11 +140,20 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
             "NightHeronFishCaptureEvent.isCancelled(this, fish, purpose)")
 
     current = p.read_text("utf-8")
+    if relative.endswith("/hummingbird/HummingbirdEntity.java"):
+        start = "    @Override public void addAdditionalSaveData(CompoundTag tag) {"
+        replacement_start = "    @Override protected void addAdditionalSaveData(ValueOutput output) {"
+        end = "    @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {"
+        assert start in expected and replacement_start in current and end in expected and end in current
+        expected = expected[:expected.index(start)] + current[current.index(replacement_start):current.index(end)] + expected[expected.index(end):]
     # Git stores normalized line endings; CRLF in individual source files is
     # immaterial to this preservation test.
     expected = expected.replace("\r\n", "\n")
     current = current.replace("\r\n", "\n")
     if current != expected:
+        if relative.endswith("/hummingbird/HummingbirdEntity.java"):
+            import difflib
+            print("".join(list(difflib.unified_diff(expected.splitlines(True), current.splitlines(True), fromfile="expected", tofile="current"))[:90]))
         raise SystemExit(f"{relative}: unexpected bird AI/animation logic changes in GeckoLib migration")
     if "software.bernie.geckolib" in current:
         raise SystemExit(f"{relative}: old GeckoLib API remains in a migrated bird entity")

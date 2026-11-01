@@ -1102,7 +1102,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBird
             return;
         }
         if (!this.isTame() && this.affinity >= TAME_AFFINITY_THRESHOLD && !this.isRememberingPlayer(player)
-                && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+                && EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
             this.tame(player);
             this.setBirdCommandMode(BirdCommandMode.FOLLOW);
         } else if (this.isTame() && this.getOwnerUUID() == null) {

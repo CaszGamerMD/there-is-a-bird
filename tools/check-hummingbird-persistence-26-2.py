@@ -59,8 +59,25 @@ assert 'tame(player); setBirdCommandMode(BirdCommandMode.FOLLOW)' in entity
 assert 'tamingProgress = Math.max(0, HummingbirdConfig.tamingFeeds() - 1)' in entity
 assert 'ForgeEventFactory' not in entity
 
+# The same pre-tame veto is used by the other three species that originally
+# called ForgeEventFactory.onAnimalTame, without changing their feeding odds.
+for species, old_condition in (
+    ("kestrel", 'this.getRandom().nextInt(4) == 0'),
+    ("seagull", 'this.getRandom().nextInt(3) == 0'),
+    ("crow", 'this.affinity >= TAME_AFFINITY_THRESHOLD'),
+):
+    name = species.capitalize() + "Entity.java"
+    if species == "crow":
+        name = "CrowEntity.java"
+    source_path = f"content/bird/{species}/{name}"
+    old, new = original(source_path), current(source_path)
+    assert old.count("ForgeEventFactory.onAnimalTame(this, player)") == 1, source_path
+    assert new.count("BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)") == 1, source_path
+    assert "ForgeEventFactory.onAnimalTame" not in new
+    assert old_condition in old and old_condition in new, f"taming odds/affinity changed: {species}"
+
 proof = (ROOT / "tools/port-probes/GuaniaoHummingbirdPersistenceProof.java").read_text(encoding="utf-8")
 for required in ('UUIDUtil.CODEC', 'ItemStack.CODEC', 'ValueInput', 'ValueOutput',
                  'BirdTamePermissionEvents.BEFORE_TAME.register'):
     assert required in proof
-print("PASS: hummingbird old-world save keys, typed NBT codecs, carrying, owner taming and veto parity")
+print("PASS: hummingbird old-world saves, typed NBT codecs and pre-tame vetoes for four birds")

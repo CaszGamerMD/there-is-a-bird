@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Bird droppings retain source gameplay and tick cadence with Fabric entity attachments."""
 from pathlib import Path
+import difflib
 import re
 import subprocess
 
@@ -19,6 +20,9 @@ current = (root / rel).read_text("utf-8")
 def without_persistence(source, first_line):
     source = source.replace("import net.minecraft.nbt.CompoundTag;\n", "")
     source = source.replace("import EdDYON.guaniao.content.bird.BirdEntityAttachments;\n", "")
+    source = source.replace("import net.minecraft.world.level.block.Blocks;\n", "")
+    source = source.replace("bird.isInWater()\n                || bird.level().getBlockState(bird.blockPosition()).is(Blocks.BUBBLE_COLUMN)",
+                            "bird.isInWaterOrBubble()")
     source = re.sub(r'    private static final String TAG_COOLDOWN = "GuaniaoDroppingCooldown";\n', "", source)
     start = source.index(first_line)
     end = source.index("    private static boolean trySpawnDropping(", start)
@@ -29,8 +33,11 @@ def without_persistence(source, first_line):
                             "// refresh cooldown")
     return source
 
-assert without_persistence(current, "        Integer previousCooldown =") == without_persistence(
-    expected, "        CompoundTag data ="), "Bird dropping logic outside persistent cooldown changed"
+actual_rest = without_persistence(current, "        Integer previousCooldown =")
+expected_rest = without_persistence(expected, "        CompoundTag data =")
+if actual_rest != expected_rest:
+    print("".join(list(difflib.unified_diff(expected_rest.splitlines(True), actual_rest.splitlines(True)))[:40]))
+    raise AssertionError("Bird dropping logic outside persistent cooldown changed")
 for formula in (
     "INITIAL_JITTER_TICKS = 20 * 30", "CHECK_INTERVAL_TICKS = 20",
     "int cooldown = Math.max(0, previousCooldown - CHECK_INTERVAL_TICKS)",

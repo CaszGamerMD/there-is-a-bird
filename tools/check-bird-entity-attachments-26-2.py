@@ -45,7 +45,8 @@ for rel in ("event/BirdMoltEvents.java", "event/BirdDroppingEvents.java", "event
 molt = migrated("event/BirdMoltEvents.java")
 for token in ("previousCooldown == null", "previousCooldown - CHECK_INTERVAL_TICKS",
               "if (tryMolt(entity))", "MOLT_MIN_TICKS, MOLT_MAX_TICKS",
-              "RETRY_MIN_TICKS, RETRY_MAX_TICKS", "hasNearbyPlayer(level, entity)"):
+              "RETRY_MIN_TICKS, RETRY_MAX_TICKS", "hasNearbyPlayer(level, entity)",
+              "entity.getRandom()", "bird.isInWater()", "Blocks.BUBBLE_COLUMN"):
     assert token in molt, f"Molt cadence or spawn behavior lost: {token}"
 
 population = migrated("event/BirdPopulationTracker.java")
@@ -60,6 +61,11 @@ for token in ("lastNearbyPlayerTime == null", "lastNearbyPlayerTime = now",
 walking = migrated("content/bird/BirdGroundLocomotion.java")
 for token in ("savedFactor != null", "Float.isFinite(savedFactor)",
               "1.0F - profile.individualVariance", "1.0F + profile.individualVariance",
-              "bird.setAttached(BirdEntityAttachments.INDIVIDUAL_WALK_FACTOR, individualFactor)"):
+              "bird.setAttached(BirdEntityAttachments.INDIVIDUAL_WALK_FACTOR, individualFactor)",
+              'Identifier.fromNamespaceAndPath("guaniao", "ground_locomotion")',
+              "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL", "multiplier - 1.0D",
+              "attribute.addTransientModifier(", "attribute.removeModifier(GROUND_SPEED_MODIFIER_ID)",
+              "bird.isInWater()", "Blocks.BUBBLE_COLUMN"):
     assert token in walking, f"Individual walking speed persistence lost: {token}"
+assert "include 'EdDYON/guaniao/content/bird/BirdGroundLocomotion.java'" in (root / "build.gradle").read_text("utf-8")
 print("ENTITY ATTACHMENTS OK: five typed persistent fields, original drop/molt and culling behavior.")

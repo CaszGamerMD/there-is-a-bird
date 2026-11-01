@@ -20,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -78,7 +79,8 @@ public final class BirdDroppingEvents {
     }
 
     private static boolean trySpawnDropping(ServerLevel level, LivingEntity bird, boolean laxative) {
-        if (bird.isDeadOrDying() || bird.isRemoved() || bird.isInWaterOrBubble() || !bird.isAlive()) {
+        if (bird.isDeadOrDying() || bird.isRemoved() || bird.isInWater()
+                || bird.level().getBlockState(bird.blockPosition()).is(Blocks.BUBBLE_COLUMN) || !bird.isAlive()) {
             return false;
         }
         Vec3 spawnPosition = droppingSpawnPosition(bird);

@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Blocks;
 
 /**
  * Molting: live birds occasionally shed a feather of their species' color where they
@@ -36,7 +37,7 @@ public final class BirdMoltEvents {
         Integer previousCooldown = entity.getAttached(BirdEntityAttachments.MOLT_COOLDOWN);
         if (previousCooldown == null) {
             entity.setAttached(BirdEntityAttachments.MOLT_COOLDOWN,
-                    randomBetween(entity.level().random, MOLT_MIN_TICKS, MOLT_MAX_TICKS));
+                    randomBetween(entity.getRandom(), MOLT_MIN_TICKS, MOLT_MAX_TICKS));
             return;
         }
 
@@ -48,15 +49,16 @@ public final class BirdMoltEvents {
 
         if (tryMolt(entity)) {
             entity.setAttached(BirdEntityAttachments.MOLT_COOLDOWN,
-                    randomBetween(entity.level().random, MOLT_MIN_TICKS, MOLT_MAX_TICKS));
+                    randomBetween(entity.getRandom(), MOLT_MIN_TICKS, MOLT_MAX_TICKS));
         } else {
             entity.setAttached(BirdEntityAttachments.MOLT_COOLDOWN,
-                    randomBetween(entity.level().random, RETRY_MIN_TICKS, RETRY_MAX_TICKS));
+                    randomBetween(entity.getRandom(), RETRY_MIN_TICKS, RETRY_MAX_TICKS));
         }
     }
 
     private static boolean tryMolt(LivingEntity bird) {
-        if (bird.isDeadOrDying() || bird.isRemoved() || !bird.isAlive() || bird.isInWaterOrBubble()) {
+        if (bird.isDeadOrDying() || bird.isRemoved() || !bird.isAlive() || bird.isInWater()
+                || bird.level().getBlockState(bird.blockPosition()).is(Blocks.BUBBLE_COLUMN)) {
             return false;
         }
         if (!(bird.level() instanceof ServerLevel level)

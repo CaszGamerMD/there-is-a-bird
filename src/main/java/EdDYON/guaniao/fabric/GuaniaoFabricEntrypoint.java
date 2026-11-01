@@ -1,6 +1,8 @@
 package EdDYON.guaniao.fabric;
 
 import EdDYON.guaniao.config.BirdConfigManager;
+import EdDYON.guaniao.config.HummingbirdConfig;
+import EdDYON.guaniao.content.bird.hummingbird.HummingbirdEcologyEvents;
 import EdDYON.guaniao.content.dropping.BirdDroppingUtil;
 import EdDYON.guaniao.registry.GuaniaoLootModifierSerializers;
 import EdDYON.guaniao.content.dropping.BirdDroppingPressurePlatePulse;
@@ -72,12 +74,14 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
 
         // Preserve the source global/world-scoped configuration lifecycle.
         BirdConfigManager.loadOrCreateDefaults();
+        HummingbirdConfig.loadOrCreateDefaults();
         BirdConfigLifecycleEvents.registerCallbacks();
 
         // Existing behavior: track active birds, tick rain worms and clean up
         // transient nest and photo state at exactly the corresponding hooks.
         BirdServerTickManager.registerCallbacks();
         BirdFlockSoundLimiter.registerCallbacks();
+        HummingbirdEcologyEvents.registerCallbacks();
         BirdPopulationTracker.registerCallbacks();
         BirdAdvancementEvents.registerCallbacks();
         CassowaryThreatEvents.registerCallbacks();

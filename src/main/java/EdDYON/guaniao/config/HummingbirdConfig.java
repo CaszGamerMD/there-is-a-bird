@@ -1,54 +1,112 @@
 package EdDYON.guaniao.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import EdDYON.guaniao.GuaniaoMod;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import net.fabricmc.loader.api.FabricLoader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-/** Server behavior settings, separate from the existing species population presets. */
+/** Persisted Fabric settings; the original Forge limits and defaults are unchanged. */
 public final class HummingbirdConfig {
-    public static final ForgeConfigSpec SPEC;
-    private static final ForgeConfigSpec.IntValue NECTAR, FEEDS, PERIOD, GRACE, COOLDOWN_MIN, COOLDOWN_MAX,
-            SCAN, CROPS, SEED_MIN, SEED_MAX, TERRITORY_COOLDOWN;
-    private static final ForgeConfigSpec.DoubleValue RADIUS, SEED_CHANCE, MALE_CHANCE, FEMALE_CHANCE, BONUS;
-    private static final ForgeConfigSpec.BooleanValue POLLINATION;
-    static {
-        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
-        b.push("hummingbird");
-        NECTAR = b.defineInRange("nectarTicks", 60, 20, 200);
-        FEEDS = b.defineInRange("tamingFeeds", 5, 1, 20);
-        POLLINATION = b.define("pollinationEnabled", true);
-        PERIOD = b.defineInRange("pollinationPeriodTicks", 400, 100, 2400);
-        RADIUS = b.defineInRange("pollinationRadius", 8.0, 1.0, 16.0);
-        GRACE = b.defineInRange("pollinationGraceTicks", 120, 0, 400);
-        COOLDOWN_MIN = b.defineInRange("flowerCooldownMinTicks", 1200, 200, 12000);
-        COOLDOWN_MAX = b.defineInRange("flowerCooldownMaxTicks", 2400, 200, 12000);
-        SCAN = b.defineInRange("flowerScanBudget", 4096, 256, 16384);
-        CROPS = b.defineInRange("cropBudget", 512, 16, 4096);
-        SEED_MIN = b.defineInRange("seedMinTicks", 12000, 1200, 72000);
-        SEED_MAX = b.defineInRange("seedMaxTicks", 18000, 1200, 72000);
-        SEED_CHANCE = b.defineInRange("seedChance", 0.35, 0.0, 1.0);
-        MALE_CHANCE = b.defineInRange("territoryMaleChance", 0.20, 0.0, 1.0);
-        FEMALE_CHANCE = b.defineInRange("territoryFemaleChance", 0.02, 0.0, 1.0);
-        TERRITORY_COOLDOWN = b.defineInRange("territoryCooldownTicks", 2400, 200, 12000);
-        BONUS = b.defineInRange("gardenBonus", 0.15, 0.0, 0.15);
-        b.pop();
-        SPEC = b.build();
-    }
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Path PATH = FabricLoader.getInstance().getConfigDir()
+            .resolve(GuaniaoMod.MOD_ID).resolve("hummingbird.json");
+    private static volatile Settings settings = new Settings();
+
     private HummingbirdConfig() { }
-    public static int nectarTicks() { return NECTAR.get(); }
-    public static int tamingFeeds() { return FEEDS.get(); }
-    public static boolean pollinationEnabled() { return POLLINATION.get(); }
-    public static int pollinationPeriodTicks() { return PERIOD.get(); }
-    public static double pollinationRadius() { return RADIUS.get(); }
-    public static int pollinationGraceTicks() { return GRACE.get(); }
-    public static int flowerCooldownMinTicks() { return COOLDOWN_MIN.get(); }
-    public static int flowerCooldownMaxTicks() { return Math.max(COOLDOWN_MIN.get(), COOLDOWN_MAX.get()); }
-    public static int flowerScanBudget() { return SCAN.get(); }
-    public static int cropBudget() { return CROPS.get(); }
-    public static int seedMinTicks() { return SEED_MIN.get(); }
-    public static int seedMaxTicks() { return Math.max(SEED_MIN.get(), SEED_MAX.get()); }
-    public static double seedChance() { return SEED_CHANCE.get(); }
-    public static double territoryMaleChance() { return MALE_CHANCE.get(); }
-    public static double territoryFemaleChance() { return FEMALE_CHANCE.get(); }
-    public static int territoryCooldownTicks() { return TERRITORY_COOLDOWN.get(); }
-    public static double gardenBonus() { return BONUS.get(); }
+
+    public static synchronized void loadOrCreateDefaults() {
+        try {
+            Files.createDirectories(PATH.getParent());
+            if (Files.exists(PATH)) {
+                try (Reader reader = Files.newBufferedReader(PATH, StandardCharsets.UTF_8)) {
+                    JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+                    if (!root.has("hummingbird") || !root.get("hummingbird").isJsonObject()) {
+                        throw new IllegalArgumentException("Missing hummingbird settings object");
+                    }
+                    Settings loaded = GSON.fromJson(root.getAsJsonObject("hummingbird"), Settings.class);
+                    if (loaded == null) throw new IllegalArgumentException("Empty hummingbird settings");
+                    settings = normalized(loaded);
+                }
+            } else {
+                JsonObject root = new JsonObject();
+                root.add("hummingbird", GSON.toJsonTree(settings));
+                Files.writeString(PATH, GSON.toJson(root), StandardCharsets.UTF_8);
+            }
+        } catch (Exception exception) {
+            GuaniaoMod.LOGGER.warn("Failed to load hummingbird settings; using defaults (file left unchanged)", exception);
+            settings = new Settings();
+        }
+    }
+
+    private static int bounded(int value, int min, int max) { return Math.max(min, Math.min(max, value)); }
+    private static double bounded(double value, double min, double max) {
+        return Double.isFinite(value) ? Math.max(min, Math.min(max, value)) : min;
+    }
+
+    private static Settings normalized(Settings input) {
+        Settings copy = new Settings();
+        copy.nectarTicks = bounded(input.nectarTicks, 20, 200);
+        copy.tamingFeeds = bounded(input.tamingFeeds, 1, 20);
+        copy.pollinationEnabled = input.pollinationEnabled;
+        copy.pollinationPeriodTicks = bounded(input.pollinationPeriodTicks, 100, 2400);
+        copy.pollinationRadius = bounded(input.pollinationRadius, 1, 16);
+        copy.pollinationGraceTicks = bounded(input.pollinationGraceTicks, 0, 400);
+        copy.flowerCooldownMinTicks = bounded(input.flowerCooldownMinTicks, 200, 12000);
+        copy.flowerCooldownMaxTicks = bounded(input.flowerCooldownMaxTicks, 200, 12000);
+        copy.flowerScanBudget = bounded(input.flowerScanBudget, 256, 16384);
+        copy.cropBudget = bounded(input.cropBudget, 16, 4096);
+        copy.seedMinTicks = bounded(input.seedMinTicks, 1200, 72000);
+        copy.seedMaxTicks = bounded(input.seedMaxTicks, 1200, 72000);
+        copy.seedChance = bounded(input.seedChance, 0, 1);
+        copy.territoryMaleChance = bounded(input.territoryMaleChance, 0, 1);
+        copy.territoryFemaleChance = bounded(input.territoryFemaleChance, 0, 1);
+        copy.territoryCooldownTicks = bounded(input.territoryCooldownTicks, 200, 12000);
+        copy.gardenBonus = bounded(input.gardenBonus, 0, 0.15);
+        return copy;
+    }
+
+    private static final class Settings {
+        int nectarTicks = 60;
+        int tamingFeeds = 5;
+        boolean pollinationEnabled = true;
+        int pollinationPeriodTicks = 400;
+        double pollinationRadius = 8.0;
+        int pollinationGraceTicks = 120;
+        int flowerCooldownMinTicks = 1200;
+        int flowerCooldownMaxTicks = 2400;
+        int flowerScanBudget = 4096;
+        int cropBudget = 512;
+        int seedMinTicks = 12000;
+        int seedMaxTicks = 18000;
+        double seedChance = 0.35;
+        double territoryMaleChance = 0.20;
+        double territoryFemaleChance = 0.02;
+        int territoryCooldownTicks = 2400;
+        double gardenBonus = 0.15;
+    }
+
+    public static int nectarTicks() { return settings.nectarTicks; }
+    public static int tamingFeeds() { return settings.tamingFeeds; }
+    public static boolean pollinationEnabled() { return settings.pollinationEnabled; }
+    public static int pollinationPeriodTicks() { return settings.pollinationPeriodTicks; }
+    public static double pollinationRadius() { return settings.pollinationRadius; }
+    public static int pollinationGraceTicks() { return settings.pollinationGraceTicks; }
+    public static int flowerCooldownMinTicks() { return settings.flowerCooldownMinTicks; }
+    public static int flowerCooldownMaxTicks() { return Math.max(settings.flowerCooldownMinTicks, settings.flowerCooldownMaxTicks); }
+    public static int flowerScanBudget() { return settings.flowerScanBudget; }
+    public static int cropBudget() { return settings.cropBudget; }
+    public static int seedMinTicks() { return settings.seedMinTicks; }
+    public static int seedMaxTicks() { return Math.max(settings.seedMinTicks, settings.seedMaxTicks); }
+    public static double seedChance() { return settings.seedChance; }
+    public static double territoryMaleChance() { return settings.territoryMaleChance; }
+    public static double territoryFemaleChance() { return settings.territoryFemaleChance; }
+    public static int territoryCooldownTicks() { return settings.territoryCooldownTicks; }
+    public static double gardenBonus() { return settings.gardenBonus; }
     public static int gardenRadius() { return 16; }
 }

@@ -12,6 +12,7 @@
     "WeightedPressurePlateBlockMixin",
     "BirdDeathDropsMixin",
     "BirdSleepSoundMixin",
+    "HummingbirdHabitatBlockUpdateMixin",
     "BurialPlumeAnvilMixin",
     "ItemEntityAgeAccessor",
     "BirdPotentialSpawnsMixin",

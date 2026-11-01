@@ -21,6 +21,8 @@ names = {
     "LAST_NEARBY_PLAYER_TIME": ("last_nearby_player_time", "LONG"),
     "TRANSIENT_FLYBY_SPAWN_TIME": ("transient_flyby_spawn_time", "LONG"),
     "INDIVIDUAL_WALK_FACTOR": ("individual_walk_factor", "FLOAT"),
+    "NIGHT_HERON_DELIVERED_FISH": ("night_heron_delivered_fish", "BOOL"),
+    "SEAGULL_STEAL_COOLDOWN_UNTIL": ("seagull_steal_cooldown_until", "LONG"),
 }
 for name, (path, codec) in names.items():
     pattern = (r"AttachmentType<\w+>\s+" + name + r"\s*=\s*AttachmentRegistry.createPersistent\(\s*"
@@ -30,7 +32,11 @@ assert "BirdEntityAttachments.registerAttachments();" in migrated("fabric/Guania
 assert "include 'EdDYON/guaniao/content/bird/BirdEntityAttachments.java'" in (root / "build.gradle").read_text("utf-8")
 
 for rel in ("event/BirdMoltEvents.java", "event/BirdDroppingEvents.java",
-            "event/BirdPopulationTracker.java", "content/bird/BirdGroundLocomotion.java"):
+            "event/BirdPopulationTracker.java", "content/bird/BirdGroundLocomotion.java",
+            "content/bird/nightheron/NightHeronFishTask.java",
+            "content/bird/nightheron/NightHeronEatThrownFishGoal.java",
+            "content/bird/nightheron/NightHeronEntity.java",
+            "content/bird/seagull/SeagullEntity.java"):
     new = migrated(rel)
     assert "getPersistentData()" not in new, f"Forge entity NBT remains in {rel}"
     assert "import EdDYON.guaniao.content.bird.BirdEntityAttachments;" in new or rel.startswith("content/bird/")
@@ -68,4 +74,22 @@ for token in ("savedFactor != null", "Float.isFinite(savedFactor)",
               "bird.isInWater()", "Blocks.BUBBLE_COLUMN"):
     assert token in walking, f"Individual walking speed persistence lost: {token}"
 assert "include 'EdDYON/guaniao/content/bird/BirdGroundLocomotion.java'" in (root / "build.gradle").read_text("utf-8")
-print("ENTITY ATTACHMENTS OK: five typed persistent fields, original drop/molt and culling behavior.")
+
+fish_task = migrated("content/bird/nightheron/NightHeronFishTask.java")
+fish_goal = migrated("content/bird/nightheron/NightHeronEatThrownFishGoal.java")
+heron = migrated("content/bird/nightheron/NightHeronEntity.java")
+for token in ("getAttachedOrElse(BirdEntityAttachments.NIGHT_HERON_DELIVERED_FISH, false)",
+              "item.setAttached(BirdEntityAttachments.NIGHT_HERON_DELIVERED_FISH, true)",
+              "markOwnerDelivery(drop)"):
+    assert token in fish_task, f"Owner-gift fish protection lost: {token}"
+assert fish_goal.count("!NightHeronFishTask.wasOwnerDelivery(") == 2
+assert fish_goal.count("|| NightHeronFishTask.wasOwnerDelivery(") == 1
+assert "NightHeronFishTask.markOwnerDelivery(drop)" in heron
+assert "|| NightHeronFishTask.wasOwnerDelivery(itemEntity)" in heron
+
+seagull = migrated("content/bird/seagull/SeagullEntity.java")
+for token in ("player.getAttachedOrElse(BirdEntityAttachments.SEAGULL_STEAL_COOLDOWN_UNTIL, 0L) <= now",
+              "this.player.setAttached(BirdEntityAttachments.SEAGULL_STEAL_COOLDOWN_UNTIL,",
+              "this.seagull.level().getGameTime() + BirdConfigManager.seagullPlayerCooldownTicks()"):
+    assert token in seagull, f"Per-player seagull theft limit lost: {token}"
+print("ENTITY ATTACHMENTS OK: seven typed persistent fields, original drop/molt, culling, fish gifts and theft.")

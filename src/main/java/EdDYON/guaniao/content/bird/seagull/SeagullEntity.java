@@ -14,6 +14,7 @@ import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.BirdActivitySchedule;
 import EdDYON.guaniao.content.bird.BirdFoodSafety;
 import EdDYON.guaniao.content.bird.BirdGroundAnimation;
+import EdDYON.guaniao.content.bird.BirdEntityAttachments;
 import EdDYON.guaniao.content.bird.BirdMovementAnimationController;
 import EdDYON.guaniao.content.bird.BirdItemSafety;
 import EdDYON.guaniao.content.bird.BirdScanBudget;
@@ -121,7 +122,6 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
     private static final BirdFlightProfile FLIGHT_PROFILE = BirdFlightProfile.SEAGULL;
     private static final byte TAMING_FAILED_EVENT = 6;
     private static final byte TAMING_SUCCEEDED_EVENT = 7;
-    private static final String PLAYER_STEAL_COOLDOWN_KEY = "guaniaoSeagullStealCooldownUntil";
     private static final String NBT_HELD_FOOD = "SeagullHeldFood";
     private static final String NBT_HELD_FOOD_TICKS = "SeagullHeldFoodTicks";
     private static final String NBT_STEAL_COOLDOWN = "SeagullStealCooldown";
@@ -1455,7 +1455,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
             this.player = this.seagull.level().getEntitiesOfClass(Player.class,
                             this.seagull.getBoundingBox().inflate(11.0D, 5.0D, 11.0D),
                     player -> !player.isSpectator() && !player.isCreative()
-                                    && player.getPersistentData().getLong(PLAYER_STEAL_COOLDOWN_KEY) <= now
+                                    && player.getAttachedOrElse(BirdEntityAttachments.SEAGULL_STEAL_COOLDOWN_UNTIL, 0L) <= now
                                     && this.findStealableHand(player) != null
                                     && !this.hasCompetingSeagull(player))
                     .stream().min(java.util.Comparator.comparingDouble(this.seagull::distanceToSqr)).orElse(null);
@@ -1519,7 +1519,7 @@ public class SeagullEntity extends TamableAnimal implements GeoEntity, ScalableB
                         return;
                     }
                     stack.shrink(1);
-                    this.player.getPersistentData().putLong(PLAYER_STEAL_COOLDOWN_KEY,
+                    this.player.setAttached(BirdEntityAttachments.SEAGULL_STEAL_COOLDOWN_UNTIL,
                             this.seagull.level().getGameTime() + BirdConfigManager.seagullPlayerCooldownTicks());
                     this.seagull.stealCooldownTicks = 1200 + this.seagull.getRandom().nextInt(1201);
                     BirdAdvancements.awardSeagullStoleFood(this.player);

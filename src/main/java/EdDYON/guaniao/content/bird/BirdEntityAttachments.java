@@ -21,12 +21,16 @@ public final class BirdEntityAttachments {
             Identifier.fromNamespaceAndPath("guaniao", "transient_flyby_spawn_time"), Codec.LONG);
     public static final AttachmentType<Float> INDIVIDUAL_WALK_FACTOR = AttachmentRegistry.createPersistent(
             Identifier.fromNamespaceAndPath("guaniao", "individual_walk_factor"), Codec.FLOAT);
+    public static final AttachmentType<Boolean> NIGHT_HERON_DELIVERED_FISH = AttachmentRegistry.createPersistent(
+            Identifier.fromNamespaceAndPath("guaniao", "night_heron_delivered_fish"), Codec.BOOL);
+    public static final AttachmentType<Long> SEAGULL_STEAL_COOLDOWN_UNTIL = AttachmentRegistry.createPersistent(
+            Identifier.fromNamespaceAndPath("guaniao", "seagull_steal_cooldown_until"), Codec.LONG);
 
     private BirdEntityAttachments() {
     }
 
     /** Eagerly register attachment types before loading entities from disk. */
     public static void registerAttachments() {
-        // Class initialization registers all five persistent attachment types.
+        // Class initialization registers all seven persistent attachment types.
     }
 }

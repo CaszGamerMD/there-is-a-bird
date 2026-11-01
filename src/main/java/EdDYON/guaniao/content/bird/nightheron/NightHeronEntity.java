@@ -639,7 +639,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
             ItemEntity drop = this.spawnAtLocation(this.getHeldFishForRendering());
             if (drop != null) {
                 drop.setTarget(this.getOwnerUUID());
-                drop.getPersistentData().putBoolean(NightHeronFishTask.DELIVERED_MARKER, true);
+                NightHeronFishTask.markOwnerDelivery(drop);
                 this.setHeldFish(ItemStack.EMPTY, HeldFishPurpose.NONE);
             }
         }
@@ -1020,7 +1020,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
 
     void eatThrownFish(ItemEntity itemEntity) {
         if (this.level().isClientSide() || this.hasHeldFishForRendering() || !this.canEatThrownFish()
-                || itemEntity.getPersistentData().getBoolean(NightHeronFishTask.DELIVERED_MARKER)) return;
+                || NightHeronFishTask.wasOwnerDelivery(itemEntity)) return;
         ItemStack stack = itemEntity.getItem();
         if (!NightHeronEntity.isDroppedFishCandidate(stack)) {
             return;

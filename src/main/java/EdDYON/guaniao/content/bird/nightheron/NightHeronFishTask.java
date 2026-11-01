@@ -1,6 +1,7 @@
 package EdDYON.guaniao.content.bird.nightheron;
 
 import EdDYON.guaniao.config.BirdConfigManager;
+import EdDYON.guaniao.content.bird.BirdEntityAttachments;
 import EdDYON.guaniao.content.bird.command.BirdCommandMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -14,13 +15,21 @@ import net.minecraft.world.phys.Vec3;
 
 /** An occasional gift in the existing mouth slot; no fishing trip or world scan. */
 public final class NightHeronFishTask {
-    public static final String DELIVERED_MARKER = "guaniao:night_heron_delivery";
     static final float CATCH_CHANCE = 0.5F;
     private final NightHeronEntity bird;
     private int giftRemaining = -1;
     private boolean delivering;
 
     NightHeronFishTask(NightHeronEntity bird) { this.bird = bird; }
+
+    /** Item entities delivered to an owner must not be picked up as foraging fish. */
+    static boolean wasOwnerDelivery(ItemEntity item) {
+        return item.getAttachedOrElse(BirdEntityAttachments.NIGHT_HERON_DELIVERED_FISH, false);
+    }
+
+    static void markOwnerDelivery(ItemEntity item) {
+        item.setAttached(BirdEntityAttachments.NIGHT_HERON_DELIVERED_FISH, true);
+    }
 
     boolean permitsTravel() {
         BirdCommandMode mode = this.bird.getBirdCommandMode();
@@ -95,7 +104,7 @@ public final class NightHeronFishTask {
                 drop.setDeltaMovement(Vec3.ZERO);
                 drop.setTarget(owner.getUUID());
                 drop.setPickUpDelay(10);
-                drop.getPersistentData().putBoolean(DELIVERED_MARKER, true);
+                markOwnerDelivery(drop);
                 transferred = this.bird.level().addFreshEntity(drop);
             }
             if (!transferred) return false;

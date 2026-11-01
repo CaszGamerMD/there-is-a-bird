@@ -167,6 +167,25 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
         expected = expected.replace(
             "MinecraftForge.EVENT_BUS.post(new NightHeronFishCaptureEvent(this, fish, purpose))",
             "NightHeronFishCaptureEvent.isCancelled(this, fish, purpose)")
+        expected = expected.replace(
+            "drop.getPersistentData().putBoolean(NightHeronFishTask.DELIVERED_MARKER, true)",
+            "NightHeronFishTask.markOwnerDelivery(drop)")
+        expected = expected.replace(
+            "itemEntity.getPersistentData().getBoolean(NightHeronFishTask.DELIVERED_MARKER)",
+            "NightHeronFishTask.wasOwnerDelivery(itemEntity)")
+
+    if relative.endswith("/seagull/SeagullEntity.java"):
+        expected = expected.replace(
+            "import EdDYON.guaniao.content.bird.BirdGroundAnimation;\n",
+            "import EdDYON.guaniao.content.bird.BirdGroundAnimation;\n"
+            "import EdDYON.guaniao.content.bird.BirdEntityAttachments;\n")
+        expected = expected.replace('    private static final String PLAYER_STEAL_COOLDOWN_KEY = "guaniaoSeagullStealCooldownUntil";\n', "")
+        expected = expected.replace(
+            "player.getPersistentData().getLong(PLAYER_STEAL_COOLDOWN_KEY)",
+            "player.getAttachedOrElse(BirdEntityAttachments.SEAGULL_STEAL_COOLDOWN_UNTIL, 0L)")
+        expected = expected.replace(
+            "this.player.getPersistentData().putLong(PLAYER_STEAL_COOLDOWN_KEY,",
+            "this.player.setAttached(BirdEntityAttachments.SEAGULL_STEAL_COOLDOWN_UNTIL,")
 
     current = p.read_text("utf-8")
     if relative.endswith("/hummingbird/HummingbirdEntity.java"):

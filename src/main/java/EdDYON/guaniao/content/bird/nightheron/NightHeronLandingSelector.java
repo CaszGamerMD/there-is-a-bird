@@ -1,6 +1,5 @@
 package EdDYON.guaniao.content.bird.nightheron;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.content.bird.BirdScanBudget;
 import EdDYON.guaniao.content.bird.flock.BirdFlockManager;
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -26,11 +26,7 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class NightHeronLandingSelector {
     private static final int MAX_LANDING_CACHE_ENTRIES = 1024;
     private static final int MAX_COVER_CACHE_ENTRIES = 1024;
@@ -304,11 +300,12 @@ public final class NightHeronLandingSelector {
         }).sum();
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            LEVEL_CACHES.remove(level);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        LEVEL_CACHES.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static long nextRefreshAt(long now, int hash) {

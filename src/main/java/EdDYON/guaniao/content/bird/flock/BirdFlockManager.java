@@ -1,10 +1,10 @@
 package EdDYON.guaniao.content.bird.flock;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.BirdScanBudget;
 import EdDYON.guaniao.content.bird.flock.FlockCompatibleBird;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -12,9 +12,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -27,7 +24,6 @@ import java.util.WeakHashMap;
  * Short-lived, section-local candidate cache shared by flock goals. The final
  * radius and compatibility checks always run against live entities.
  */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdFlockManager {
     private static final int MAX_CACHE_ENTRIES = 4096;
     private static final Map<ServerLevel, LevelCache> LEVEL_CACHES = new WeakHashMap<>();
@@ -106,11 +102,12 @@ public final class BirdFlockManager {
         return result;
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
-            LEVEL_CACHES.remove(serverLevel);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        LEVEL_CACHES.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private record CacheKey(long section, EntityType<?> type, int radiusBucket, Class<?> entityClass) {

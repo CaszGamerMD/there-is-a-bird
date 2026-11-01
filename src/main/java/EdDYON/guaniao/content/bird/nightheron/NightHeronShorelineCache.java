@@ -1,6 +1,5 @@
 package EdDYON.guaniao.content.bird.nightheron;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.content.bird.BirdScanBudget;
 import java.util.ArrayList;
@@ -10,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -20,12 +20,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /** Shares heightmap-assisted shoreline probes between night herons in the same section. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class NightHeronShorelineCache {
     private static final int MAX_ENTRIES_PER_LEVEL = 2048;
     private static final int MAX_CANDIDATES = 24;
@@ -78,11 +74,12 @@ public final class NightHeronShorelineCache {
                 || isPreferredShoreBlock(below);
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            LEVEL_CACHES.remove(level);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        LEVEL_CACHES.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static List<BlockPos> scan(ServerLevel level, BlockPos origin) {

@@ -12,12 +12,15 @@ for text in (
     'GpuFormat.RGBA8_UNORM',
     'world.getColorTexture() == null', 'world.getDepthTexture() == null',
     'CameraFramebufferSize.of(world.width, world.height)',
-    'target.copyColorFrom(world);', 'target.copyDepthFrom(world);',
+    'RenderSystem.getDevice().createCommandEncoder().copyTextureToTexture(',
+    'world.getColorTexture(), target.getColorTexture(),',
+    'target.copyDepthFrom(world);',
     'target.destroyBuffers();', 'target = null;', 'size = null;',
     'boolean hasMatchingFrame(int width, int height)',
 ):
     assert text in target, text
 for bad in ("GL11", "GL30", "RenderSystem.setShaderTexture(",
+            "target.copyColorFrom(world);",
             "world.copyColorFrom(target);", "world.copyDepthFrom(target);",
             "getColorTextureId()", "frameBufferId"):
     assert bad not in target, bad

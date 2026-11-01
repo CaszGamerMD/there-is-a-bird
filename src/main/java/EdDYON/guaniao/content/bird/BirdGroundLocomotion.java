@@ -4,7 +4,6 @@ import EdDYON.guaniao.config.BirdSpecies;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Mob;
@@ -18,7 +17,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * follow, chase and escape logic keep their existing tuning.
  */
 public final class BirdGroundLocomotion {
-    private static final String TAG_INDIVIDUAL_FACTOR = "GuaniaoIndividualWalkFactor";
     private static final UUID GROUND_SPEED_MODIFIER_ID =
             UUID.fromString("5d7e8914-9a44-4af0-b6fc-1de640e178a1");
     private static final String GROUND_SPEED_MODIFIER_NAME = "Guaniao ground locomotion";
@@ -180,20 +178,18 @@ public final class BirdGroundLocomotion {
         }
 
         private static State create(Mob bird, LocomotionProfile profile) {
-            CompoundTag data = bird.getPersistentData();
+            Float savedFactor = bird.getAttached(BirdEntityAttachments.INDIVIDUAL_WALK_FACTOR);
             float individualFactor;
-            if (data.contains(TAG_INDIVIDUAL_FACTOR, 99)) {
-                float savedFactor = data.getFloat(TAG_INDIVIDUAL_FACTOR);
+            if (savedFactor != null) {
                 individualFactor = Mth.clamp(
                         Float.isFinite(savedFactor) ? savedFactor : 1.0F,
                         1.0F - profile.individualVariance,
                         1.0F + profile.individualVariance);
-                data.putFloat(TAG_INDIVIDUAL_FACTOR, individualFactor);
             } else {
                 individualFactor = 1.0F
                         + (bird.getRandom().nextFloat() * 2.0F - 1.0F) * profile.individualVariance;
-                data.putFloat(TAG_INDIVIDUAL_FACTOR, individualFactor);
             }
+            bird.setAttached(BirdEntityAttachments.INDIVIDUAL_WALK_FACTOR, individualFactor);
             GroundPace initialPace = choosePace(bird.getRandom(), profile);
             return new State(
                     individualFactor,

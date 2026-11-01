@@ -25,6 +25,7 @@ import EdDYON.guaniao.event.BirdNoteEvents;
 import EdDYON.guaniao.command.BirdConfigCommands;
 import EdDYON.guaniao.command.PhotoAdminCommands;
 import EdDYON.guaniao.content.bird.flight.BirdFlightLock;
+import EdDYON.guaniao.content.bird.BirdEntityAttachments;
 import EdDYON.guaniao.content.bird.BirdFlockSoundLimiter;
 import EdDYON.guaniao.event.CrowNestLifecycleEvents;
 import EdDYON.guaniao.event.EarthwormRainEvents;
@@ -57,6 +58,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
     public void onInitialize() {
         GuaniaoFabricNetworking.register();
         BirdFlightLock.registerAttachments();
+        BirdEntityAttachments.registerAttachments();
         GuaniaoSoundEvents.registerAll();
         GuaniaoParticleTypes.registerAll();
 

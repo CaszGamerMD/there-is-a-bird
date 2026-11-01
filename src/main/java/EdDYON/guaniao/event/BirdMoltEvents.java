@@ -1,7 +1,7 @@
 package EdDYON.guaniao.event;
 
 import EdDYON.guaniao.content.bird.BirdAmbientDropControl;
-import net.minecraft.nbt.CompoundTag;
+import EdDYON.guaniao.content.bird.BirdEntityAttachments;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -12,7 +12,6 @@ import net.minecraft.world.item.Item;
  * stand. Special birds never molt — the rainbow mutation sheds nothing naturally.
  */
 public final class BirdMoltEvents {
-    private static final String TAG_COOLDOWN = "GuaniaoMoltCooldown";
     private static final int CHECK_INTERVAL_TICKS = 20;
     private static final int MOLT_MIN_TICKS = 12000;
     private static final int MOLT_MAX_TICKS = 24000;
@@ -34,22 +33,25 @@ public final class BirdMoltEvents {
             return;
         }
 
-        CompoundTag data = entity.getPersistentData();
-        if (!data.contains(TAG_COOLDOWN)) {
-            data.putInt(TAG_COOLDOWN, randomBetween(entity.level().random, MOLT_MIN_TICKS, MOLT_MAX_TICKS));
+        Integer previousCooldown = entity.getAttached(BirdEntityAttachments.MOLT_COOLDOWN);
+        if (previousCooldown == null) {
+            entity.setAttached(BirdEntityAttachments.MOLT_COOLDOWN,
+                    randomBetween(entity.level().random, MOLT_MIN_TICKS, MOLT_MAX_TICKS));
             return;
         }
 
-        int cooldown = Math.max(0, data.getInt(TAG_COOLDOWN) - CHECK_INTERVAL_TICKS);
+        int cooldown = Math.max(0, previousCooldown - CHECK_INTERVAL_TICKS);
         if (cooldown > 0) {
-            data.putInt(TAG_COOLDOWN, cooldown);
+            entity.setAttached(BirdEntityAttachments.MOLT_COOLDOWN, cooldown);
             return;
         }
 
         if (tryMolt(entity)) {
-            data.putInt(TAG_COOLDOWN, randomBetween(entity.level().random, MOLT_MIN_TICKS, MOLT_MAX_TICKS));
+            entity.setAttached(BirdEntityAttachments.MOLT_COOLDOWN,
+                    randomBetween(entity.level().random, MOLT_MIN_TICKS, MOLT_MAX_TICKS));
         } else {
-            data.putInt(TAG_COOLDOWN, randomBetween(entity.level().random, RETRY_MIN_TICKS, RETRY_MAX_TICKS));
+            entity.setAttached(BirdEntityAttachments.MOLT_COOLDOWN,
+                    randomBetween(entity.level().random, RETRY_MIN_TICKS, RETRY_MAX_TICKS));
         }
     }
 

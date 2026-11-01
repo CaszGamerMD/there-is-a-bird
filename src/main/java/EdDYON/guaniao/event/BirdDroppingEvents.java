@@ -4,6 +4,7 @@ import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.BirdAmbientDropControl;
 import EdDYON.guaniao.content.bird.BirdDroppingAreaLimiter;
+import EdDYON.guaniao.content.bird.BirdEntityAttachments;
 import EdDYON.guaniao.content.bird.kingfisher.KingfisherEntity;
 import EdDYON.guaniao.content.dropping.BirdDroppingItem;
 import EdDYON.guaniao.content.dropping.BirdDroppingProjectileEntity;
@@ -11,7 +12,6 @@ import EdDYON.guaniao.content.dropping.BirdDroppingSplatEntity;
 import EdDYON.guaniao.content.dropping.BirdDroppingVariant;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
@@ -24,7 +24,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class BirdDroppingEvents {
-    private static final String TAG_COOLDOWN = "GuaniaoDroppingCooldown";
     private static final int CHECK_INTERVAL_TICKS = 20;
     private static final int RETRY_MIN_TICKS = 20 * 5;
     private static final int RETRY_MAX_TICKS = 20 * 10;
@@ -49,26 +48,28 @@ public final class BirdDroppingEvents {
             return;
         }
 
-        CompoundTag data = entity.getPersistentData();
-        if (!data.contains(TAG_COOLDOWN)) {
+        Integer previousCooldown = entity.getAttached(BirdEntityAttachments.DROPPING_COOLDOWN);
+        if (previousCooldown == null) {
             long initialCooldown = (long)nextNaturalCooldown(entity)
                     + entity.getRandom().nextInt(INITIAL_JITTER_TICKS + 1);
-            data.putInt(TAG_COOLDOWN, (int)Math.min(Integer.MAX_VALUE, initialCooldown));
+            entity.setAttached(BirdEntityAttachments.DROPPING_COOLDOWN,
+                    (int)Math.min(Integer.MAX_VALUE, initialCooldown));
             return;
         }
 
-        int cooldown = Math.max(0, data.getInt(TAG_COOLDOWN) - CHECK_INTERVAL_TICKS);
+        int cooldown = Math.max(0, previousCooldown - CHECK_INTERVAL_TICKS);
         if (cooldown > 0) {
-            data.putInt(TAG_COOLDOWN, cooldown);
+            entity.setAttached(BirdEntityAttachments.DROPPING_COOLDOWN, cooldown);
             return;
         }
 
         boolean started = entity instanceof KingfisherEntity kingfisher
                 ? kingfisher.tryStartDefecation() : trySpawnDropping(level, entity);
         if (started) {
-            data.putInt(TAG_COOLDOWN, nextNaturalCooldown(entity));
+            entity.setAttached(BirdEntityAttachments.DROPPING_COOLDOWN, nextNaturalCooldown(entity));
         } else {
-            data.putInt(TAG_COOLDOWN, randomBetween(entity.getRandom(), RETRY_MIN_TICKS, RETRY_MAX_TICKS));
+            entity.setAttached(BirdEntityAttachments.DROPPING_COOLDOWN,
+                    randomBetween(entity.getRandom(), RETRY_MIN_TICKS, RETRY_MAX_TICKS));
         }
     }
 
@@ -292,7 +293,7 @@ public final class BirdDroppingEvents {
         for (ServerLevel level : server.getAllLevels()) {
             for (Entity entity : level.getAllEntities()) {
                 if (entity instanceof LivingEntity bird && isBird(bird)) {
-                    bird.getPersistentData().putInt(TAG_COOLDOWN, nextNaturalCooldown(bird));
+                    bird.setAttached(BirdEntityAttachments.DROPPING_COOLDOWN, nextNaturalCooldown(bird));
                 }
             }
         }

@@ -130,6 +130,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
         include 'EdDYON/guaniao/content/bird/FullColorSpawnEggItem.java'
         include 'EdDYON/guaniao/content/bird/flight/BirdFlightAnimation.java'
         include 'EdDYON/guaniao/content/bird/flight/BirdFlightLock.java'
+        include 'EdDYON/guaniao/content/bird/BirdEntityAttachments.java'
         include 'EdDYON/guaniao/mixin/ItemEntityAgeAccessor.java'
         include 'EdDYON/guaniao/content/bird/BirdWalkStride.java'
         include 'EdDYON/guaniao/content/bird/BirdWalkDistance.java'
@@ -157,6 +158,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
     source files('tools/port-probes/GuaniaoHummingbirdEcologyProof.java')
     source files('tools/port-probes/GuaniaoHummingbirdPersistenceProof.java')
     source files('tools/port-probes/GuaniaoSparrowTideProof.java')
+    source files('tools/port-probes/GuaniaoBirdEntityAttachmentProof.java')
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
     options.release = 25

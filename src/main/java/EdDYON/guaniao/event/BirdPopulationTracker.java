@@ -3,9 +3,8 @@ package EdDYON.guaniao.event;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.BirdVisibility;
+import EdDYON.guaniao.content.bird.BirdEntityAttachments;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
@@ -27,8 +26,6 @@ import java.util.WeakHashMap;
 
 /** Incremental wild-bird counts; spawn checks never scan a large entity AABB. */
 public final class BirdPopulationTracker {
-    private static final String LAST_NEARBY_PLAYER_TIME = "GuaniaoLastNearbyPlayerTime";
-    private static final String TRANSIENT_FLYBY_SPAWN_TIME = "GuaniaoTransientFlybySpawnTime";
     private static final int TRACK_INTERVAL_TICKS = 100;
     private static final double EXCESS_CULL_DISTANCE_SQR = 32.0D * 32.0D;
     private static final double NEARBY_PLAYER_DISTANCE_SQR = 32.0D * 32.0D;
@@ -82,7 +79,7 @@ public final class BirdPopulationTracker {
 
     public static void markTransientFlyby(Mob mob) {
         if (mob.level() instanceof ServerLevel level) {
-            mob.getPersistentData().putLong(TRANSIENT_FLYBY_SPAWN_TIME, level.getGameTime());
+            mob.setAttached(BirdEntityAttachments.TRANSIENT_FLYBY_SPAWN_TIME, level.getGameTime());
         }
     }
 
@@ -141,23 +138,26 @@ public final class BirdPopulationTracker {
         }
 
         long now = level.getGameTime();
-        CompoundTag data = mob.getPersistentData();
+        Long lastNearbyPlayerTime = mob.getAttached(BirdEntityAttachments.LAST_NEARBY_PLAYER_TIME);
         double nearestPlayerDistanceSqr = nearestPlayerDistanceSqr(level, mob);
-        if (!data.contains(LAST_NEARBY_PLAYER_TIME, Tag.TAG_LONG)) {
-            data.putLong(LAST_NEARBY_PLAYER_TIME, now);
+        if (lastNearbyPlayerTime == null) {
+            lastNearbyPlayerTime = now;
+            mob.setAttached(BirdEntityAttachments.LAST_NEARBY_PLAYER_TIME, now);
         }
         if (nearestPlayerDistanceSqr <= NEARBY_PLAYER_DISTANCE_SQR) {
-            data.putLong(LAST_NEARBY_PLAYER_TIME, now);
+            lastNearbyPlayerTime = now;
+            mob.setAttached(BirdEntityAttachments.LAST_NEARBY_PLAYER_TIME, now);
         }
 
-        if (data.contains(TRANSIENT_FLYBY_SPAWN_TIME, Tag.TAG_LONG)
-                && elapsed(now, data.getLong(TRANSIENT_FLYBY_SPAWN_TIME)) >= BirdConfigManager.flybyBirdLifetimeTicks()
+        Long flybySpawnTime = mob.getAttached(BirdEntityAttachments.TRANSIENT_FLYBY_SPAWN_TIME);
+        if (flybySpawnTime != null
+                && elapsed(now, flybySpawnTime) >= BirdConfigManager.flybyBirdLifetimeTicks()
                 && canCullQuietly(level, mob, nearestPlayerDistanceSqr)) {
             return true;
         }
 
         return nearestPlayerDistanceSqr > UNOBSERVED_CULL_DISTANCE_SQR
-                && elapsed(now, data.getLong(LAST_NEARBY_PLAYER_TIME)) >= BirdConfigManager.wildBirdDespawnTicks()
+                && elapsed(now, lastNearbyPlayerTime) >= BirdConfigManager.wildBirdDespawnTicks()
                 && canCullQuietly(level, mob, nearestPlayerDistanceSqr);
     }
 
@@ -173,8 +173,7 @@ public final class BirdPopulationTracker {
     }
 
     private static void clearLifecycleTimers(Mob mob) {
-        CompoundTag data = mob.getPersistentData();
-        data.remove(LAST_NEARBY_PLAYER_TIME);
+        mob.removeAttached(BirdEntityAttachments.LAST_NEARBY_PLAYER_TIME);
     }
 
     private static double nearestPlayerDistanceSqr(ServerLevel level, Mob mob) {

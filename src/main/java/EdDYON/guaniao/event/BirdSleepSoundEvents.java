@@ -1,17 +1,13 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.bird.BirdLoudSoundListener;
 import EdDYON.guaniao.content.bird.BirdSleepWakeable;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.PlayLevelSoundEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
+/** Server-side response to sounds actually broadcast by ServerLevel. */
 public final class BirdSleepSoundEvents {
     private static final float LOUD_SOUND_VOLUME = 1.5F;
     private static final double MIN_WAKE_RADIUS = 12.0D;
@@ -20,20 +16,16 @@ public final class BirdSleepSoundEvents {
     private BirdSleepSoundEvents() {
     }
 
-    @SubscribeEvent
-    public static void onSoundAtEntity(PlayLevelSoundEvent.AtEntity event) {
-        wakeNearbySleepingBirds(event, event.getEntity().position());
+    public static void onSoundAtEntity(ServerLevel level, Entity sourceEntity, float volume) {
+        wakeNearbySleepingBirds(level, sourceEntity.position(), volume);
     }
 
-    @SubscribeEvent
-    public static void onSoundAtPosition(PlayLevelSoundEvent.AtPosition event) {
-        wakeNearbySleepingBirds(event, event.getPosition());
+    public static void onSoundAtPosition(ServerLevel level, Vec3 soundPosition, float volume) {
+        wakeNearbySleepingBirds(level, soundPosition, volume);
     }
 
-    private static void wakeNearbySleepingBirds(PlayLevelSoundEvent event, Vec3 soundPosition) {
-        Level level = event.getLevel();
-        float volume = event.getOriginalVolume();
-        if (level.isClientSide || event.isCanceled() || !Float.isFinite(volume) || volume < LOUD_SOUND_VOLUME) {
+    private static void wakeNearbySleepingBirds(ServerLevel level, Vec3 soundPosition, float volume) {
+        if (!Float.isFinite(volume) || volume < LOUD_SOUND_VOLUME) {
             return;
         }
 

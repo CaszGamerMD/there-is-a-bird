@@ -143,7 +143,7 @@ public class LongTailedTitEntity extends SparrowEntity {
                 }
                 this.level().broadcastEntityEvent(this, (byte) 7);
             } else if (this.getRandom().nextInt(3) == 0
-                    && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+                    && EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
                 this.tame(player);
                 this.setBirdCommandMode(BirdCommandMode.FOLLOW);
                 this.getNavigation().stop();

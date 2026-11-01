@@ -465,7 +465,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             return InteractionResult.SUCCESS;
         }
         if (this.getRandom().nextFloat() < chance
-                && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+                && EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
             this.tame(player);
             this.setBirdCommandMode(BirdCommandMode.FOLLOW);
             this.setPersistenceRequired();

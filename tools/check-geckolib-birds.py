@@ -155,7 +155,9 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
             "@Override protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean hit) {\n"
             "        super.dropCustomDeathLoot(level, source, hit);\n"
             "        if (!getHeldGardenItem().isEmpty()) { spawnAtLocation(level, getHeldGardenItem().copy());")
-    if relative.endswith(("/crow/CrowEntity.java", "/kestrel/KestrelEntity.java", "/seagull/SeagullEntity.java")):
+    if relative.endswith(("/crow/CrowEntity.java", "/kestrel/KestrelEntity.java", "/seagull/SeagullEntity.java",
+                          "/sparrow/SparrowEntity.java", "/longtailedtit/LongTailedTitEntity.java",
+                          "/columbid/AbstractColumbidEntity.java")):
         expected = expected.replace("!net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)",
                                     "EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)")
 

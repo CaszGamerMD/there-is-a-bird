@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 final class HummingbirdSites {
     private static final net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> PERCHES =
             net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BLOCK,
-                    new net.minecraft.resources.ResourceLocation("guaniao", "hummingbird_perches"));
+                    net.minecraft.resources.Identifier.fromNamespaceAndPath("guaniao", "hummingbird_perches"));
     record Perch(BlockPos block, Vec3 feet, Vec3 facing, boolean delicate) { }
     private HummingbirdSites() { }
     @Nullable static BirdBathBlockEntity bath(ServerLevel level, Vec3 center, boolean sugarOnly) {
@@ -146,7 +146,7 @@ final class HummingbirdSites {
         double top = delicate ? (state.getBlock() instanceof VineBlock ? 0.65 : 0.52)
                 : shape.max(net.minecraft.core.Direction.Axis.Y);
         Vec3 feet = new Vec3(pos.getX() + 0.5, pos.getY() + top + 0.015, pos.getZ() + 0.5);
-        if (FlowerHabitatIndex.isSupportedFlower(state.getBlock())) feet = feet.add(state.getOffset(level, pos));
+        if (FlowerHabitatIndex.isSupportedFlower(state.getBlock())) feet = feet.add(state.getOffset(pos));
         Vec3 facing = feet.add(0, 0, 1);
         if (state.getBlock() instanceof VineBlock) {
             net.minecraft.core.Direction attached = null;

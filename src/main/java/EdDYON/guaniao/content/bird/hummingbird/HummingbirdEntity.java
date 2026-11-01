@@ -10,15 +10,16 @@ import EdDYON.guaniao.content.bird.command.BirdCommandInteraction;
 import EdDYON.guaniao.content.bird.command.BirdCommandMode;
 import EdDYON.guaniao.content.bird.command.CommandableBird;
 import EdDYON.guaniao.event.BirdPopulationTracker;
+import EdDYON.guaniao.event.BirdTamePermissionEvents;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -40,10 +41,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.ForgeEventFactory;
 import com.geckolib.animatable.GeoEntity;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.util.GeckoLibUtil;
@@ -58,8 +61,8 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         HOVER, TRAVEL, NECTAR_ENTER, NECTAR_LOOP, NECTAR_EXIT, TAKEOFF, LAND,
         PERCH, SLEEP_ENTER, SLEEP, WAKE, DROP_SEED, HEAD_PERCH, TERRITORY, PANIC
     }
-    public static final TagKey<Item> FOODS = TagKey.create(Registries.ITEM, new ResourceLocation("guaniao", "hummingbird_foods"));
-    public static final TagKey<Item> TEMPT = TagKey.create(Registries.ITEM, new ResourceLocation("guaniao", "hummingbird_tempt_items"));
+    public static final TagKey<Item> FOODS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("guaniao", "hummingbird_foods"));
+    public static final TagKey<Item> TEMPT = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("guaniao", "hummingbird_tempt_items"));
     private static final EntityDataAccessor<Integer> ACTIVITY = SynchedEntityData.defineId(HummingbirdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> COMMAND = SynchedEntityData.defineId(HummingbirdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> MALE = SynchedEntityData.defineId(HummingbirdEntity.class, EntityDataSerializers.BOOLEAN);
@@ -320,7 +323,7 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
                 if (!player.getUUID().equals(tamingCandidate)) { tamingCandidate = player.getUUID(); tamingProgress = 0; }
                 tamingProgress++;
                 if (tamingProgress >= HummingbirdConfig.tamingFeeds()) {
-                    if (!ForgeEventFactory.onAnimalTame(this, player)) {
+                    if (BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
                         tame(player); setBirdCommandMode(BirdCommandMode.FOLLOW);
                         setPersistenceRequired(); level().broadcastEntityEvent(this, (byte)7);
                     } else tamingProgress = Math.max(0, HummingbirdConfig.tamingFeeds() - 1);
@@ -382,22 +385,25 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         if (!level().isClientSide()) behavior.release();
         super.remove(reason);
     }
-    @Override public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
-        tag.putInt("HummingbirdCommand", getBirdCommandMode().ordinal()); tag.putBoolean("Male", isMale());
-        tag.putInt("TamingProgress", tamingProgress);
-        if (tamingCandidate != null) tag.putUUID("TamingCandidate", tamingCandidate);
-        if (!getHeldGardenItem().isEmpty()) tag.put("GardenItem", getHeldGardenItem().save(new CompoundTag()));
-        behavior.save(tag);
+    @Override protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putInt("HummingbirdCommand", getBirdCommandMode().ordinal());
+        output.putBoolean("Male", isMale());
+        output.putInt("TamingProgress", tamingProgress);
+        if (tamingCandidate != null) output.store("TamingCandidate", UUIDUtil.CODEC, tamingCandidate);
+        if (!getHeldGardenItem().isEmpty()) output.store("GardenItem", ItemStack.CODEC, getHeldGardenItem());
+        behavior.save(output);
     }
-    @Override public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        entityData.set(COMMAND, BirdCommandMode.byId(tag.getInt("HummingbirdCommand")).ordinal());
-        if (tag.contains("Male")) entityData.set(MALE, tag.getBoolean("Male"));
-        tamingCandidate = tag.hasUUID("TamingCandidate") ? tag.getUUID("TamingCandidate") : null;
-        tamingProgress = Math.max(0, Math.min(tag.getInt("TamingProgress"), HummingbirdConfig.tamingFeeds() - 1));
-        ItemStack held = ItemStack.of(tag.getCompound("GardenItem")); held.setCount(Math.min(1, held.getCount()));
-        setHeldGardenItem(held); behavior.load(tag);
+    @Override protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        entityData.set(COMMAND, BirdCommandMode.byId(input.getIntOr("HummingbirdCommand", 0)).ordinal());
+        entityData.set(MALE, input.getBooleanOr("Male", isMale()));
+        tamingCandidate = input.read("TamingCandidate", UUIDUtil.CODEC).orElse(null);
+        tamingProgress = Math.max(0, Math.min(input.getIntOr("TamingProgress", 0), HummingbirdConfig.tamingFeeds() - 1));
+        ItemStack held = input.read("GardenItem", ItemStack.CODEC).orElse(ItemStack.EMPTY);
+        if (!held.isEmpty()) { held = held.copy(); held.setCount(1); }
+        setHeldGardenItem(held);
+        behavior.load(input);
     }
     @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         // Explicit enter/exit clips provide transitions; keep all three layer clocks aligned.

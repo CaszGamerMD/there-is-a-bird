@@ -7,8 +7,9 @@ import EdDYON.guaniao.content.bird.BirdScanBudget;
 import EdDYON.guaniao.content.bird.command.BirdCommandMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
@@ -47,8 +48,8 @@ final class HummingbirdGardenBehavior {
     @Nullable private HummingbirdEntity rival;
     @Nullable private Vec3 territoryCenter;
     private double territoryPhase;
-    @Nullable private ResourceLocation lastFlower;
-    @Nullable private ResourceLocation gardenDimension;
+    @Nullable private Identifier lastFlower;
+    @Nullable private Identifier gardenDimension;
     @Nullable private BlockPos restoredPerch, deliveryBath;
     @Nullable private BlockPos blockedDeliveryBath;
     @Nullable private BlockPos approachingDeliveryBath;
@@ -726,27 +727,28 @@ final class HummingbirdGardenBehavior {
         resetTravelProgress();
         waitingForTree = waitingAligned = false; resetNightSearch();
     }
-    void save(CompoundTag tag) {
-        if (garden != null) tag.putLong("Garden", garden.asLong());
-        if (linkedBath != null) tag.putLong("LinkedBath", linkedBath.asLong());
-        if (gardenDimension != null) tag.putString("GardenDimension", gardenDimension.toString());
-        if (anchor != null && !waitingForTree) tag.putLong("Perch", anchor.block().asLong());
-        tag.putInt("SeedCooldown", seedCooldown); tag.putInt("TerritoryCooldown", territoryCooldown);
-        tag.putInt("BathCooldown", bathCooldown); tag.putInt("FlowerVisits", visitCount);
-        if (lastFlower != null) tag.putString("LastFlower", lastFlower.toString());
-        tag.putBoolean("HummingbirdSleeping", bird.isSleeping());
+    void save(ValueOutput output) {
+        if (garden != null) output.putLong("Garden", garden.asLong());
+        if (linkedBath != null) output.putLong("LinkedBath", linkedBath.asLong());
+        if (gardenDimension != null) output.putString("GardenDimension", gardenDimension.toString());
+        if (anchor != null && !waitingForTree) output.putLong("Perch", anchor.block().asLong());
+        output.putInt("SeedCooldown", seedCooldown); output.putInt("TerritoryCooldown", territoryCooldown);
+        output.putInt("BathCooldown", bathCooldown); output.putInt("FlowerVisits", visitCount);
+        if (lastFlower != null) output.putString("LastFlower", lastFlower.toString());
+        output.putBoolean("HummingbirdSleeping", bird.isSleeping());
     }
-    void load(CompoundTag tag) {
-        garden = tag.contains("Garden") ? BlockPos.of(tag.getLong("Garden")) : null;
-        linkedBath = tag.contains("LinkedBath") ? BlockPos.of(tag.getLong("LinkedBath")) : null;
-        gardenDimension = ResourceLocation.tryParse(tag.getString("GardenDimension"));
-        restoredPerch = tag.contains("Perch") ? BlockPos.of(tag.getLong("Perch")) : null;
-        asleepRestored = tag.getBoolean("HummingbirdSleeping");
-        seedCooldown = Math.max(0, Math.min(HummingbirdConfig.seedMaxTicks(), tag.contains("SeedCooldown") ? tag.getInt("SeedCooldown") : HummingbirdConfig.seedMinTicks()));
-        territoryCooldown = Math.max(0, Math.min(HummingbirdConfig.territoryCooldownTicks(), tag.getInt("TerritoryCooldown")));
-        bathCooldown = Math.max(0, Math.min(1200, tag.getInt("BathCooldown")));
-        visitCount = Math.max(0, Math.min(1000, tag.getInt("FlowerVisits")));
-        lastFlower = ResourceLocation.tryParse(tag.getString("LastFlower"));
+    void load(ValueInput input) {
+        garden = input.getLong("Garden").map(BlockPos::of).orElse(null);
+        linkedBath = input.getLong("LinkedBath").map(BlockPos::of).orElse(null);
+        gardenDimension = Identifier.tryParse(input.getStringOr("GardenDimension", ""));
+        restoredPerch = input.getLong("Perch").map(BlockPos::of).orElse(null);
+        asleepRestored = input.getBooleanOr("HummingbirdSleeping", false);
+        seedCooldown = Math.max(0, Math.min(HummingbirdConfig.seedMaxTicks(),
+                input.getIntOr("SeedCooldown", HummingbirdConfig.seedMinTicks())));
+        territoryCooldown = Math.max(0, Math.min(HummingbirdConfig.territoryCooldownTicks(), input.getIntOr("TerritoryCooldown", 0)));
+        bathCooldown = Math.max(0, Math.min(1200, input.getIntOr("BathCooldown", 0)));
+        visitCount = Math.max(0, Math.min(1000, input.getIntOr("FlowerVisits", 0)));
+        lastFlower = Identifier.tryParse(input.getStringOr("LastFlower", ""));
         browseCenter = null;
         // Targets/leases are never restored; a real block must be found and validated after reload.
         anchor = landing = null; flower = null; drinkingBath = null; state(Activity.HOVER);

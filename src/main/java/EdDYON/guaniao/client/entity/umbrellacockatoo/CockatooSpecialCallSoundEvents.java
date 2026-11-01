@@ -17,12 +17,14 @@ public final class CockatooSpecialCallSoundEvents {
     private CockatooSpecialCallSoundEvents() { }
 
     public static void registerCallbacks() {
-        ClientTickEvents.END_WORLD_TICK.register(world -> {
-            for (Entity entity : world.entitiesForRendering()) {
-                if (entity instanceof UmbrellaCockatooEntity bird) onLivingTick(bird);
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.level != null) {
+                for (Entity entity : client.level.entitiesForRendering()) {
+                    if (entity instanceof UmbrellaCockatooEntity bird) onLivingTick(bird);
+                }
             }
+            onClientTick();
         });
-        ClientTickEvents.END_CLIENT_TICK.register(client -> onClientTick());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clear());
     }
 

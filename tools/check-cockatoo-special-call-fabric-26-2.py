@@ -24,9 +24,8 @@ for token in (
     assert token in old and token in new, f"Original cockatoo recording rule lost: {token}"
 
 for hook in (
-    "ClientTickEvents.END_WORLD_TICK.register(",
-    "for (Entity entity : world.entitiesForRendering())",
     "ClientTickEvents.END_CLIENT_TICK.register(",
+    "for (Entity entity : client.level.entitiesForRendering())",
     "ClientPlayConnectionEvents.DISCONNECT.register(",
     "getSoundManager().isActive(call.sound())",
 ):

@@ -9,12 +9,13 @@ public final class GuaniaoCockatooSoundLifecycleProof {
     private GuaniaoCockatooSoundLifecycleProof() { }
 
     public static void register() {
-        ClientTickEvents.END_WORLD_TICK.register(world -> {
-            for (Entity entity : world.entitiesForRendering()) {
-                entity.isAlive();
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.level != null) {
+                for (Entity entity : client.level.entitiesForRendering()) {
+                    entity.isAlive();
+                }
             }
         });
-        ClientTickEvents.END_CLIENT_TICK.register(client -> { });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { });
     }
 }

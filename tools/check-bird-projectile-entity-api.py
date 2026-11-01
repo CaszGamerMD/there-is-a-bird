@@ -36,6 +36,18 @@ def expected_port(source, photograph):
         source = source.replace("ResourceLocation", "Identifier")
         source = source.replace("ForgeRegistries.ITEMS.getKey(",
                                 "BuiltInRegistries.ITEM.getKey(")
+    # Datapack enchantments are ResourceKeys in 26.2, not Forge-registered
+    # Enchantment objects. Keep both original piercing-art decisions unchanged.
+    if "private PiercingArt getPiercingArt()" in source:
+        source = source.replace("import net.minecraft.world.item.enchantment.EnchantmentHelper;\n", "")
+        source = source.replace(
+            "if (EnchantmentHelper.getItemEnchantmentLevel(\n"
+            "                GuaniaoEnchantments.RIVEN_PLUME.get(), fan) > 0) {",
+            "if (GuaniaoEnchantments.has(fan, GuaniaoEnchantments.RIVEN_PLUME)) {")
+        source = source.replace(
+            "if (EnchantmentHelper.getItemEnchantmentLevel(\n"
+            "                GuaniaoEnchantments.BURIAL_PLUME.get(), fan) > 0) {",
+            "if (GuaniaoEnchantments.has(fan, GuaniaoEnchantments.BURIAL_PLUME)) {")
     return source
 
 for path in FILES:

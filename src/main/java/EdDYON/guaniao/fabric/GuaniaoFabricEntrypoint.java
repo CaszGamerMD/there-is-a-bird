@@ -22,6 +22,7 @@ import EdDYON.guaniao.event.BirdNoteEvents;
 import EdDYON.guaniao.command.BirdConfigCommands;
 import EdDYON.guaniao.command.PhotoAdminCommands;
 import EdDYON.guaniao.content.bird.flight.BirdFlightLock;
+import EdDYON.guaniao.content.bird.BirdFlockSoundLimiter;
 import EdDYON.guaniao.event.CrowNestLifecycleEvents;
 import EdDYON.guaniao.event.EarthwormRainEvents;
 import EdDYON.guaniao.event.PhotoTransferEvents;
@@ -36,6 +37,7 @@ import EdDYON.guaniao.registry.GuaniaoMenuTypes;
 import EdDYON.guaniao.registry.GuaniaoParticleTypes;
 import EdDYON.guaniao.registry.GuaniaoRecipeSerializers;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
+import EdDYON.guaniao.world.GuaniaoBirdSpawnRegistry;
 import net.fabricmc.api.ModInitializer;
 
 /**
@@ -59,6 +61,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         GuaniaoBlockEntityTypes.BLOCK_ENTITY_TYPES.registerAll();
         GuaniaoEntityTypes.ENTITY_TYPES.registerAll();
         GuaniaoEntityAttributes.registerAll();
+        GuaniaoBirdSpawnRegistry.registerCallbacks();
         GuaniaoItems.ITEMS.registerAll();
         GuaniaoMenuTypes.MENU_TYPES.registerAll();
         BirdDroppingUtil.registerCompostables();
@@ -74,6 +77,7 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         // Existing behavior: track active birds, tick rain worms and clean up
         // transient nest and photo state at exactly the corresponding hooks.
         BirdServerTickManager.registerCallbacks();
+        BirdFlockSoundLimiter.registerCallbacks();
         BirdPopulationTracker.registerCallbacks();
         BirdAdvancementEvents.registerCallbacks();
         CassowaryThreatEvents.registerCallbacks();

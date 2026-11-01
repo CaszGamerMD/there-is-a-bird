@@ -114,6 +114,10 @@ jobs:
         run: python3 tools/check-bird-potential-spawns-mixin.py
       - name: Verify 26.2 bird weighted spawn pools and repopulation source parity
         run: python3 tools/check-bird-weighted-spawns-port.py
+      - name: Verify all 19 original bird biome spawn entries use Fabric 26.2 callbacks
+        run: python3 tools/check-bird-biome-spawns-26-2.py
+      - name: Verify original flock ambient-call limits and Fabric level-unload cleanup
+        run: python3 tools/check-bird-flock-sounds-26-2.py
       - name: Verify bird repopulation cadence and loaded-world cleanup in Fabric
         run: python3 tools/check-bird-repopulation-lifecycle.py
       - name: Verify 26.2 flyby initializers and kingfisher spawn-egg bypass

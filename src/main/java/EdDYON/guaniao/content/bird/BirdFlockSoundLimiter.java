@@ -1,6 +1,5 @@
 package EdDYON.guaniao.content.bird;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.config.BirdSpecies;
 import java.util.LinkedHashMap;
@@ -9,12 +8,9 @@ import java.util.WeakHashMap;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 
 /** Prevents a dense same-species flock from starting many ambient calls together. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdFlockSoundLimiter {
     private static final int MAX_KEYS_PER_LEVEL = 2048;
     private static final int MAX_AMBIENT_CALLS_PER_WINDOW = 2;
@@ -53,11 +49,12 @@ public final class BirdFlockSoundLimiter {
         return Math.max(20, (int)Math.round(baseTicks * BirdConfigManager.ambientSoundCooldownMultiplier(species)));
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
-            WINDOWS.remove(serverLevel);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        WINDOWS.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private record SoundKey(long section, BirdSpecies species, long window, long expiresAt) {

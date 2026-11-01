@@ -20,7 +20,7 @@ public final class HummingbirdEcologyEvents {
             }
         });
         ServerChunkEvents.CHUNK_UNLOAD.register((level, chunk) ->
-                FlowerHabitatIndex.unloadChunk(level, chunk.getPos().x, chunk.getPos().z));
+                FlowerHabitatIndex.unloadChunk(level, chunk.getPos().x(), chunk.getPos().z()));
         ServerLevelEvents.UNLOAD.register((server, level) -> {
             FlowerHabitatIndex.forgetLevel(level);
             HummingbirdPollinationService.forgetLevel(level);

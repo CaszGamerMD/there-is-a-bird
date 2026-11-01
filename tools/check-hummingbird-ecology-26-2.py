@@ -60,6 +60,7 @@ for required in ('GameRules.MOB_GRIEFING', 'isValidBonemealTarget(level, pos, be
                  'MOB_GRIEFING.invoker().allow(', 'BEFORE_GROW.invoker().allow(',
                  'Objects.equals(source.owner(), currentOwner)', 'valid(level, active)',
                  'before.equals(FlowerHabitatIndex.readyState(level, pos))',
+                 'getOwnerReference().getUUID()', 'ChunkPos.pack(', 'level.getRandom()',
                  'crop.performBonemeal(', 'public static double chanceFor(int distinctSources)',
                  '0.25 * Math.min(4, Math.max(0, distinctSources))'):
     assert required in service, f"pollination safety/probability contract changed: {required}"
@@ -74,6 +75,8 @@ assert 'method = "setBlocksDirty"' in mixin
 assert 'FlowerHabitatIndex.invalidate(level, pos)' in mixin
 assert '"HummingbirdHabitatBlockUpdateMixin"' in mixins
 assert "public static void invalidate(ServerLevel level, BlockPos pos)" in habitat
+for required in ('level.getMinY()', 'level.getMaxY()', 'pot.getPotted()', 'state.getOffset(flowerPos)'):
+    assert required in habitat, f"Minecraft 26.2 habitat API missing: {required}"
 assert "HummingbirdConfig.loadOrCreateDefaults();" in init
 assert "HummingbirdEcologyEvents.registerCallbacks();" in init
 assert "FlowerHabitatIndex.tick(level);" in ecology and "HummingbirdPollinationService.tick(level);" in ecology

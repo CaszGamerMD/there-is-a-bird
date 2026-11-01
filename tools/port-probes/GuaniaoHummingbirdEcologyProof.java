@@ -15,8 +15,8 @@ public final class GuaniaoHummingbirdEcologyProof {
     static void verify(ServerLevel level, CropBlock crop, BlockPos pos, BlockState state) {
         boolean allowed = level.getGameRules().get(GameRules.MOB_GRIEFING);
         boolean growable = crop.isValidBonemealTarget(level, pos, state);
-        boolean success = crop.isBonemealSuccess(level, level.random, pos, state);
-        if (allowed && growable && success) crop.performBonemeal(level, level.random, pos, state);
+        boolean success = crop.isBonemealSuccess(level, level.getRandom(), pos, state);
+        if (allowed && growable && success) crop.performBonemeal(level, level.getRandom(), pos, state);
         level.setBlocksDirty(pos, state, state);
     }
 

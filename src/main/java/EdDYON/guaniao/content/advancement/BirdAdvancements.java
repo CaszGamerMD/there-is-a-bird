@@ -91,18 +91,18 @@ public final class BirdAdvancements {
     }
 
     public static boolean grant(ServerPlayer player, Identifier advancementId) {
-        AdvancementHolder advancement = player.server.getAdvancements().get(advancementId);
+        AdvancementHolder advancement = player.serverLevel().getServer().getAdvancements().get(advancementId);
         return advancement != null && player.getAdvancements().award(advancement, CRITERION);
     }
 
     public static boolean isDone(ServerPlayer player, Identifier advancementId) {
-        AdvancementHolder advancement = player.server.getAdvancements().get(advancementId);
+        AdvancementHolder advancement = player.serverLevel().getServer().getAdvancements().get(advancementId);
         return advancement != null && player.getAdvancements().getOrStartProgress(advancement).isDone();
     }
 
     private static int countOwnedLoadedBirds(ServerPlayer player) {
         int count = 0;
-        for (ServerLevel level : player.server.getAllLevels()) {
+        for (ServerLevel level : player.serverLevel().getServer().getAllLevels()) {
             for (Entity entity : level.getAllEntities()) {
                 if (entity instanceof TamableAnimal bird
                         && bird.isAlive()

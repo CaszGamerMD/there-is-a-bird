@@ -2,10 +2,11 @@ package EdDYON.guaniao.fabric;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.Weighted;
 import net.minecraft.util.random.WeightedList;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 
 /** Compiles against real 26.2 WeightedList and record-valued SpawnerData. */
@@ -26,7 +27,8 @@ public final class GuaniaoWeightedSpawnProof {
 
     public static boolean canDraw(RandomSource random) {
         var source = WeightedList.of(List.of(
-                new Weighted<>(new MobSpawnSettings.SpawnerData(EntityType.CHICKEN, 1, 3), 7)));
+                new Weighted<>(new MobSpawnSettings.SpawnerData(
+                        BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.withDefaultNamespace("chicken")), 1, 3), 7)));
         return adjust(source, 2).getRandom(random).isPresent();
     }
 }

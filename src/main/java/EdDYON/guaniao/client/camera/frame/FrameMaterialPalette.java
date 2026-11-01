@@ -13,9 +13,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.MilkBucketItem;
 import net.minecraft.world.item.PotionItem;
-import net.minecraft.world.level.block.AbstractGlassBlock;
 import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.CakeBlock;
 import net.minecraft.world.level.block.LeavesBlock;
@@ -63,11 +61,11 @@ final class FrameMaterialPalette {
     }
     static Category category(ItemStack stack) {
         Item item=stack.getItem();String path=BuiltInRegistries.ITEM.getKey(item).getPath();
-        if(stack.has(DataComponents.FOOD) || item instanceof PotionItem || item instanceof MilkBucketItem
+        if(stack.has(DataComponents.FOOD) || item instanceof PotionItem || item==Items.MILK_BUCKET
                 || item instanceof BlockItem block && block.getBlock() instanceof CakeBlock)return Category.FOOD;
         if(item instanceof BlockItem block) {
             var state=block.getBlock().defaultBlockState();
-            if(block.getBlock() instanceof AbstractGlassBlock || block.getBlock() instanceof StainedGlassPaneBlock
+            if(block.getBlock() instanceof StainedGlassPaneBlock
                     || path.contains("glass") || path.endsWith("_pane"))
                 return Category.GLASS;
             if(state.is(BlockTags.LOGS) || state.is(BlockTags.PLANKS) || state.is(BlockTags.WOODEN_BUTTONS)
@@ -79,9 +77,7 @@ final class FrameMaterialPalette {
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.LEAVES))return Category.NATURE;
             if(state.is(BlockTags.BASE_STONE_OVERWORLD) || state.is(BlockTags.BASE_STONE_NETHER)
                     || state.is(BlockTags.GOLD_ORES) || state.is(BlockTags.IRON_ORES)
-                    || state.is(BlockTags.DIAMOND_ORES) || state.is(BlockTags.REDSTONE_ORES)
-                    || state.is(BlockTags.LAPIS_ORES) || state.is(BlockTags.COAL_ORES)
-                    || state.is(BlockTags.EMERALD_ORES) || state.is(BlockTags.COPPER_ORES)
+                    || state.is(BlockTags.COPPER_ORES)
                     || path.endsWith("_ore") || STONE_FAMILIES.stream().anyMatch(stone->family(path,stone)))return Category.STONE;
             if(colorIndex(path)>=0)return Category.COLORED;
             return Category.BUILDING;

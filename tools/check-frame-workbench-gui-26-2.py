@@ -37,14 +37,20 @@ assert "RenderPipelines.GUI_TEXTURED" in backdrop
 
 widget=new("FrameNumberControl")
 original_widget=old("FrameNumberControl")
-for token in ("field.setFilter(value->value.matches(",
-              "BigDecimal.valueOf(value).divide(BigDecimal.valueOf(divisor))",
+for token in ("BigDecimal.valueOf(value).divide(BigDecimal.valueOf(divisor))",
               "this.getter.getAsInt()+direction*this.step.getAsInt()",
               "this.setter.accept((int)Math.round(number))",
               "this.slider=new ValueSlider(x+20,y+16,width-40)",
               "this.field.setFocused(false);",
               "boolean isEditing()", "boolean isSliding()"):
     assert token in original_widget and token in widget,token
+assert "field.setFilter(value->value.matches(" in original_widget
+assert "field.setFilter(" not in widget
+for token in ('this.lastValidInput=this.field.getValue();',
+              'if(!value.matches("-?[0-9]*(\\\\.[0-9]*)?"))',
+              'this.field.setValue(this.lastValidInput);',
+              'this.lastValidInput=value;'):
+    assert token in widget,token
 for token in ("extractWidgetRenderState(GuiGraphicsExtractor graphics",
               "this.field.extractRenderState(", "this.slider.extractRenderState(",
               "mouseClicked(MouseButtonEvent event,boolean doubleClick)",

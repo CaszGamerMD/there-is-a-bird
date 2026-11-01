@@ -29,9 +29,9 @@ for term in ('enum Kind { FRAME, TRIM, LINING, STICKER }',
 for term in ('net.minecraft.resources.Identifier',
              'DataComponents.FOOD','stack.has(DataComponents.FOOD)',
              'BlockTags.BASE_STONE_OVERWORLD','BlockTags.BASE_STONE_NETHER',
-             'BlockTags.GOLD_ORES','BlockTags.IRON_ORES','BlockTags.DIAMOND_ORES',
-             'BlockTags.REDSTONE_ORES','BlockTags.LAPIS_ORES',
-             'BlockTags.COAL_ORES','BlockTags.EMERALD_ORES','BlockTags.COPPER_ORES',
+             'BlockTags.GOLD_ORES','BlockTags.IRON_ORES','BlockTags.COPPER_ORES',
+             'path.endsWith("_ore")', 'item==Items.MILK_BUCKET',
+             'block.getBlock() instanceof StainedGlassPaneBlock',
              'BlockTags.FENCE_GATES',
              'ItemTags.SWORDS','ItemTags.AXES','ItemTags.HOES',
              'ItemTags.PICKAXES','ItemTags.SHOVELS',
@@ -44,5 +44,9 @@ for term in ('net.minecraft.resources.Identifier',
 for gone in ('net.minecraftforge.', 'ResourceLocation', 'Tags.Blocks.', 'Tags.Items.',
              'ItemTags.TOOLS', 'item.isEdible()', 'BuiltInRegistries.ITEM.get('):
     assert gone not in new, gone
+for removed in ('MilkBucketItem', 'AbstractGlassBlock', 'BlockTags.DIAMOND_ORES',
+                'BlockTags.REDSTONE_ORES', 'BlockTags.LAPIS_ORES',
+                'BlockTags.COAL_ORES', 'BlockTags.EMERALD_ORES'):
+    assert removed not in new, removed
 print("FRAME WORKBENCH MATERIAL PALETTE 26.2 PARITY OK: live mod registry,"
       " original 10 categories, stable material ordering, saved-mod fallback")

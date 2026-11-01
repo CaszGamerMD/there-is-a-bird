@@ -26,6 +26,7 @@ final class FrameNumberControl extends AbstractWidget {
     private final ValueSlider slider;
     private final Button minus, plus;
     private boolean synchronizing,inputFocusRequested,sliderDragging;
+    private String lastValidInput;
 
     FrameNumberControl(Font font,int x,int y,int width,Component label,int minimum,int maximum,int divisor,
                        IntSupplier getter,IntSupplier step,IntConsumer setter) {
@@ -34,9 +35,19 @@ final class FrameNumberControl extends AbstractWidget {
         this.getter=getter;this.step=step;this.setter=setter;
         this.field=new EditBox(font,x+width-48,y,48,14,label);
         this.field.setMaxLength(10);
-        this.field.setFilter(value->value.matches("-?[0-9]*(\\.[0-9]*)?"));
         this.field.setValue(format(getter.getAsInt(),divisor));
+        this.lastValidInput=this.field.getValue();
         this.field.setResponder(value->{
+            // EditBox no longer exposes a text filter in 26.2. Reject invalid
+            // input here, including pasted text, while keeping incomplete
+            // signed/decimal edits available until the player finishes typing.
+            if(!value.matches("-?[0-9]*(\\.[0-9]*)?")) {
+                this.synchronizing=true;
+                this.field.setValue(this.lastValidInput);
+                this.synchronizing=false;
+                return;
+            }
+            this.lastValidInput=value;
             if(this.synchronizing || value.isEmpty() || value.equals("-") || value.equals(".") || value.equals("-.")) return;
             try {
                 double number=Double.parseDouble(value)*divisor;

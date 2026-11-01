@@ -77,9 +77,10 @@ assert "RegistryFriendlyByteBuf" in snapshot
 assert "net.minecraftforge" not in snapshot
 save = new("network/SaveBirdConfigPacket.java")
 assert "Permissions.COMMANDS_MODERATOR" in save
-assert "BirdConfigManager.replaceAndSave(data, player.server)" in save
-assert "BirdPopulationTracker.rebuild(player.server)" in save
-assert "BirdDroppingEvents.refreshLoadedBirdCooldowns(player.server)" in save
+assert "MinecraftServer server = player.serverLevel().getServer();" in save
+assert "BirdConfigManager.replaceAndSave(data, server)" in save
+assert "BirdPopulationTracker.rebuild(server)" in save
+assert "BirdDroppingEvents.refreshLoadedBirdCooldowns(server)" in save
 
 commands = new("command/BirdConfigCommands.java")
 assert "CommandRegistrationCallback.EVENT.register" in commands

@@ -9,7 +9,6 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.AbstractGlassBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StainedGlassPaneBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -33,7 +32,7 @@ final class FrameWorkbenchMaterialResolver {
         Minecraft client=Minecraft.getInstance();
         boolean paper=id.equals(PAPER) || id.equals(AIR);
         Item item=BuiltInRegistries.ITEM.getValue(id);
-        BlockState state=paper ? Blocks.WHITE_WOOL.defaultBlockState()
+        BlockState state=paper ? BuiltInRegistries.BLOCK.getValue(Identifier.withDefaultNamespace("white_wool")).defaultBlockState()
                 : item instanceof BlockItem block ? block.getBlock().defaultBlockState()
                 : Blocks.OAK_PLANKS.defaultBlockState();
         TextureAtlasSprite sprite=client.getModelManager().getBlockStateModelSet()
@@ -61,8 +60,8 @@ final class FrameWorkbenchMaterialResolver {
     static boolean isGlass(Identifier id) {
         Item item=BuiltInRegistries.ITEM.getValue(id);
         if(!(item instanceof BlockItem block))return false;
-        if(block.getBlock() instanceof AbstractGlassBlock
-                || block.getBlock() instanceof StainedGlassPaneBlock
+        if(block.getBlock() instanceof StainedGlassPaneBlock
+                || id.getPath().contains("glass") || id.getPath().endsWith("_pane")
                 || block.getBlock()==Blocks.GLASS_PANE)return true;
         // Preserve the original special case for beacons and third-party
         // blocks whose actual particle material is a vanilla glass surface.

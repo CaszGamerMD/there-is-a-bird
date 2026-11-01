@@ -76,11 +76,12 @@ for token in (
     "sprite.transparency().hasTranslucent()",
     "Blocks.OAK_PLANKS.defaultBlockState()",
     "item instanceof BlockItem block",
-    "Blocks.WHITE_WOOL.defaultBlockState()",
+    'BuiltInRegistries.BLOCK.getValue(Identifier.withDefaultNamespace("white_wool")).defaultBlockState()',
     "paper ? 0.96F : 1.0F",
     "paper ? 0.86F : 1.0F",
     'path.equals("block/tinted_glass")',
-    "block.getBlock() instanceof AbstractGlassBlock",
+    'block.getBlock() instanceof StainedGlassPaneBlock',
+    'id.getPath().contains("glass")',
 ):
     assert token in resolver, token
 assert "net.minecraftforge." not in resolver

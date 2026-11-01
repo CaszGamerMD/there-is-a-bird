@@ -27,6 +27,8 @@ import EdDYON.guaniao.command.BirdConfigCommands;
 import EdDYON.guaniao.command.PhotoAdminCommands;
 import EdDYON.guaniao.content.bird.flight.BirdFlightLock;
 import EdDYON.guaniao.content.bird.BirdEntityAttachments;
+import EdDYON.guaniao.content.bird.BirdScanBudget;
+import EdDYON.guaniao.content.bird.BirdDroppingAreaLimiter;
 import EdDYON.guaniao.content.bird.BirdFlockSoundLimiter;
 import EdDYON.guaniao.event.CrowNestLifecycleEvents;
 import EdDYON.guaniao.event.EarthwormRainEvents;
@@ -85,6 +87,8 @@ public final class GuaniaoFabricEntrypoint implements ModInitializer {
         // Existing behavior: track active birds, tick rain worms and clean up
         // transient nest and photo state at exactly the corresponding hooks.
         BirdServerTickManager.registerCallbacks();
+        BirdScanBudget.registerCallbacks();
+        BirdDroppingAreaLimiter.registerCallbacks();
         BirdFlockSoundLimiter.registerCallbacks();
         HummingbirdEcologyEvents.registerCallbacks();
         BirdPopulationTracker.registerCallbacks();

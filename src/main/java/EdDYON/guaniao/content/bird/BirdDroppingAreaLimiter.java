@@ -1,6 +1,5 @@
 package EdDYON.guaniao.content.bird;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,17 +7,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /** Server-thread-only rate limit shared by all naturally defecating bird species. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdDroppingAreaLimiter {
     private static final int CELL_SIZE = 16;
     private static final int CLEANUP_INTERVAL_TICKS = 600;
@@ -42,11 +38,7 @@ public final class BirdDroppingAreaLimiter {
                 .recordDrop(level.getGameTime(), pos.getX(), pos.getZ(), cooldown);
     }
 
-    @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+    public static void onServerTick() {
         Iterator<Map.Entry<ServerLevel, AreaWindows>> iterator = WINDOWS.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<ServerLevel, AreaWindows> entry = iterator.next();
@@ -57,11 +49,13 @@ public final class BirdDroppingAreaLimiter {
         }
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            WINDOWS.remove(level);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        WINDOWS.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerTickEvents.END_SERVER_TICK.register(server -> onServerTick());
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     // Kept independent of world objects so boundary, expiry and cache limits can be tested.

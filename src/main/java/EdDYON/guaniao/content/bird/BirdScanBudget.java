@@ -1,19 +1,15 @@
 package EdDYON.guaniao.content.bird;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.config.BirdSpecies;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /** Per-level total budget plus refillable per-species tokens to prevent one species monopolizing scans. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdScanBudget {
     private static final Map<ServerLevel, TickUsage> USAGE = new WeakHashMap<>();
 
@@ -74,11 +70,12 @@ public final class BirdScanBudget {
         }
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            USAGE.remove(level);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        USAGE.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     public record Stats(int usedThisTick, long granted, long denied, long tick) {

@@ -133,6 +133,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
         include 'EdDYON/guaniao/mixin/ItemEntityAgeAccessor.java'
         include 'EdDYON/guaniao/content/bird/BirdWalkStride.java'
         include 'EdDYON/guaniao/content/bird/BirdWalkDistance.java'
+        include 'EdDYON/guaniao/content/guide/BirdGuideItem.java'
         // The loud-sound wake handler and both ServerLevel broadcasts are fully Fabric-native.
         include 'EdDYON/guaniao/content/bird/BirdLoudSoundListener.java'
         include 'EdDYON/guaniao/content/bird/BirdSleepWakeable.java'

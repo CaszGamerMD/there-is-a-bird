@@ -17,6 +17,8 @@ public final class GuaniaoSparrowTideProof {
         level.getMinY();
         level.getMaxY();
         level.getRandom().nextFloat();
+        level.getOverworldClockTime();
+        sparrow.snapTo(0.5, 65.0, 0.5, 0.0F, 0.0F);
     }
 
     static void register() {

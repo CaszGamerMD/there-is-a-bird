@@ -126,6 +126,35 @@ for p in sorted((root / subtree).rglob("*Entity.java")):
         expected = expected.replace('new ResourceLocation("guaniao", ', 'Identifier.fromNamespaceAndPath("guaniao", ')
         expected = expected.replace("!ForgeEventFactory.onAnimalTame(this, player)",
                                     "BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)")
+        expected = expected.replace(
+            "@Override protected void customServerAiStep() {\n        super.customServerAiStep();\n        if (level() instanceof ServerLevel server && isAlive()) {",
+            "@Override protected void customServerAiStep(ServerLevel server) {\n        super.customServerAiStep(server);\n        if (isAlive()) {")
+        expected = expected.replace(
+            "if (isTame() && isOwnedBy(player) && player.isShiftKeyDown() && stack.is(net.minecraft.tags.ItemTags.FLOWERS)) {",
+            "if (isTame() && isOwnedBy(player) && player.isShiftKeyDown()\n"
+            "                && stack.is(net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags.FLOWERS)) {")
+        expected = expected.replace("InteractionResult.sidedSuccess(level().isClientSide())",
+                                    "level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME")
+        expected = expected.replace(
+            "@Override public boolean hurt(DamageSource source, float amount) {\n"
+            "        boolean hurt = super.hurt(source, amount);\n"
+            "        if (hurt && !level().isClientSide() && isAlive()) behavior.panic(source.getEntity());",
+            "@Override public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {\n"
+            "        boolean hurt = super.hurtServer(level, source, amount);\n"
+            "        if (hurt && isAlive()) behavior.panic(source.getEntity());")
+        expected = expected.replace("    @Override public boolean canRiderInteract() { return true; }",
+                                    "    // In 26.2 riding interactions no longer dispatch canRiderInteract; retain\n"
+                                    "    // the named method for downstream integrations that query this bird.\n"
+                                    "    public boolean canRiderInteract() { return true; }")
+        expected = expected.replace("@Override public boolean causeFallDamage(float distance, float multiplier, DamageSource source)",
+                                    "@Override public boolean causeFallDamage(double distance, float multiplier, DamageSource source)")
+        expected = expected.replace(
+            "@Override protected void dropCustomDeathLoot(DamageSource source, int looting, boolean hit) {\n"
+            "        super.dropCustomDeathLoot(source, looting, hit);\n"
+            "        if (!getHeldGardenItem().isEmpty()) { spawnAtLocation(getHeldGardenItem().copy());",
+            "@Override protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean hit) {\n"
+            "        super.dropCustomDeathLoot(level, source, hit);\n"
+            "        if (!getHeldGardenItem().isEmpty()) { spawnAtLocation(level, getHeldGardenItem().copy());")
     if relative.endswith(("/crow/CrowEntity.java", "/kestrel/KestrelEntity.java", "/seagull/SeagullEntity.java")):
         expected = expected.replace("!net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)",
                                     "EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)")

@@ -1,6 +1,12 @@
 import EdDYON.guaniao.event.BirdTamePermissionEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -25,5 +31,15 @@ public final class GuaniaoHummingbirdPersistenceProof {
 
     static void veto() {
         BirdTamePermissionEvents.BEFORE_TAME.register((bird, player) -> true);
+    }
+
+    static void modernHummingbirdApis(ServerLevel level, Mob bird, DamageSource damage, ItemStack stack) {
+        bird.hurtServer(level, damage, 1.0F);
+        bird.startRiding(bird, true, true);
+        level.dimension().identifier();
+        level.getOverworldClockTime();
+        stack.is(net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags.FLOWERS);
+        BuiltInRegistries.BLOCK.getValue(Identifier.withDefaultNamespace("dandelion"));
+        InteractionResult success = level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 }

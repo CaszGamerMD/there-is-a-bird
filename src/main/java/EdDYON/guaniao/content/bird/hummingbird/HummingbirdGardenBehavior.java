@@ -88,7 +88,7 @@ final class HummingbirdGardenBehavior {
         BirdBathBlockEntity bath = HummingbirdSites.bath(level, Vec3.atCenterOf(at), false);
         garden = bath == null ? at.immutable() : bath.getBlockPos().immutable();
         linkedBath = bath == null ? null : bath.getBlockPos().immutable();
-        gardenDimension = level.dimension().location();
+        gardenDimension = level.dimension().identifier();
         bird.setBirdCommandMode(BirdCommandMode.FREE);
     }
     void commandChanged() {
@@ -116,7 +116,7 @@ final class HummingbirdGardenBehavior {
         if (freeFlightTicks > 0 && --freeFlightTicks == 0) scanDelay = 0;
         if (treeDepartureTicks > 0 && --treeDepartureTicks == 0) departedTree = null;
         if (failedTreeTicks > 0 && --failedTreeTicks == 0) failedTree = null;
-        if (gardenDimension != null && !gardenDimension.equals(level.dimension().location())) {
+        if (gardenDimension != null && !gardenDimension.equals(level.dimension().identifier())) {
             garden = linkedBath = null; gardenDimension = null;
         }
         boolean night = level.dimensionType().hasSkyLight() && level.isNight();
@@ -258,7 +258,7 @@ final class HummingbirdGardenBehavior {
                                     (bird.getRandom().nextDouble() - .5) * 2.4);
                             aim = bird.getEyePosition().add(bird.getLookAngle().scale(4)); state(Activity.HOVER);
                         } else {
-                            double morning = level.getDayTime() % 24000 < 3000 ? 1.4 : 1;
+                            double morning = level.getOverworldClockTime() % 24000 < 3000 ? 1.4 : 1;
                             destination = center.add((bird.getRandom().nextDouble() - .5) * 8 * morning,
                                     1 + bird.getRandom().nextDouble() * 2,
                                     (bird.getRandom().nextDouble() - .5) * 8 * morning);
@@ -563,7 +563,7 @@ final class HummingbirdGardenBehavior {
         seedCooldown = HummingbirdConfig.seedMinTicks() + bird.getRandom().nextInt(
                 HummingbirdConfig.seedMaxTicks() - HummingbirdConfig.seedMinTicks() + 1);
         if (bird.getRandom().nextDouble() >= HummingbirdConfig.seedChance()) return;
-        Block last = lastFlower == null ? null : BuiltInRegistries.BLOCK.get(lastFlower);
+        Block last = lastFlower == null ? null : BuiltInRegistries.BLOCK.getValue(lastFlower);
         if (last != null && FlowerHabitatIndex.isVanillaFlower(last) && last.asItem() != Items.AIR) {
             bird.setHeldGardenItem(new ItemStack(last.asItem()));
         }
@@ -639,7 +639,7 @@ final class HummingbirdGardenBehavior {
         if (ownerStillTicks > 200 && mayHeadPerch(owner) && owner.getPassengers().isEmpty()) {
             Vec3 head = owner.position().add(bird.ownerHeadOffset(owner.getYHeadRot(), owner.getXRot()));
             bird.motor.aim(head, owner.getEyePosition(), .20);
-            if (bird.position().distanceToSqr(head) < .01 && bird.startRiding(owner, true)) {
+            if (bird.position().distanceToSqr(head) < .01 && bird.startRiding(owner, true, true)) {
                 state(Activity.HEAD_PERCH); bird.syncHeadPassenger(owner);
             }
             return;
@@ -670,7 +670,8 @@ final class HummingbirdGardenBehavior {
                 if (level.getChunkSource().getChunkNow(x, z) == null) return false;
         return level.noCollision(bird, bird.getBoundingBox().move(head.subtract(bird.position())))
                 && owner.isAlive() && !owner.isSpectator() && !owner.isSleeping()
-                && !owner.isFallFlying() && !owner.isInWaterOrBubble();
+                && !owner.isFallFlying() && !owner.isInWater()
+                && !owner.level().getBlockState(owner.blockPosition()).is(net.minecraft.world.level.block.Blocks.BUBBLE_COLUMN);
     }
     private boolean tryTerritory(ServerLevel level) {
         if (territoryCooldown > 0 || bird.getBirdCommandMode() != BirdCommandMode.FREE) return false;

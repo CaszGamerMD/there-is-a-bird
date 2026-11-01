@@ -120,9 +120,9 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         };
     }
     @Override protected void registerGoals() { /* All motion is owned by the hover state machine. */ }
-    @Override protected void customServerAiStep() {
-        super.customServerAiStep();
-        if (level() instanceof ServerLevel server && isAlive()) {
+    @Override protected void customServerAiStep(ServerLevel server) {
+        super.customServerAiStep(server);
+        if (isAlive()) {
             if (motor.escapeWater(server)) {
                 behavior.prepareWaterEscape();
                 return;
@@ -308,12 +308,13 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
             playInteractionSound();
             return command;
         }
-        if (isTame() && isOwnedBy(player) && player.isShiftKeyDown() && stack.is(net.minecraft.tags.ItemTags.FLOWERS)) {
+        if (isTame() && isOwnedBy(player) && player.isShiftKeyDown()
+                && stack.is(net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags.FLOWERS)) {
             if (!level().isClientSide()) {
                 behavior.bindGarden((ServerLevel)level(), player.blockPosition());
                 playInteractionSound();
             }
-            return InteractionResult.sidedSuccess(level().isClientSide());
+            return level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
         }
         if (!BirdFoodSafety.matchesClean(FOODS, stack)) return InteractionResult.PASS;
         if (isTame() && !isOwnedBy(player)) return InteractionResult.PASS;
@@ -332,11 +333,11 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
             if (!player.getAbilities().instabuild) stack.shrink(1);
             playInteractionSound();
         }
-        return InteractionResult.sidedSuccess(level().isClientSide());
+        return level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
-    @Override public boolean hurt(DamageSource source, float amount) {
-        boolean hurt = super.hurt(source, amount);
-        if (hurt && !level().isClientSide() && isAlive()) behavior.panic(source.getEntity());
+    @Override public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        boolean hurt = super.hurtServer(level, source, amount);
+        if (hurt && isAlive()) behavior.panic(source.getEntity());
         return hurt;
     }
     @Override public void rideTick() {
@@ -372,14 +373,16 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         Entity old = getVehicle(); super.removeVehicle();
         if (old instanceof Player owner) syncHeadPassenger(owner);
     }
-    @Override public boolean canRiderInteract() { return true; }
-    @Override public boolean causeFallDamage(float distance, float multiplier, DamageSource source) { return false; }
+    // In 26.2 riding interactions no longer dispatch canRiderInteract; retain
+    // the named method for downstream integrations that query this bird.
+    public boolean canRiderInteract() { return true; }
+    @Override public boolean causeFallDamage(double distance, float multiplier, DamageSource source) { return false; }
     @Override protected void checkFallDamage(double distance, boolean onGround, net.minecraft.world.level.block.state.BlockState state, BlockPos pos) { }
     @Override public boolean shouldRenderAtSqrDistance(double distance) { return BirdVisibility.shouldRender(distance, Entity.getViewScale()); }
     @Override public boolean removeWhenFarAway(double distance) { return !isTame() && distance > BirdVisibility.TRACKING_DISTANCE_SQUARED; }
-    @Override protected void dropCustomDeathLoot(DamageSource source, int looting, boolean hit) {
-        super.dropCustomDeathLoot(source, looting, hit);
-        if (!getHeldGardenItem().isEmpty()) { spawnAtLocation(getHeldGardenItem().copy()); setHeldGardenItem(ItemStack.EMPTY); }
+    @Override protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean hit) {
+        super.dropCustomDeathLoot(level, source, hit);
+        if (!getHeldGardenItem().isEmpty()) { spawnAtLocation(level, getHeldGardenItem().copy()); setHeldGardenItem(ItemStack.EMPTY); }
     }
     @Override public void remove(RemovalReason reason) {
         if (!level().isClientSide()) behavior.release();

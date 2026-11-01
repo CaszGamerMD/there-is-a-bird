@@ -21,6 +21,7 @@ garden_file = "content/bird/hummingbird/HummingbirdGardenBehavior.java"
 old_entity, entity = original(entity_file), current(entity_file)
 old_garden, garden = original(garden_file), current(garden_file)
 sites = current("content/bird/hummingbird/HummingbirdSites.java")
+motor = current("content/bird/hummingbird/HummingbirdFlightMotor.java")
 events = current("event/BirdTamePermissionEvents.java")
 
 
@@ -58,6 +59,18 @@ assert 'BEFORE_TAME.invoker().canTame(this, player)' in entity
 assert 'tame(player); setBirdCommandMode(BirdCommandMode.FOLLOW)' in entity
 assert 'tamingProgress = Math.max(0, HummingbirdConfig.tamingFeeds() - 1)' in entity
 assert 'ForgeEventFactory' not in entity
+assert '@Override public boolean hurtServer(ServerLevel level, DamageSource source, float amount)' in entity
+assert 'if (hurt && isAlive()) behavior.panic(source.getEntity())' in entity
+assert 'dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean hit)' in entity
+assert 'spawnAtLocation(level, getHeldGardenItem().copy())' in entity
+assert 'ConventionalItemTags.FLOWERS' in entity
+assert 'InteractionResult.SUCCESS : InteractionResult.CONSUME' in entity
+assert 'getOverworldClockTime()' in garden
+assert 'dimension().identifier()' in garden
+assert 'BuiltInRegistries.BLOCK.getValue(lastFlower)' in garden
+assert 'bird.startRiding(owner, true, true)' in garden
+assert 'bird.isInWater() || bird.level().getBlockState(bird.blockPosition())' in motor
+assert 'Blocks.BUBBLE_COLUMN' in motor and 'Blocks.BUBBLE_COLUMN' in garden
 
 # The same pre-tame veto is used by the other three species that originally
 # called ForgeEventFactory.onAnimalTame, without changing their feeding odds.

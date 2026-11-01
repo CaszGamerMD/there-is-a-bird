@@ -17,6 +17,9 @@ assert 'for (ServerLevel level : server.getAllLevels())' in new
 assert 'level.dimension() != Level.OVERWORLD || level.getGameTime() % 5L != 0L' in new
 assert 'level.getGameRules().get(GameRules.SPAWN_MOBS)' in new
 assert 'EntitySpawnReason.NATURAL, null)' in new
+assert 'GuaniaoEntityTypes.SPARROW.get().create(level, EntitySpawnReason.NATURAL)' in new
+assert 'bird.snapTo(start.x, start.y, start.z, yaw, 0.0F)' in new
+assert 'SparrowTideRules.activityMultiplier(level.getOverworldClockTime()' in new
 assert 'level.getMinY()' in new and 'level.getMaxY()' in new
 assert 'Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "sparrow_tide_habitat")' in new
 assert 'level.getRandom()' in new and 'level.random' not in new

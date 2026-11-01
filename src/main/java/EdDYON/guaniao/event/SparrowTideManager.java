@@ -85,7 +85,7 @@ public final class SparrowTideManager {
     private static void tickLevel(ServerLevel level, LevelTides tides) {
         long now = level.getGameTime();
         boolean enabled = enabled(level);
-        double activity = SparrowTideRules.activityMultiplier(level.getDayTime(), level.isRaining(), level.isThundering());
+        double activity = SparrowTideRules.activityMultiplier(level.getOverworldClockTime(), level.isRaining(), level.isThundering());
         Iterator<TideEvent> iterator = tides.events.values().iterator();
         int activeEvents = 0;
         while (iterator.hasNext()) {
@@ -229,14 +229,14 @@ public final class SparrowTideManager {
         if (!BirdFlybySpawnEvents.isHiddenFromNearbyPlayers(level, start)) {
             return;
         }
-        SparrowEntity bird = GuaniaoEntityTypes.SPARROW.get().create(level);
+        SparrowEntity bird = GuaniaoEntityTypes.SPARROW.get().create(level, EntitySpawnReason.NATURAL);
         if (bird == null) {
             return;
         }
         Vec3 target = Vec3.atBottomCenterOf(landing).add(0.0D, 0.05D, 0.0D);
         Vec3 direction = target.subtract(start);
         float yaw = (float)Math.toDegrees(Math.atan2(direction.z, direction.x)) - 90.0F;
-        bird.moveTo(start.x, start.y, start.z, yaw, 0.0F);
+        bird.snapTo(start.x, start.y, start.z, yaw, 0.0F);
         bird.setYHeadRot(yaw);
         bird.yBodyRot = yaw;
         bird.finalizeSpawn(level, level.getCurrentDifficultyAt(ground), EntitySpawnReason.NATURAL, null);

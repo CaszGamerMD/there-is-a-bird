@@ -2,7 +2,8 @@ package EdDYON.guaniao.client.camera;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.textures.GpuFormat;
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.Objects;
 
 /**
@@ -27,6 +28,7 @@ public final class CameraOffscreenTarget26 implements AutoCloseable {
      */
     public RenderTarget copyWorld(RenderTarget world) {
         Objects.requireNonNull(world, "world");
+        RenderSystem.assertOnRenderThread();
         if (world.width <= 0 || world.height <= 0
                 || world.getColorTexture() == null || world.getDepthTexture() == null) {
             return null;
@@ -42,9 +44,17 @@ public final class CameraOffscreenTarget26 implements AutoCloseable {
                     true, GpuFormat.RGBA8_UNORM);
             this.size = next;
         }
-        // Copy AFTER the level is drawn and BEFORE applying a camera shader.
-        // The visible main target is only a source; neither call writes to it.
-        target.copyColorFrom(world);
+        if (target.getColorTexture() == null || target.getDepthTexture() == null) {
+            // A failed GPU allocation must not expose an incomplete preview.
+            close();
+            return null;
+        }
+        // Minecraft 26.2 has no RenderTarget.copyColorFrom. Copy directly via
+        // the cross-backend GPU command encoder, matching vanilla's depth-copy
+        // path. The visible main target is only a source; it is never modified.
+        RenderSystem.getDevice().createCommandEncoder().copyTextureToTexture(
+                world.getColorTexture(), target.getColorTexture(),
+                0, 0, 0, 0, 0, next.width(), next.height());
         target.copyDepthFrom(world);
         return target;
     }

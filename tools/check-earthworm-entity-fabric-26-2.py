@@ -39,9 +39,12 @@ for token in (
     "public InteractionResult interact(Player player, InteractionHand hand, Vec3 hitLocation)",
     "protected void addAdditionalSaveData(ValueOutput tag)",
     "protected void readAdditionalSaveData(ValueInput tag)",
-    'tag.getDouble("HomeX").isPresent()',
+    'tag.getDoubleOr("HomeX", Double.NaN)',
+    '!Double.isNaN(homeX)',
     'tag.getInt("BurrowAfter").isPresent()',
     'tag.getIntOr("SoilAge", 0)',
+    'public boolean hurtServer(ServerLevel level, DamageSource source, float amount)',
+    'return false;',
     "return this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME",
 ):
     assert token in new, f"26.2 earthworm entity API migration incomplete: {token}"

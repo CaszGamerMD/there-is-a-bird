@@ -4,6 +4,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -37,10 +38,15 @@ public final class GuaniaoEarthwormEntityProof extends Entity {
 
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
-        double x = input.getDoubleOr("HomeX", 0.0D);
-        if (input.getDouble("HomeX").isPresent() && x > 0.0D) {
+        double x = input.getDoubleOr("HomeX", Double.NaN);
+        if (!Double.isNaN(x) && x > 0.0D) {
             this.entityData.set(BURROW, input.getIntOr("Burrow", 0));
         }
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        return false;
     }
 
     @Override

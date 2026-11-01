@@ -10,6 +10,8 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -155,6 +157,13 @@ public final class EarthwormEntity extends Entity {
     @Override public float getPickRadius() { return 0.08F; }
 
     @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        // As before, earthworms are collected through an empty-hand interaction,
+        // not killed by ordinary entity damage.
+        return false;
+    }
+
+    @Override
     protected void addAdditionalSaveData(ValueOutput tag) {
         Vec3 center = this.home == null ? this.position() : this.home;
         tag.putDouble("HomeX", center.x); tag.putDouble("HomeY", center.y); tag.putDouble("HomeZ", center.z);
@@ -165,9 +174,10 @@ public final class EarthwormEntity extends Entity {
 
     @Override
     protected void readAdditionalSaveData(ValueInput tag) {
-        this.home = tag.getDouble("HomeX").isPresent()
-                ? new Vec3(tag.getDoubleOr("HomeX", 0.0D), tag.getDoubleOr("HomeY", 0.0D),
-                        tag.getDoubleOr("HomeZ", 0.0D)) : this.position();
+        double homeX = tag.getDoubleOr("HomeX", Double.NaN);
+        this.home = !Double.isNaN(homeX)
+                ? new Vec3(homeX, tag.getDoubleOr("HomeY", 0.0D), tag.getDoubleOr("HomeZ", 0.0D))
+                : this.position();
         this.soilAge = Mth.clamp(tag.getIntOr("SoilAge", 0), 0, 1800);
         this.burrowAfter = tag.getInt("BurrowAfter").isPresent()
                 ? Mth.clamp(tag.getIntOr("BurrowAfter", this.burrowAfter), 900, 1800) : this.burrowAfter;

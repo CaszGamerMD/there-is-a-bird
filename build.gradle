@@ -167,6 +167,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
     source files('tools/port-probes/GuaniaoCockatooSoundLifecycleProof.java')
     source files('tools/port-probes/GuaniaoDroppingProjectileProof.java')
     source files('tools/port-probes/GuaniaoDroppingSplatEntityProof.java')
+    source files('tools/port-probes/GuaniaoPhotographHangingProof.java')
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
     options.release = 25

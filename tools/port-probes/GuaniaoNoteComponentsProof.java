@@ -36,7 +36,7 @@ public final class GuaniaoNoteComponentsProof {
     }
 
     public static void award(ServerPlayer player, Identifier advancementId) {
-        AdvancementHolder holder = player.serverLevel().getServer().getAdvancements().get(advancementId);
+        AdvancementHolder holder = player.level().getServer().getAdvancements().get(advancementId);
         if (holder != null) {
             player.getAdvancements().award(holder, "triggered");
         }

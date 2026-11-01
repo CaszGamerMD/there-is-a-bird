@@ -45,7 +45,7 @@ public final class SaveBirdConfigPacket implements CustomPacketPayload {
 
     public void handle(ServerPlayer player) {
             if (player == null) return;
-            MinecraftServer server = player.serverLevel().getServer();
+            MinecraftServer server = player.level().getServer();
             if (!player.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)
                     && (server == null || !server.isSingleplayerOwner(player.getGameProfile()))) {
                 return;

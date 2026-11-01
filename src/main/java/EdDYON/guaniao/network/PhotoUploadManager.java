@@ -62,8 +62,8 @@ public final class PhotoUploadManager {
     }
 
     public static void begin(ServerPlayer player, UUID uploadId, InteractionHand hand, int totalBytes, int width, int height, String contentHash) {
-        long now = gameTime(player.serverLevel().getServer());
-        cleanupExpired(player.serverLevel().getServer(), now);
+        long now = gameTime(player.level().getServer());
+        cleanupExpired(player.level().getServer(), now);
         if (acknowledgeCompleted(player, uploadId)) {
             return;
         }
@@ -79,7 +79,7 @@ public final class PhotoUploadManager {
                 || totalBytes > PhotoTransferLimits.MAX_COMPRESSED_BYTES
                 || !PhotoTransferLimits.isCaptureDimensions(width, height)
                 || !PhotoImageCodec.isSha256(contentHash)
-                || !quotaAllows(player.serverLevel().getServer(), player.getUUID(), totalBytes)) {
+                || !quotaAllows(player.level().getServer(), player.getUUID(), totalBytes)) {
             fail(player, uploadId);
             return;
         }
@@ -120,12 +120,12 @@ public final class PhotoUploadManager {
         }
         ACTIVE_UPLOADS.remove(playerId);
         if (!session.complete()
-                || !quotaAllows(player.serverLevel().getServer(), playerId, session.totalBytes)) {
+                || !quotaAllows(player.level().getServer(), playerId, session.totalBytes)) {
             fail(player, session.uploadId);
             return;
         }
 
-        MinecraftServer server = player.serverLevel().getServer();
+        MinecraftServer server = player.level().getServer();
         String ownerName = player.getScoreboardName();
         long gameTime = player.level().getGameTime();
         String filmName = captureDate();
@@ -165,7 +165,7 @@ public final class PhotoUploadManager {
             sendMissing(player, photoId);
             return;
         }
-        PhotoRecord indexed = PhotoIndexSavedData.get(player.serverLevel().getServer()).get(photoId);
+        PhotoRecord indexed = PhotoIndexSavedData.get(player.level().getServer()).get(photoId);
         // Only an indexed photo may be served. A disk file with no index record is an orphan —
         // never revive it as ACTIVE (its dimensions/hash would be fabricated). Maintenance tools
         // are the sole path that rebuilds the index, and they go through TRASH handling.
@@ -186,7 +186,7 @@ public final class PhotoUploadManager {
             return;
         }
 
-        MinecraftServer server = player.serverLevel().getServer();
+        MinecraftServer server = player.level().getServer();
         Object request = new Object();
         PENDING_DOWNLOADS.put(playerId, request);
         boolean accepted = PhotoIoService.submit(
@@ -240,7 +240,7 @@ public final class PhotoUploadManager {
     }
 
     public static boolean allowDownload(ServerPlayer player) {
-        long now = gameTime(player.serverLevel().getServer());
+        long now = gameTime(player.level().getServer());
         RequestWindow window = DOWNLOAD_RATE.computeIfAbsent(player.getUUID(), ignored -> new RequestWindow(now));
         if (now - window.startedAt >= 20L) {
             window.startedAt = now;
@@ -454,7 +454,7 @@ public final class PhotoUploadManager {
                 && (!BirdConfigManager.photoUploadsOperatorOnly() || player.hasPermissions(2))
                 && (!BirdConfigManager.photoUploadsWhitelistedOnly()
                 || player.hasPermissions(2)
-                || player.serverLevel().getServer().getPlayerList().getWhiteList().isWhiteListed(player.getGameProfile()));
+                || player.level().getServer().getPlayerList().getWhiteList().isWhiteListed(player.getGameProfile()));
     }
 
     private static boolean quotaAllows(MinecraftServer server, UUID playerId, int bytes) {

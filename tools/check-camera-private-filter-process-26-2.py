@@ -29,7 +29,9 @@ for token in (
 assert world.index("OFFSCREEN.copyWorld(source)") < world.index("processFilterOnPrivate(")
 assert world.index("processFilterOnPrivate(") < world.index("copiedWorld = updated;")
 assert "minecraft.gameRenderer.mainRenderTarget()" in world
-assert "target.copyColorFrom(world);" in target
+assert "world.getColorTexture(), target.getColorTexture()," in target
+assert "RenderSystem.getDevice().createCommandEncoder().copyTextureToTexture(" in target
+assert "target.copyColorFrom(world);" not in target
 assert "target.copyDepthFrom(world);" in target
 for forbidden in (
     "chain.process(source,", "chain.process(minecraft.gameRenderer.mainRenderTarget()",

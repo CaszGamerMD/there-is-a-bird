@@ -66,6 +66,7 @@ assert 'spawnAtLocation(level, getHeldGardenItem().copy())' in entity
 assert 'ConventionalItemTags.FLOWERS' in entity
 assert 'InteractionResult.SUCCESS : InteractionResult.CONSUME' in entity
 assert 'getOverworldClockTime()' in garden
+assert 'level.dimensionType().hasSkyLight() && level.isDarkOutside()' in garden
 assert 'dimension().identifier()' in garden
 assert 'BuiltInRegistries.BLOCK.getValue(lastFlower)' in garden
 assert 'bird.startRiding(owner, true, true)' in garden

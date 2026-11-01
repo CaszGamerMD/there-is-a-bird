@@ -119,7 +119,7 @@ final class HummingbirdGardenBehavior {
         if (gardenDimension != null && !gardenDimension.equals(level.dimension().identifier())) {
             garden = linkedBath = null; gardenDimension = null;
         }
-        boolean night = level.dimensionType().hasSkyLight() && level.isNight();
+        boolean night = level.dimensionType().hasSkyLight() && level.isDarkOutside();
         if (!night) {
             resetNightSearch();
             if (waitingForTree) {

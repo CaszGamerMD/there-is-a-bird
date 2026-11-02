@@ -24,7 +24,7 @@ assert "createGeoRenderer(Consumer<GeoRenderProvider> consumer)" in item
 assert "consumer.accept(this.geoRenderProvider.getValue())" in item
 assert "registerCrowNestItemRenderer();" in client
 assert "GuaniaoItems.CROW_NEST.get()" in client
-assert "new CrowNestItemRenderer()" in client
+assert "CrowNestItemRenderer::new" in client
 assert "new GeoRenderProvider()" in client
 assert "CrowNestItemRenderer extends GeoItemRenderer<CrowNestItem>" in renderer
 assert "adjustRenderPose(RenderPassInfo<GeoRenderState> info)" in renderer

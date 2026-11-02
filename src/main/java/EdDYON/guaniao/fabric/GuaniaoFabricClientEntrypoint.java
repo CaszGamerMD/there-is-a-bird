@@ -142,7 +142,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         }
         bath.geoRenderProvider.setValue(new GeoRenderProvider() {
             private final Supplier<GeoItemRenderer<BirdBathItem>> renderer =
-                    com.google.common.base.Suppliers.memoize(BirdBathItemRenderer::new);
+                    com.google.common.base.Suppliers.memoize(() -> new BirdBathItemRenderer(bath));
 
             @Override
             public GeoItemRenderer<BirdBathItem> getGeoItemRenderer() {

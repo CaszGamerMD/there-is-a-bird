@@ -26,7 +26,7 @@ assert "createGeoRenderer(Consumer<GeoRenderProvider> consumer)" in item
 assert "consumer.accept(this.geoRenderProvider.getValue())" in item
 assert "new MutableObject<>()" in item
 assert "registerBirdBathItemRenderers();" in client
-assert "com.google.common.base.Suppliers.memoize(BirdBathItemRenderer::new)" in client
+assert "com.google.common.base.Suppliers.memoize(() -> new BirdBathItemRenderer(bath))" in client
 for variant in (
     "WOODEN_BIRD_BATH", "STONE_BIRD_BATH", "BIRD_BATH",
     "WOODEN_BIRD_BATH_2", "STONE_BIRD_BATH_2", "BIRD_BATH_2",

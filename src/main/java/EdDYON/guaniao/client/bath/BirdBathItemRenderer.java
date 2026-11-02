@@ -1,48 +1,63 @@
 package EdDYON.guaniao.client.bath;
 
-import EdDYON.guaniao.content.bath.BirdBathContentType;
-import EdDYON.guaniao.content.bath.BirdBathCleanliness;
 import EdDYON.guaniao.content.bath.BirdBathItem;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.renderer.GeoItemRenderer;
+import com.geckolib.renderer.base.BoneSnapshots;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.RenderPassInfo;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.item.ItemDisplayContext;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
 
+import java.util.Set;
+
+/** GeckoLib 5's render-state equivalent of the original bird bath inventory presentation. */
 public class BirdBathItemRenderer extends GeoItemRenderer<BirdBathItem> {
-    public BirdBathItemRenderer() {
-        super(new BirdBathItemModel());
+    // Inventory baths are always empty and clean. These are exactly the authored
+    // content and dirt bones that the old renderRecursively callback suppressed.
+    private static final Set<String> HIDDEN_BONES = Set.of(
+            "water_up", "water_middle", "water_down",
+            "ice_up", "ice_middle", "ice_down",
+            "fish_up", "fish_middle", "fish_down",
+            "meat_up", "meat_middle", "meat_down",
+            "bread_up", "bread_middle", "bread_down",
+            "spoiled_up", "spoiled_middle", "spoiled_down",
+            "dirty_spots_light", "dirty_spots_medium", "dirty_spots_heavy",
+            "spoil_spots", "flies"
+    );
+
+    public BirdBathItemRenderer(BirdBathItem item) {
+        super(new BirdBathItemModel(item.variant()));
     }
 
     @Override
-    public void preRender(PoseStack poseStack, BirdBathItem animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        if (this.renderPerspective == ItemDisplayContext.GUI) {
-            // Fill the slot with the basin's top, without changing the held model.
+    public void adjustRenderPose(RenderPassInfo<GeoRenderState> info) {
+        PoseStack poseStack = info.poseStack();
+        if (info.renderState().getGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE) == ItemDisplayContext.GUI) {
+            // Authored slot view: show the basin top while keeping the small birds
+            // on the second design visible. The old preRender canceled GeckoLib's
+            // default origin translation here, so do not apply it in this branch.
             poseStack.translate(0.5F, 0.5F, 0.5F);
             poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
-            // Leave room for the second design's small birds along the rim.
             poseStack.scale(0.8F, 0.8F, 0.8F);
             poseStack.translate(0.0F, -1.4F, 0.0F);
-            if (!isReRender) {
-                // GeoItemRenderer adds this model-origin offset in preRender.
-                poseStack.translate(-0.5F, -0.51F, -0.5F);
-            }
         } else {
             poseStack.translate(itemOffsetX(), itemOffsetY(), itemOffsetZ());
             float scale = itemScale();
             poseStack.scale(scale, scale, scale);
+            super.adjustRenderPose(info);
         }
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
     }
 
     @Override
-    public void renderRecursively(PoseStack poseStack, BirdBathItem animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        BirdBathBoneVisibility.apply(BirdBathContentType.EMPTY, 0, BirdBathCleanliness.CLEAN, BirdBathContentType.EMPTY, bone);
-        super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+    public void adjustModelBonesForRender(RenderPassInfo<GeoRenderState> info, BoneSnapshots snapshots) {
+        for (String name : HIDDEN_BONES) {
+            snapshots.ifPresent(name, bone -> {
+                bone.skipRender(true);
+                bone.skipChildrenRender(true);
+            });
+        }
     }
 
     private static float itemOffsetX() {

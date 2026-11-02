@@ -23,7 +23,8 @@
     "GuaniaoGuiRenderStateAccess",
     "GuaniaoCameraMouseInputMixin",
     "GuaniaoCameraKeyboardInputMixin",
-    "GuaniaoCameraFieldOfViewMixin"
+    "GuaniaoCameraFieldOfViewMixin",
+    "FeatherFanHandPoseMixin"
   ],
   "server": [],
   "injectors": {

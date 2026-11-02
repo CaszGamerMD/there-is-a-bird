@@ -30,7 +30,7 @@ import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -1016,7 +1016,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
     }
 
     @Override
-    public ResourceLocation getTextureResource() {
+    public Identifier getTextureResource() {
         return UmbrellaCockatooDefinition.TEXTURE;
     }
 

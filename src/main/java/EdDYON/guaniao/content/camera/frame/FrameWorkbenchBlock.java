@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -36,7 +36,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 /** The workshop retains one private work area per visiting player. */
 public final class FrameWorkbenchBlock extends BaseEntityBlock {
     public static final MapCodec<FrameWorkbenchBlock> CODEC = simpleCodec(FrameWorkbenchBlock::new);
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     // Table, recessed work surface, cabinet and legs; texture seam offsets do not
     // need sub-pixel collision boxes. These shared shapes are built only once.
     private static final VoxelShape BODY = Shapes.or(

@@ -3,7 +3,7 @@ package EdDYON.guaniao.client.bath;
 import EdDYON.guaniao.content.bath.BirdBathContentType;
 import EdDYON.guaniao.content.bath.BirdBathCleanliness;
 import java.util.Set;
-import software.bernie.geckolib.cache.object.GeoBone;
+import com.geckolib.animation.state.BoneSnapshot;
 
 final class BirdBathBoneVisibility {
     private static final Set<String> CONTENT_BONES = Set.of(
@@ -43,20 +43,20 @@ final class BirdBathBoneVisibility {
     private static final float[] DIRT_DIRTY = {0.42F, 0.46F, 0.28F};
     private static final float[] DIRT_FILTHY = {0.24F, 0.32F, 0.16F};
 
-    static void apply(BirdBathContentType type, int level, BirdBathCleanliness cleanliness, BirdBathContentType spoiledContentType, GeoBone bone) {
-        String boneName = bone.getName();
+    static void apply(BirdBathContentType type, int level, BirdBathCleanliness cleanliness, BirdBathContentType spoiledContentType, BoneSnapshot bone) {
+        String boneName = bone.getBone().name();
         if (CONTENT_BONES.contains(boneName)) {
             boolean visible = isContentBoneVisible(type, level, spoiledContentType, boneName);
-            bone.setHidden(!visible);
-            bone.setChildrenHidden(!visible);
+            bone.skipRender(!visible);
+            bone.skipChildrenRender(!visible);
             return;
         }
         if (!DIRT_BONES.contains(boneName)) {
             return;
         }
         boolean visible = isDirtBoneVisible(type, level, cleanliness, boneName);
-        bone.setHidden(!visible);
-        bone.setChildrenHidden(!visible);
+        bone.skipRender(!visible);
+        bone.skipChildrenRender(!visible);
     }
 
     static boolean isContentBoneVisible(BirdBathContentType type, int level, BirdBathContentType spoiledContentType, String boneName) {

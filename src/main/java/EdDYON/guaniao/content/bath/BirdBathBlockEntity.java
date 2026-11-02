@@ -287,7 +287,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
         boolean changed = this.tickOccupation();
         long gameTime = level.getGameTime();
         if (Math.floorMod((int)(gameTime + this.environmentalTickOffset), ENVIRONMENT_TICK_INTERVAL) == 0) {
-            changed |= this.runEnvironmentTick(level, pos, state, level.random, ENVIRONMENT_TICK_INTERVAL);
+            changed |= this.runEnvironmentTick(level, pos, state, level.getRandom(), ENVIRONMENT_TICK_INTERVAL);
         }
         if (changed) {
             this.sync();
@@ -300,7 +300,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
         boolean rainingHere = openToSky && level.isRainingAt(pos.above());
         if (rainingHere) {
             changed |= this.tickRainRefill(level, pos, random);
-        } else if (this.contentType.isLiquid() && openToSky && level.isDay() && random.nextInt(EVAPORATION_CHANCE) == 0) {
+        } else if (this.contentType.isLiquid() && openToSky && level.isBrightOutside() && random.nextInt(EVAPORATION_CHANCE) == 0) {
             changed |= this.reduceWaterByEvaporation(level, pos);
         }
         if (openToSky) {
@@ -403,7 +403,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     private void sync() {
         this.setChanged();
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             BlockState state = this.getBlockState();
             this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
         }
@@ -465,7 +465,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     private boolean tickFreezeAndMelt(ServerLevel level, BlockPos pos, RandomSource random) {
-        boolean coldEnough = level.getBiome(pos).value().coldEnoughToSnow(pos);
+        boolean coldEnough = level.getBiome(pos).value().coldEnoughToSnow(pos, level.getSeaLevel());
         if (this.contentType.isLiquid() && coldEnough && random.nextInt(3) == 0) {
             this.frozenSugarWater = this.contentType == BirdBathContentType.SUGAR_WATER;
             this.contentType = BirdBathContentType.FROZEN_WATER;
@@ -473,7 +473,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
             BirdBathEffects.froze(level, pos);
             return true;
         }
-        if (this.contentType == BirdBathContentType.FROZEN_WATER && !coldEnough && level.isDay() && random.nextInt(4) == 0) {
+        if (this.contentType == BirdBathContentType.FROZEN_WATER && !coldEnough && level.isBrightOutside() && random.nextInt(4) == 0) {
             this.contentType = this.frozenSugarWater ? BirdBathContentType.SUGAR_WATER : BirdBathContentType.WATER;
             this.frozenSugarWater = false;
             BirdBathEffects.melted(level, pos);
@@ -487,7 +487,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
             return false;
         }
         int increment = Math.max(1, elapsedTicks);
-        if (level.isDay() && level.canSeeSky(pos.above()) && !level.isRaining()) {
+        if (level.isBrightOutside() && level.canSeeSky(pos.above()) && !level.isRaining()) {
             increment += Math.max(1, elapsedTicks / SUNLIGHT_SPOIL_BONUS_DIVISOR);
         }
         this.spoilTicks = (int)Math.min(Integer.MAX_VALUE, (long)this.spoilTicks + increment);

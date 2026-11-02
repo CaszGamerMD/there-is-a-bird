@@ -162,6 +162,16 @@ for rel in relative_files:
                 if invariant not in new_region:
                     raise SystemExit("Bird bath missing original validity/fallback behavior: " + invariant)
 
+    if rel.startswith("content/bath/"):
+        # Minecraft 26.2 exposes random/client-side as getters, renames the
+        # outdoor daylight test and now needs sea level for biome temperature.
+        # The surrounding rain, ice, spoiling and occupancy logic stays exact.
+        expected = expected.replace("level.random, ENVIRONMENT_TICK_INTERVAL",
+                                    "level.getRandom(), ENVIRONMENT_TICK_INTERVAL")
+        expected = expected.replace("level.isDay()", "level.isBrightOutside()")
+        expected = expected.replace("!this.level.isClientSide", "!this.level.isClientSide()")
+        expected = expected.replace(".coldEnoughToSnow(pos)", ".coldEnoughToSnow(pos, level.getSeaLevel())")
+
     if migrated != expected:
         raise SystemExit(f"{rel}: gameplay differs outside documented GeckoLib/persistence changes")
     print(f"BLOCK ENTITY PARITY OK: {rel}")

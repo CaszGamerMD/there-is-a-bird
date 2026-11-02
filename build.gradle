@@ -190,6 +190,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
     source files('tools/port-probes/GuaniaoBirdBathWaterBottleProof.java')
     source files('tools/port-probes/GuaniaoBirdBathBlockProof.java')
     source files('tools/port-probes/GuaniaoBirdBathEffectsProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathClimateProof.java')
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
     options.release = 25

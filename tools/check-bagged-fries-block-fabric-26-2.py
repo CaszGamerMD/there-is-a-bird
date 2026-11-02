@@ -48,6 +48,7 @@ for marker in (
     "return useFries(state, level, pos, player, hand)",
     "return useFries(state, level, pos, player, InteractionHand.MAIN_HAND)",
     "updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks,",
+    "return RenderShape.INVISIBLE;",
 ):
     assert marker in current, f"Missing 26.2-compatible or authored block behavior: {marker}"
 

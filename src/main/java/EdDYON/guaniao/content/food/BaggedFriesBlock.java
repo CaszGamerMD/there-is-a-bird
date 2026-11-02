@@ -65,7 +65,9 @@ public final class BaggedFriesBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        // 26.2 removed ENTITYBLOCK_ANIMATED; the authored GeckoLib block entity
+        // renderer supplies the model, so skip the vanilla baked block mesh.
+        return RenderShape.INVISIBLE;
     }
 
     @Override

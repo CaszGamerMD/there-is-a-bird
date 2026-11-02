@@ -165,6 +165,18 @@ def expected_port(source, photograph, dropping, splat):
         for before, after in changes:
             assert before in source, f"Missing original splat migration site: {before[:65]}"
             source = source.replace(before, after)
+    if "private PiercingArt getPiercingArt()" in source:
+        # The vanilla Projectile superclass supplies the correct 26.2 spawn
+        # packet; keep every fan combat branch below exactly as authored.
+        source = source.replace("import net.minecraft.network.syncher.SynchedEntityData;\n",
+                                "import net.minecraft.network.syncher.SynchedEntityData;\n"
+                                "import net.minecraft.server.level.ServerEntity;\n")
+        source = source.replace("import net.minecraftforge.network.NetworkHooks;\n", "")
+        source = source.replace(
+            "public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() {\n"
+            "        return NetworkHooks.getEntitySpawningPacket(this);",
+            "public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {\n"
+            "        return super.getAddEntityPacket(serverEntity);")
     # Datapack enchantments are ResourceKeys in 26.2, not Forge-registered
     # Enchantment objects. Keep both original piercing-art decisions unchanged.
     if "private PiercingArt getPiercingArt()" in source:

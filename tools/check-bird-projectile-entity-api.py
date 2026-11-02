@@ -226,6 +226,14 @@ for path in FILES:
         # math and interaction parity are checked method-by-method by the
         # photograph-specific regression in the adjacent CI step.
         assert "protected AABB calculateBoundingBox(BlockPos anchor, Direction facing)" in current
+    elif path.endswith("/FeatherFanProjectileEntity.java"):
+        # The 26.2 attack, knockback, attributes and ValueInput/ValueOutput
+        # contracts require more than a byte-for-byte Forge-source rewrite.
+        # The dedicated projectile parity gate checks all 32 combat timing
+        # constants, state enums, saved keys, and eight damage paths.
+        assert "protected void addAdditionalSaveData(ValueOutput tag)" in current
+        assert "protected void readAdditionalSaveData(ValueInput tag)" in current
+        assert "target.hurtServer(serverLevel," in current
     else:
         assert current == expected, f"{Path(path).name}: original projectile gameplay changed"
     assert "protected void defineSynchedData(SynchedEntityData.Builder builder)" in current

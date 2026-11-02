@@ -1,12 +1,14 @@
 package EdDYON.guaniao.content.bath;
 
 import EdDYON.guaniao.GuaniaoMod;
+import com.mojang.serialization.Codec;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public enum BirdBathVariant {
+public enum BirdBathVariant implements StringRepresentable {
     WOODEN_BIRD_BATH("wooden_bird_bath", "geo/wooden_bird_bath.geo.json", "textures/block/wooden_bird_bath.png", "animations/bird_bath.animation.json", SoundType.WOOD,
             Block.box(1.0D, 0.0D, 1.0D, 15.0D, 24.0D, 15.0D)),
     STONE_BIRD_BATH("stone_bird_bath", "geo/stone_bird_bath.geo.json", "textures/block/stone_bird_bath.png", "animations/bird_bath.animation.json", SoundType.STONE,
@@ -19,6 +21,8 @@ public enum BirdBathVariant {
             Block.box(1.0D, 0.0D, 1.0D, 15.0D, 24.0D, 15.0D)),
     BIRD_BATH_2("bird_bath_2", "geo/iron_bird_bath_2.geo.json", "textures/block/iron_bird_bath_2.png", "animations/bird_bath_2.animation.json", SoundType.METAL,
             Block.box(1.0D, 0.0D, 1.0D, 15.0D, 24.0D, 15.0D));
+
+    public static final Codec<BirdBathVariant> CODEC = StringRepresentable.fromEnum(BirdBathVariant::values);
 
     private final String id;
     private final Identifier model;
@@ -37,6 +41,11 @@ public enum BirdBathVariant {
     }
 
     public String id() {
+        return this.id;
+    }
+
+    @Override
+    public String getSerializedName() {
         return this.id;
     }
 

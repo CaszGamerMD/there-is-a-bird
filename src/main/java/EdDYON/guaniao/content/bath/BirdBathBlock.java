@@ -2,6 +2,8 @@ package EdDYON.guaniao.content.bath;
 
 import EdDYON.guaniao.registry.GuaniaoItems;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleOptions;
@@ -32,6 +34,11 @@ import org.jetbrains.annotations.Nullable;
 
 
 public class BirdBathBlock extends BaseEntityBlock {
+    public static final MapCodec<BirdBathBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            BirdBathVariant.CODEC.fieldOf("variant").forGetter(BirdBathBlock::variant),
+            propertiesCodec()
+    ).apply(instance, BirdBathBlock::new));
+
     private final BirdBathVariant variant;
 
     public BirdBathBlock(BirdBathVariant variant, BlockBehaviour.Properties properties) {
@@ -44,8 +51,14 @@ public class BirdBathBlock extends BaseEntityBlock {
     }
 
     @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
+
+    @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        // GeckoLib renders the block entity; Minecraft 26.2 has no ENTITYBLOCK_ANIMATED.
+        return RenderShape.INVISIBLE;
     }
 
     @Override
@@ -54,24 +67,35 @@ public class BirdBathBlock extends BaseEntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos,
+                                          Player player, InteractionHand hand, BlockHitResult hit) {
+        return useBath(level, pos, player, hand, held);
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                               Player player, BlockHitResult hit) {
+        return useBath(level, pos, player, InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+    }
+
+    private InteractionResult useBath(Level level, BlockPos pos, Player player,
+                                      InteractionHand hand, ItemStack stack) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof BirdBathBlockEntity birdBath)) {
             return InteractionResult.PASS;
         }
-        ItemStack stack = player.getItemInHand(hand);
         if (stack.isEmpty()) {
             return this.handleEmptyHand(level, pos, player, birdBath);
         }
         if (stack.is(Items.SUGAR)) {
-            if (birdBath.canSweetenWater() && !level.isClientSide && birdBath.sweetenWater()) {
+            if (birdBath.canSweetenWater() && !level.isClientSide() && birdBath.sweetenWater()) {
                 if (!player.getAbilities().instabuild) stack.shrink(1);
                 BirdBathEffects.waterAdded(level, pos, net.minecraft.sounds.SoundEvents.BOTTLE_EMPTY);
             }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return sidedSuccess(level);
         }
         if ((stack.is(Items.WATER_BUCKET) || isWaterBottle(stack)) && birdBath.containsSugarWater()) {
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return sidedSuccess(level);
         }
         if (stack.is(Items.WATER_BUCKET)) {
             return this.fillWithWaterBucket(level, pos, player, hand, stack, birdBath);
@@ -87,7 +111,7 @@ public class BirdBathBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (level instanceof ServerLevel serverLevel
                 && level.getBlockEntity(pos) instanceof BirdBathBlockEntity birdBath
                 && !birdBath.isEmpty()) {
@@ -101,7 +125,7 @@ public class BirdBathBlock extends BaseEntityBlock {
                 spawnDestroyedContent(serverLevel, pos, ParticleTypes.COMPOSTER, 6);
             }
         }
-        super.playerWillDestroy(level, pos, state, player);
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     @Nullable
@@ -113,31 +137,31 @@ public class BirdBathBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return level.isClientSide ? null : createTickerHelper(blockEntityType, GuaniaoBlockEntityTypes.BIRD_BATH.get(), BirdBathBlockEntity::serverTick);
+        return level.isClientSide() ? null : createTickerHelper(blockEntityType, GuaniaoBlockEntityTypes.BIRD_BATH.get(), BirdBathBlockEntity::serverTick);
     }
 
     private InteractionResult handleEmptyHand(Level level, BlockPos pos, Player player, BirdBathBlockEntity birdBath) {
         if (birdBath.isSpoiled()) {
-            if (!level.isClientSide && birdBath.cleanByHand()) {
+            if (!level.isClientSide() && birdBath.cleanByHand()) {
                 BirdBathEffects.spoiledCleared(level, pos);
             }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return sidedSuccess(level);
         }
         if (player.isShiftKeyDown()) {
             if (birdBath.isEmpty()) {
                 return InteractionResult.PASS;
             }
-            if (!level.isClientSide && birdBath.clearContent()) {
+            if (!level.isClientSide() && birdBath.clearContent()) {
                 BirdBathEffects.contentCleared(level, pos);
             }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return sidedSuccess(level);
         }
         if (birdBath.isDirty()) {
             BirdBathCleanliness previous = birdBath.getCleanliness();
-            if (!level.isClientSide && birdBath.cleanByHand()) {
+            if (!level.isClientSide() && birdBath.cleanByHand()) {
                 BirdBathEffects.cleaned(level, pos, previous);
             }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return sidedSuccess(level);
         }
         return InteractionResult.PASS;
     }
@@ -147,9 +171,9 @@ public class BirdBathBlock extends BaseEntityBlock {
             return InteractionResult.PASS;
         }
         if (birdBath.getContentType() == BirdBathContentType.WATER && birdBath.getContentLevel() >= 3) {
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return sidedSuccess(level);
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (birdBath.getCleanliness() == BirdBathCleanliness.FILTHY) {
                 birdBath.cleanByHand();
             }
@@ -160,7 +184,7 @@ public class BirdBathBlock extends BaseEntityBlock {
             }
             BirdBathEffects.waterAdded(level, pos, net.minecraft.sounds.SoundEvents.BUCKET_EMPTY);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return sidedSuccess(level);
     }
 
     private InteractionResult addStackContent(Level level, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, BirdBathBlockEntity birdBath, BirdBathContentType contentType, ItemStack remainder) {
@@ -171,9 +195,9 @@ public class BirdBathBlock extends BaseEntityBlock {
             return InteractionResult.PASS;
         }
         if (birdBath.getContentLevel() >= 3) {
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return sidedSuccess(level);
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (birdBath.addContent(contentType, 1)) {
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
@@ -188,11 +212,11 @@ public class BirdBathBlock extends BaseEntityBlock {
                 }
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return sidedSuccess(level);
     }
 
     private InteractionResult replaceStackContent(Level level, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, BirdBathBlockEntity birdBath, BirdBathContentType contentType, ItemStack remainder) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (birdBath.setContent(contentType, 1)) {
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
@@ -203,7 +227,7 @@ public class BirdBathBlock extends BaseEntityBlock {
                 BirdBathEffects.foodAdded(level, pos, contentType);
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return sidedSuccess(level);
     }
 
     private static boolean canReplaceContent(BirdBathBlockEntity birdBath, BirdBathContentType contentType) {
@@ -256,6 +280,10 @@ public class BirdBathBlock extends BaseEntityBlock {
         PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
         return stack.is(Items.POTION) && contents != null && contents.is(Potions.WATER)
                 && contents.customEffects().isEmpty();
+    }
+
+    private static InteractionResult sidedSuccess(Level level) {
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     private static void giveOrReplaceHeldItem(Player player, InteractionHand hand, ItemStack replacement) {

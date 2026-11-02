@@ -27,6 +27,18 @@ replacements = (
     ("level.getMinBuildHeight()", "level.getMinY()"),
     ("level.getMaxBuildHeight()", "level.getMaxY()"),
     ("entity.hasImpulse = true;", "entity.needsSync = true;"),
+    ("import net.minecraft.server.level.ServerLevel;", "import net.minecraft.resources.Identifier;\nimport net.minecraft.server.level.ServerLevel;"),
+    ("import net.minecraft.sounds.SoundEvents;", "import net.minecraft.sounds.SoundEvent;\nimport net.minecraft.sounds.SoundEvents;"),
+    ("private static final float FOX_DROP_HELD_ITEM_CHANCE = 0.15F;",
+     'private static final float FOX_DROP_HELD_ITEM_CHANCE = 0.15F;\n'
+     '    // 26.2 retains these vanilla sounds as data-driven wolf/cat variants, but\n'
+     '    // no longer exposes the three original SoundEvents field names.\n'
+     '    private static final SoundEvent CLASSIC_WOLF_WHINE = SoundEvent.createVariableRangeEvent(Identifier.withDefaultNamespace("entity.wolf.whine"));\n'
+     '    private static final SoundEvent CLASSIC_WOLF_AMBIENT = SoundEvent.createVariableRangeEvent(Identifier.withDefaultNamespace("entity.wolf.ambient"));\n'
+     '    private static final SoundEvent CLASSIC_CAT_HISS = SoundEvent.createVariableRangeEvent(Identifier.withDefaultNamespace("entity.cat.hiss"));'),
+    ("SoundEvents.WOLF_WHINE", "CLASSIC_WOLF_WHINE"),
+    ("SoundEvents.WOLF_AMBIENT", "CLASSIC_WOLF_AMBIENT"),
+    ("SoundEvents.CAT_HISS", "CLASSIC_CAT_HISS"),
 )
 
 expected = original

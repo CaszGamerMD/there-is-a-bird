@@ -3,7 +3,9 @@ package EdDYON.guaniao.content.dropping;
 import EdDYON.guaniao.content.bird.seagull.SeagullEntity;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -31,6 +33,11 @@ public final class BirdDroppingInteractionHandler {
     private static final double GROUND_FOOD_SEARCH_RADIUS = 0.62D;
     private static final double SEAGULL_DOG_BARK_RADIUS = 10.0D;
     private static final float FOX_DROP_HELD_ITEM_CHANCE = 0.15F;
+    // 26.2 retains these vanilla sounds as data-driven wolf/cat variants, but
+    // no longer exposes the three original SoundEvents field names.
+    private static final SoundEvent CLASSIC_WOLF_WHINE = SoundEvent.createVariableRangeEvent(Identifier.withDefaultNamespace("entity.wolf.whine"));
+    private static final SoundEvent CLASSIC_WOLF_AMBIENT = SoundEvent.createVariableRangeEvent(Identifier.withDefaultNamespace("entity.wolf.ambient"));
+    private static final SoundEvent CLASSIC_CAT_HISS = SoundEvent.createVariableRangeEvent(Identifier.withDefaultNamespace("entity.cat.hiss"));
     private static final DustParticleOptions DIRTY_BROWN_DUST = new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.25F, 0.16F, 0.06F), 0.92F);
     private static final DustParticleOptions SICK_GREEN_DUST = new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.18F, 0.42F, 0.08F), 0.78F);
 
@@ -133,7 +140,7 @@ public final class BirdDroppingInteractionHandler {
     private static void reactWolf(ServerLevel level, BirdDroppingProjectileEntity projectile, Wolf wolf) {
         wetSplat(level, wolf.position().add(0.0D, wolf.getBbHeight() * 0.72D, 0.0D), 7);
         wolf.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 30, 0));
-        wolf.playSound(SoundEvents.WOLF_WHINE, 0.8F, 0.85F + level.getRandom().nextFloat() * 0.25F);
+        wolf.playSound(CLASSIC_WOLF_WHINE, 0.8F, 0.85F + level.getRandom().nextFloat() * 0.25F);
 
         LivingEntity owner = wolf.getOwner();
         if (wolf.isTame() && owner != null) {
@@ -147,7 +154,7 @@ public final class BirdDroppingInteractionHandler {
 
     private static void reactCat(ServerLevel level, BirdDroppingProjectileEntity projectile, Cat cat) {
         wetSplat(level, cat.position().add(0.0D, cat.getBbHeight() * 0.72D, 0.0D), 7);
-        cat.playSound(SoundEvents.CAT_HISS, 0.9F, 0.9F + level.getRandom().nextFloat() * 0.25F);
+        cat.playSound(CLASSIC_CAT_HISS, 0.9F, 0.9F + level.getRandom().nextFloat() * 0.25F);
         cat.addEffect(new MobEffectInstance(MobEffects.SPEED, 55, 0));
         shoveAway(cat, projectile.position(), 0.42D, 0.18D);
     }
@@ -229,7 +236,7 @@ public final class BirdDroppingInteractionHandler {
         }
 
         SeagullEntity seagull = seagulls.get(level.getRandom().nextInt(seagulls.size()));
-        level.playSound(null, seagull.getX(), seagull.getY(), seagull.getZ(), SoundEvents.WOLF_AMBIENT, SoundSource.AMBIENT, 0.75F, 1.25F + level.getRandom().nextFloat() * 0.3F);
+        level.playSound(null, seagull.getX(), seagull.getY(), seagull.getZ(), CLASSIC_WOLF_AMBIENT, SoundSource.AMBIENT, 0.75F, 1.25F + level.getRandom().nextFloat() * 0.3F);
         level.sendParticles(ParticleTypes.NOTE, seagull.getX(), seagull.getY(0.85D), seagull.getZ(), 1, 0.08D, 0.08D, 0.08D, 0.0D);
     }
 

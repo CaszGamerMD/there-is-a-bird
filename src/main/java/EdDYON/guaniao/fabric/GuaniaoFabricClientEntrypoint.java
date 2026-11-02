@@ -2,7 +2,9 @@ package EdDYON.guaniao.fabric;
 
 import EdDYON.guaniao.client.camera.CameraTooltipEvents;
 import EdDYON.guaniao.client.bath.BirdBathItemRenderer;
+import EdDYON.guaniao.client.camera.NikonD750ItemRenderer;
 import EdDYON.guaniao.content.bath.BirdBathItem;
+import EdDYON.guaniao.content.camera.NikonD750Item;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import com.geckolib.animatable.client.GeoRenderProvider;
 import com.geckolib.renderer.GeoItemRenderer;
@@ -57,6 +59,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
     public void onInitializeClient() {
         // Six GeckoLib bath block-items retain a cached authored model renderer.
         registerBirdBathItemRenderers();
+        registerNikonCameraRenderer();
         CameraTooltipEvents.registerCallbacks();
         CameraKeyMappings.register();
         // Real world-frame snapshots must happen in the GPU draw phase.
@@ -146,6 +149,22 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
 
             @Override
             public GeoItemRenderer<BirdBathItem> getGeoItemRenderer() {
+                return this.renderer.get();
+            }
+        });
+    }
+
+    private static void registerNikonCameraRenderer() {
+        Item item = GuaniaoItems.NIKON_D750.get();
+        if (!(item instanceof NikonD750Item camera)) {
+            throw new IllegalStateException("Expected the authored Nikon camera item for " + item);
+        }
+        camera.geoRenderProvider.setValue(new GeoRenderProvider() {
+            private final Supplier<GeoItemRenderer<NikonD750Item>> renderer =
+                    com.google.common.base.Suppliers.memoize(NikonD750ItemRenderer::new);
+
+            @Override
+            public GeoItemRenderer<NikonD750Item> getGeoItemRenderer() {
                 return this.renderer.get();
             }
         });

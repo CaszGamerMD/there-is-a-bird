@@ -62,11 +62,6 @@ public class BreadcrumbPileBlock extends Block {
     }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
-        return true;
-    }
-
-    @Override
     public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
         return context.getItemInHand().is(GuaniaoItems.BREADCRUMBS.get()) && state.getValue(BITES) < 7
                 || super.canBeReplaced(state, context);

@@ -28,11 +28,6 @@ public final class GuaniaoBreadcrumbBlockProof extends Block {
     }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
-        return true;
-    }
-
-    @Override
     public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
         return super.canBeReplaced(state, context);
     }

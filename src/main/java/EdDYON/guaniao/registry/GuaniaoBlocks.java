@@ -24,6 +24,7 @@ public final class GuaniaoBlocks {
     public static final FabricRegistryQueue.Ref<Block> BREADCRUMBS = BLOCKS.register("breadcrumbs", () ->
             new BreadcrumbPileBlock(BlockBehaviour.Properties.of().setId(GuaniaoRegistryIds.block("breadcrumbs"))
                     .noCollision()
+                    .noOcclusion()
                     .instabreak()
                     .sound(SoundType.SAND)
                     .randomTicks()));

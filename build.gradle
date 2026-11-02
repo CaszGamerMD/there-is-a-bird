@@ -182,6 +182,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
     source files('tools/port-probes/GuaniaoFeatherFanSpawnProof.java')
     source files('tools/port-probes/GuaniaoBaggedFriesBlockProof.java')
     source files('tools/port-probes/GuaniaoBreadcrumbBlockProof.java')
+    source files('tools/port-probes/GuaniaoDroppingStainBlockProof.java')
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
     options.release = 25

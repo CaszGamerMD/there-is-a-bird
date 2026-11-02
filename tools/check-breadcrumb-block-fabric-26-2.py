@@ -20,6 +20,10 @@ changes = (
     ("    @Override\n    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {\n"
      "        consumer.accept(PlaceableBlockBreakEffects.breadcrumbs());\n"
      "    }\n\n", ""),
+    # 26.2 light transparency is declared on the block properties rather than
+    # using the removed propagatesSkylightDown override.
+    ("    @Override\n    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {\n"
+     "        return true;\n    }\n\n", ""),
     ("import net.minecraft.world.level.LevelAccessor;\n", ""),
     ("import net.minecraft.world.level.LevelReader;\n",
      "import net.minecraft.world.level.LevelReader;\nimport net.minecraft.world.level.ScheduledTickAccess;\n"),
@@ -51,5 +55,9 @@ if current != expected:
     print("".join(list(difflib.unified_diff(expected.splitlines(True), current.splitlines(True),
                                            fromfile="expected", tofile="current"))[:55]))
     raise AssertionError("Breadcrumb state, rain decay, serving count, support or sparrow cache behavior changed")
+registry = Path("src/main/java/EdDYON/guaniao/registry/GuaniaoBlocks.java").read_text(encoding="utf-8")
+breadcrumb_registration = registry.split('BLOCKS.register("breadcrumbs",', 1)[1].split('BLOCKS.register(', 1)[0]
+assert ".noCollision()" in breadcrumb_registration and ".noOcclusion()" in breadcrumb_registration
 print("PASS: all original breadcrumb placement, servings, rain and bird search logic preserved")
+print("PASS: removed skylight override is preserved by 26.2 no-occlusion block property")
 print("PASS: removed blocks release the sparrow search cache through 26.2 server removal callback")

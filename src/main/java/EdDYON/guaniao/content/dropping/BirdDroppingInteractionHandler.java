@@ -12,14 +12,14 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.animal.Cat;
-import net.minecraft.world.entity.animal.Fox;
-import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.entity.animal.feline.Cat;
+import net.minecraft.world.entity.animal.fox.Fox;
+import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.AbstractSkeleton;
+import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
 import net.minecraft.world.entity.monster.EnderMan;
-import net.minecraft.world.entity.monster.Spider;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.spider.Spider;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -133,7 +133,7 @@ public final class BirdDroppingInteractionHandler {
     private static void reactWolf(ServerLevel level, BirdDroppingProjectileEntity projectile, Wolf wolf) {
         wetSplat(level, wolf.position().add(0.0D, wolf.getBbHeight() * 0.72D, 0.0D), 7);
         wolf.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 30, 0));
-        wolf.playSound(SoundEvents.WOLF_WHINE, 0.8F, 0.85F + level.random.nextFloat() * 0.25F);
+        wolf.playSound(SoundEvents.WOLF_WHINE, 0.8F, 0.85F + level.getRandom().nextFloat() * 0.25F);
 
         LivingEntity owner = wolf.getOwner();
         if (wolf.isTame() && owner != null) {
@@ -147,23 +147,23 @@ public final class BirdDroppingInteractionHandler {
 
     private static void reactCat(ServerLevel level, BirdDroppingProjectileEntity projectile, Cat cat) {
         wetSplat(level, cat.position().add(0.0D, cat.getBbHeight() * 0.72D, 0.0D), 7);
-        cat.playSound(SoundEvents.CAT_HISS, 0.9F, 0.9F + level.random.nextFloat() * 0.25F);
+        cat.playSound(SoundEvents.CAT_HISS, 0.9F, 0.9F + level.getRandom().nextFloat() * 0.25F);
         cat.addEffect(new MobEffectInstance(MobEffects.SPEED, 55, 0));
         shoveAway(cat, projectile.position(), 0.42D, 0.18D);
     }
 
     private static void reactFox(ServerLevel level, BirdDroppingProjectileEntity projectile, Fox fox) {
         wetSplat(level, fox.position().add(0.0D, fox.getBbHeight() * 0.66D, 0.0D), 7);
-        fox.playSound(SoundEvents.FOX_HURT, 0.8F, 1.05F + level.random.nextFloat() * 0.25F);
+        fox.playSound(SoundEvents.FOX_HURT, 0.8F, 1.05F + level.getRandom().nextFloat() * 0.25F);
         shoveAway(fox, projectile.position(), 0.46D, 0.22D);
 
         ItemStack held = fox.getItemBySlot(EquipmentSlot.MAINHAND);
-        if (!held.isEmpty() && level.random.nextFloat() < FOX_DROP_HELD_ITEM_CHANCE) {
+        if (!held.isEmpty() && level.getRandom().nextFloat() < FOX_DROP_HELD_ITEM_CHANCE) {
             ItemStack dropped = held.split(1);
             fox.setItemSlot(EquipmentSlot.MAINHAND, held);
 
             ItemEntity itemEntity = new ItemEntity(level, fox.getX(), fox.getY(0.45D), fox.getZ(), dropped);
-            itemEntity.setDeltaMovement(fox.getDeltaMovement().add((level.random.nextDouble() - 0.5D) * 0.18D, 0.12D, (level.random.nextDouble() - 0.5D) * 0.18D));
+            itemEntity.setDeltaMovement(fox.getDeltaMovement().add((level.getRandom().nextDouble() - 0.5D) * 0.18D, 0.12D, (level.getRandom().nextDouble() - 0.5D) * 0.18D));
             itemEntity.setPickUpDelay(20);
             level.addFreshEntity(itemEntity);
         }
@@ -172,20 +172,20 @@ public final class BirdDroppingInteractionHandler {
     private static void reactZombie(ServerLevel level, Zombie zombie) {
         wetSplat(level, zombie.position().add(0.0D, zombie.getBbHeight() * 0.72D, 0.0D), 5);
         zombie.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 70, 0));
-        zombie.playSound(SoundEvents.ZOMBIE_HURT, 0.55F, 0.8F + level.random.nextFloat() * 0.25F);
+        zombie.playSound(SoundEvents.ZOMBIE_HURT, 0.55F, 0.8F + level.getRandom().nextFloat() * 0.25F);
     }
 
     private static void reactSkeleton(ServerLevel level, AbstractSkeleton skeleton) {
         wetSplat(level, skeleton.position().add(0.0D, skeleton.getBbHeight() * 0.72D, 0.0D), 5);
         skeleton.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, 0));
         skeleton.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 70, 0));
-        skeleton.playSound(SoundEvents.SKELETON_HURT, 0.55F, 0.75F + level.random.nextFloat() * 0.25F);
+        skeleton.playSound(SoundEvents.SKELETON_HURT, 0.55F, 0.75F + level.getRandom().nextFloat() * 0.25F);
     }
 
     private static void reactSpider(ServerLevel level, Spider spider) {
         wetSplat(level, spider.position().add(0.0D, spider.getBbHeight() * 0.45D, 0.0D), 6);
         spider.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 80, 0));
-        spider.playSound(SoundEvents.SPIDER_HURT, 0.55F, 0.85F + level.random.nextFloat() * 0.25F);
+        spider.playSound(SoundEvents.SPIDER_HURT, 0.55F, 0.85F + level.getRandom().nextFloat() * 0.25F);
     }
 
     private static void reactEnderman(ServerLevel level, BirdDroppingProjectileEntity projectile, EnderMan enderMan) {
@@ -203,9 +203,9 @@ public final class BirdDroppingInteractionHandler {
     private static void teleportEndermanAway(ServerLevel level, EnderMan enderMan) {
         Vec3 origin = enderMan.position();
         for (int i = 0; i < 16; i++) {
-            double x = origin.x + (level.random.nextDouble() - 0.5D) * 18.0D;
-            double y = Mth.clamp(origin.y + level.random.nextInt(9) - 4, level.getMinBuildHeight() + 1, level.getMaxBuildHeight() - 1);
-            double z = origin.z + (level.random.nextDouble() - 0.5D) * 18.0D;
+            double x = origin.x + (level.getRandom().nextDouble() - 0.5D) * 18.0D;
+            double y = Mth.clamp(origin.y + level.getRandom().nextInt(9) - 4, level.getMinY() + 1, level.getMaxY() - 1);
+            double z = origin.z + (level.getRandom().nextDouble() - 0.5D) * 18.0D;
             if (endermanRandomTeleport(enderMan, x, y, z)) {
                 return;
             }
@@ -224,12 +224,12 @@ public final class BirdDroppingInteractionHandler {
     private static void triggerNearbySeagullDogBark(ServerLevel level, Vec3 position) {
         AABB searchBox = new AABB(position, position).inflate(SEAGULL_DOG_BARK_RADIUS);
         List<SeagullEntity> seagulls = level.getEntitiesOfClass(SeagullEntity.class, searchBox, SeagullEntity::isAlive);
-        if (seagulls.isEmpty() || level.random.nextFloat() > 0.45F) {
+        if (seagulls.isEmpty() || level.getRandom().nextFloat() > 0.45F) {
             return;
         }
 
-        SeagullEntity seagull = seagulls.get(level.random.nextInt(seagulls.size()));
-        level.playSound(null, seagull.getX(), seagull.getY(), seagull.getZ(), SoundEvents.WOLF_AMBIENT, SoundSource.AMBIENT, 0.75F, 1.25F + level.random.nextFloat() * 0.3F);
+        SeagullEntity seagull = seagulls.get(level.getRandom().nextInt(seagulls.size()));
+        level.playSound(null, seagull.getX(), seagull.getY(), seagull.getZ(), SoundEvents.WOLF_AMBIENT, SoundSource.AMBIENT, 0.75F, 1.25F + level.getRandom().nextFloat() * 0.3F);
         level.sendParticles(ParticleTypes.NOTE, seagull.getX(), seagull.getY(0.85D), seagull.getZ(), 1, 0.08D, 0.08D, 0.08D, 0.0D);
     }
 
@@ -240,7 +240,7 @@ public final class BirdDroppingInteractionHandler {
         }
         away = away.normalize();
         entity.setDeltaMovement(entity.getDeltaMovement().add(away.scale(horizontalStrength)).add(0.0D, upwardStrength, 0.0D));
-        entity.hasImpulse = true;
+        entity.needsSync = true;
     }
 
     private static ItemStack droppingStack(BirdDroppingProjectileEntity projectile) {
@@ -248,12 +248,12 @@ public final class BirdDroppingInteractionHandler {
     }
 
     private static void wetSplat(ServerLevel level, Vec3 position, int particleCount) {
-        level.playSound(null, position.x, position.y, position.z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, 0.62F, 0.82F + level.random.nextFloat() * 0.28F);
+        level.playSound(null, position.x, position.y, position.z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, 0.62F, 0.82F + level.getRandom().nextFloat() * 0.28F);
         level.sendParticles(ParticleTypes.POOF, position.x, position.y, position.z, particleCount, 0.16D, 0.12D, 0.16D, 0.01D);
     }
 
     private static void spawnPrankFoodFilth(ServerLevel level, Vec3 position) {
-        level.playSound(null, position.x, position.y, position.z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, 0.78F, 0.48F + level.random.nextFloat() * 0.18F);
+        level.playSound(null, position.x, position.y, position.z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, 0.78F, 0.48F + level.getRandom().nextFloat() * 0.18F);
         level.sendParticles(ParticleTypes.ITEM_SLIME, position.x, position.y, position.z, 7, 0.20D, 0.08D, 0.20D, 0.05D);
         level.sendParticles(ParticleTypes.COMPOSTER, position.x, position.y + 0.04D, position.z, 8, 0.18D, 0.10D, 0.18D, 0.04D);
         level.sendParticles(DIRTY_BROWN_DUST, position.x, position.y + 0.06D, position.z, 9, 0.20D, 0.10D, 0.20D, 0.02D);

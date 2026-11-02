@@ -35,6 +35,20 @@ def verify(filename):
         expected = expected.replace("import org.joml.Vector3f;", "import net.minecraft.util.ARGB;")
         for before, after in DUST.items():
             expected = expected.replace(before, after)
+    if filename == "BirdDroppingInteractionHandler.java":
+        for before, after in (
+            ("net.minecraft.world.entity.animal.Cat", "net.minecraft.world.entity.animal.feline.Cat"),
+            ("net.minecraft.world.entity.animal.Fox", "net.minecraft.world.entity.animal.fox.Fox"),
+            ("net.minecraft.world.entity.animal.Wolf", "net.minecraft.world.entity.animal.wolf.Wolf"),
+            ("net.minecraft.world.entity.monster.AbstractSkeleton", "net.minecraft.world.entity.monster.skeleton.AbstractSkeleton"),
+            ("net.minecraft.world.entity.monster.Spider", "net.minecraft.world.entity.monster.spider.Spider"),
+            ("net.minecraft.world.entity.monster.Zombie", "net.minecraft.world.entity.monster.zombie.Zombie"),
+            ("level.random", "level.getRandom()"),
+            ("level.getMinBuildHeight()", "level.getMinY()"),
+            ("level.getMaxBuildHeight()", "level.getMaxY()"),
+            ("entity.hasImpulse = true;", "entity.needsSync = true;"),
+        ):
+            expected = expected.replace(before, after)
     if filename == "PollutedCakeData.java":
         # The separate saved-data port intentionally changes the codec and the
         # storage methods. This gate exclusively owns authored dust colors and

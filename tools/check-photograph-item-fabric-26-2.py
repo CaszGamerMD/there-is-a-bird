@@ -43,7 +43,7 @@ assert "InteractionResult useOn(UseOnContext context)" in new
 assert new.count("level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME") == 2
 assert "if (!level.isClientSide())" in new, "Only server may spawn a photo entity"
 assert "Item material = BuiltInRegistries.ITEM.getValue(design.frameMaterial());" in new
-assert "material != null ? material.getDescription()" in new
+assert "material != null ? new ItemStack(material).getHoverName()" in new
 assert "appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display," in new
 assert "Consumer<Component> tooltip, TooltipFlag flag)" in new
 assert new.count("tooltip.accept(") == old.count("tooltip.add(")

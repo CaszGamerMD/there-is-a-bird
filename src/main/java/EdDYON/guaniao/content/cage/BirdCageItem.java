@@ -1,26 +1,25 @@
 package EdDYON.guaniao.content.cage;
 
-import EdDYON.guaniao.client.cage.BirdCageItemRenderer;
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 import java.util.function.Consumer;
-import java.util.List;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import org.apache.commons.lang3.mutable.MutableObject;
 
 public class BirdCageItem extends BlockItem implements GeoItem {
     private final BirdCageVariant variant;
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+    // The common item never loads a client-only renderer on a dedicated server.
+    public final MutableObject<GeoRenderProvider> geoRenderProvider = new MutableObject<>();
 
     public BirdCageItem(BirdCageVariant variant, Block block, Properties properties) {
         super(block, properties);
@@ -32,23 +31,14 @@ public class BirdCageItem extends BlockItem implements GeoItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.guaniao.bird_cage.decorative").withStyle(ChatFormatting.GRAY));
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display,
+                                Consumer<Component> tooltip, TooltipFlag flag) {
+        tooltip.accept(Component.translatable("item.guaniao.bird_cage.decorative").withStyle(ChatFormatting.GRAY));
     }
 
     @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-            private BirdCageItemRenderer renderer;
-
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                if (this.renderer == null) {
-                    this.renderer = new BirdCageItemRenderer();
-                }
-                return this.renderer;
-            }
-        });
+    public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
+        consumer.accept(this.geoRenderProvider.getValue());
     }
 
     @Override

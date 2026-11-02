@@ -2,6 +2,8 @@ package EdDYON.guaniao.fabric;
 
 import EdDYON.guaniao.client.camera.CameraTooltipEvents;
 import EdDYON.guaniao.client.bath.BirdBathItemRenderer;
+import EdDYON.guaniao.client.cage.BirdCageItemRenderer;
+import EdDYON.guaniao.content.cage.BirdCageItem;
 import EdDYON.guaniao.client.camera.NikonD750ItemRenderer;
 import EdDYON.guaniao.content.bath.BirdBathItem;
 import EdDYON.guaniao.content.camera.NikonD750Item;
@@ -59,6 +61,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
     public void onInitializeClient() {
         // Six GeckoLib bath block-items retain a cached authored model renderer.
         registerBirdBathItemRenderers();
+        registerBirdCageItemRenderers();
         registerNikonCameraRenderer();
         CameraTooltipEvents.registerCallbacks();
         CameraKeyMappings.register();
@@ -149,6 +152,27 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
 
             @Override
             public GeoItemRenderer<BirdBathItem> getGeoItemRenderer() {
+                return this.renderer.get();
+            }
+        });
+    }
+
+    private static void registerBirdCageItemRenderers() {
+        registerBirdCageItemRenderer(GuaniaoItems.SMALL_BIRD_CAGE.get());
+        registerBirdCageItemRenderer(GuaniaoItems.MEDIUM_BIRD_CAGE.get());
+        registerBirdCageItemRenderer(GuaniaoItems.LARGE_BIRD_CAGE.get());
+    }
+
+    private static void registerBirdCageItemRenderer(Item item) {
+        if (!(item instanceof BirdCageItem cage)) {
+            throw new IllegalStateException("Expected the authored bird cage item for " + item);
+        }
+        cage.geoRenderProvider.setValue(new GeoRenderProvider() {
+            private final Supplier<GeoItemRenderer<BirdCageItem>> renderer =
+                    com.google.common.base.Suppliers.memoize(() -> new BirdCageItemRenderer(cage));
+
+            @Override
+            public GeoItemRenderer<BirdCageItem> getGeoItemRenderer() {
                 return this.renderer.get();
             }
         });

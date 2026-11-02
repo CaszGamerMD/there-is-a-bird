@@ -50,6 +50,6 @@ public final class GuaniaoPhotographItemProof extends Item {
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display,
                                 Consumer<Component> tooltip, TooltipFlag flag) {
         Item material = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("minecraft", "oak_planks"));
-        tooltip.accept(material == null ? Component.literal("unknown") : material.getDescription());
+        tooltip.accept(material == null ? Component.literal("unknown") : new ItemStack(material).getHoverName());
     }
 }

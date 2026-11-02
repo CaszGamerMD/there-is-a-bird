@@ -100,7 +100,7 @@ public class PhotographItem extends Item {
         } else {
             Item material = BuiltInRegistries.ITEM.getValue(design.frameMaterial());
             tooltip.accept(Component.translatable("item.guaniao.photograph.tooltip.design", blockSize(design.widthPixels()), blockSize(design.heightPixels()),
-                    material != null ? material.getDescription()
+                    material != null ? new ItemStack(material).getHoverName()
                             : Component.literal(design.frameMaterial().toString())).withStyle(ChatFormatting.GRAY));
         }
         if (!PhotographData.hasImage(stack)) {

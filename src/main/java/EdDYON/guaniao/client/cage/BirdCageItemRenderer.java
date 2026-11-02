@@ -2,24 +2,26 @@ package EdDYON.guaniao.client.cage;
 
 import EdDYON.guaniao.content.cage.BirdCageItem;
 import EdDYON.guaniao.content.cage.BirdCageVariant;
+import com.geckolib.renderer.GeoItemRenderer;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.RenderPassInfo;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
 
 public class BirdCageItemRenderer extends GeoItemRenderer<BirdCageItem> {
-    public BirdCageItemRenderer() {
-        super(new BirdCageItemModel());
+    private final BirdCageVariant variant;
+
+    public BirdCageItemRenderer(BirdCageItem item) {
+        super(new BirdCageItemModel(item.variant()));
+        this.variant = item.variant();
     }
 
     @Override
-    public void preRender(PoseStack poseStack, BirdCageItem animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        BirdCageVariant variant = animatable.variant();
-        poseStack.translate(itemOffsetX(variant), itemOffsetY(variant), 0.0F);
-        float scale = itemScale(variant);
+    public void adjustRenderPose(RenderPassInfo<GeoRenderState> info) {
+        PoseStack poseStack = info.poseStack();
+        poseStack.translate(itemOffsetX(this.variant), itemOffsetY(this.variant), 0.0F);
+        float scale = itemScale(this.variant);
         poseStack.scale(scale, scale, scale);
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+        super.adjustRenderPose(info);
     }
 
     private static float itemScale(BirdCageVariant variant) {

@@ -180,6 +180,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
     source files('tools/port-probes/GuaniaoPhotographHangingProof.java')
     source files('tools/port-probes/GuaniaoFrameWorkbenchBlockProof.java')
     source files('tools/port-probes/GuaniaoFeatherFanSpawnProof.java')
+    source files('tools/port-probes/GuaniaoBaggedFriesBlockProof.java')
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
     options.release = 25

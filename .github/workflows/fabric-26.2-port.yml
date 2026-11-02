@@ -114,6 +114,8 @@ jobs:
         run: python3 tools/check-bird-attributes.py
       - name: Verify original three feather-fan enchanted book visuals and tooltip keys
         run: python3 tools/check-feather-book-tooltips.py
+      - name: Verify bagged fries food and laxative behavior on Minecraft 26.2 block hooks
+        run: python3 tools/check-bagged-fries-block-fabric-26-2.py
       - name: Verify 26.2 plume enchantment data and original custom-anvil rules
         run: python3 tools/check-feather-fan-enchantments-26-2.py
       - name: Verify polluted cake SavedData format and original runtime behavior

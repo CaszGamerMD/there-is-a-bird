@@ -1658,7 +1658,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Scalab
 
     private void updateTrustedOwner(Player player) {
         if (!this.isTame() && this.trustTicks >= 900
-                && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+                && EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
             this.tame(player);
             this.setBirdCommandMode(BirdCommandMode.FOLLOW);
         } else if (this.isTame() && this.getOwnerUUID() == null) {

@@ -376,7 +376,7 @@ public class UmbrellaCockatooEntity extends BudgerigarEntity implements BirdLoud
 
     private void completeTaming(Player player) {
         boolean wasTame = this.isTame();
-        if (!wasTame && net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+        if (!wasTame && !EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
             this.level().broadcastEntityEvent(this, TAMING_FAILED_EVENT);
             return;
         }

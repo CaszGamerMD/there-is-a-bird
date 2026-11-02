@@ -168,6 +168,16 @@ def expected_port(source, photograph, dropping, splat):
     if "private PiercingArt getPiercingArt()" in source:
         # The vanilla Projectile superclass supplies the correct 26.2 spawn
         # packet; keep every fan combat branch below exactly as authored.
+        source = source.replace(
+            "import net.minecraft.world.entity.projectile.ThrowableItemProjectile;",
+            "import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;")
+        source = source.replace(
+            "super(GuaniaoEntityTypes.FEATHER_FAN_PROJECTILE.get(), owner, level);",
+            "super(GuaniaoEntityTypes.FEATHER_FAN_PROJECTILE.get(), owner, level,\n"
+            "                new ItemStack(GuaniaoItems.WIND_FEATHER_FAN.get()));")
+        source = source.replace(
+            "protected float getGravity() {\n        return 0.0F;",
+            "protected double getDefaultGravity() {\n        return 0.0D;")
         source = source.replace("import net.minecraft.network.syncher.SynchedEntityData;\n",
                                 "import net.minecraft.network.syncher.SynchedEntityData;\n"
                                 "import net.minecraft.server.level.ServerEntity;\n")

@@ -32,7 +32,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -165,7 +165,8 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     public FeatherFanProjectileEntity(Level level, LivingEntity owner) {
-        super(GuaniaoEntityTypes.FEATHER_FAN_PROJECTILE.get(), owner, level);
+        super(GuaniaoEntityTypes.FEATHER_FAN_PROJECTILE.get(), owner, level,
+                new ItemStack(GuaniaoItems.WIND_FEATHER_FAN.get()));
         this.ownerUuid = owner.getUUID();
         this.throwOrigin = this.position();
     }
@@ -228,8 +229,8 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     @Override
-    protected float getGravity() {
-        return 0.0F;
+    protected double getDefaultGravity() {
+        return 0.0D;
     }
 
     @Override

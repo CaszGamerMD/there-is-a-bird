@@ -2,6 +2,12 @@ package EdDYON.guaniao.fabric;
 
 import EdDYON.guaniao.client.camera.CameraTooltipEvents;
 import EdDYON.guaniao.client.bath.BirdBathItemRenderer;
+import EdDYON.guaniao.client.bath.BirdBathRenderer;
+import EdDYON.guaniao.client.cage.BirdCageRenderer;
+import EdDYON.guaniao.client.nest.CrowNestRenderer;
+import EdDYON.guaniao.client.food.BaggedFriesRenderer;
+import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import EdDYON.guaniao.client.cage.BirdCageItemRenderer;
 import EdDYON.guaniao.client.nest.CrowNestItemRenderer;
 import EdDYON.guaniao.content.nest.CrowNestItem;
@@ -65,6 +71,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         registerBirdBathItemRenderers();
         registerBirdCageItemRenderers();
         registerCrowNestItemRenderer();
+        registerPlacedBlockRenderers();
         registerNikonCameraRenderer();
         CameraTooltipEvents.registerCallbacks();
         CameraKeyMappings.register();
@@ -195,6 +202,13 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
                 return this.renderer.get();
             }
         });
+    }
+
+    private static void registerPlacedBlockRenderers() {
+        BlockEntityRendererRegistry.register(GuaniaoBlockEntityTypes.BIRD_BATH.get(), BirdBathRenderer::new);
+        BlockEntityRendererRegistry.register(GuaniaoBlockEntityTypes.BIRD_CAGE.get(), BirdCageRenderer::new);
+        BlockEntityRendererRegistry.register(GuaniaoBlockEntityTypes.CROW_NEST.get(), CrowNestRenderer::new);
+        BlockEntityRendererRegistry.register(GuaniaoBlockEntityTypes.BAGGED_FRIES.get(), BaggedFriesRenderer::new);
     }
 
     private static void registerNikonCameraRenderer() {

@@ -2,32 +2,38 @@ package EdDYON.guaniao.client.food;
 
 import EdDYON.guaniao.content.food.BaggedFriesBlockEntity;
 import EdDYON.guaniao.content.food.BaggedFriesBlock;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import com.geckolib.constant.dataticket.DataTicket;
+import com.geckolib.renderer.GeoBlockRenderer;
+import com.geckolib.renderer.base.BoneSnapshots;
+import com.geckolib.renderer.base.RenderPassInfo;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 
-public final class BaggedFriesRenderer extends GeoBlockRenderer<BaggedFriesBlockEntity> {
+public final class BaggedFriesRenderer extends GeoBlockRenderer<BaggedFriesBlockEntity, BlockEntityRenderState> {
+    private static final DataTicket<Integer> FRY_MASK =
+            DataTicket.create("guaniao_fry_mask", Integer.class);
+
     public BaggedFriesRenderer(BlockEntityRendererProvider.Context context) {
-        super(new BaggedFriesModel());
+        super(context, new BaggedFriesModel());
     }
 
     @Override
-    public void renderRecursively(PoseStack poseStack, BaggedFriesBlockEntity fries, GeoBone bone,
-                                  RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer,
-                                  boolean isReRender, float partialTick, int packedLight, int packedOverlay,
-                                  float red, float green, float blue, float alpha) {
-        int index = fryIndex(bone.getName());
-        if (index > 0) {
-            boolean visible = fries.isFryVisible(index);
-            bone.setHidden(!visible);
-            bone.setChildrenHidden(!visible);
+    public void addRenderData(BaggedFriesBlockEntity fries, Void unused, BlockEntityRenderState state, float partialTick) {
+        super.addRenderData(fries, unused, state, partialTick);
+        state.addGeckolibData(FRY_MASK, fries.getFryMask());
+    }
+
+    @Override
+    public void adjustModelBonesForRender(RenderPassInfo<BlockEntityRenderState> info, BoneSnapshots snapshots) {
+        super.adjustModelBonesForRender(info, snapshots);
+        int mask = info.getOrDefaultGeckolibData(FRY_MASK, 0);
+        for (int index = 1; index <= BaggedFriesBlock.TOTAL_FRIES; index++) {
+            boolean visible = (mask & (1 << (index - 1))) != 0;
+            snapshots.ifPresent("fry_" + String.format("%02d", index), bone -> {
+                bone.skipRender(!visible);
+                bone.skipChildrenRender(!visible);
+            });
         }
-        super.renderRecursively(poseStack, fries, bone, renderType, bufferSource, buffer, isReRender,
-                partialTick, packedLight, packedOverlay, red, green, blue, alpha);
     }
 
     private static int fryIndex(String name) {

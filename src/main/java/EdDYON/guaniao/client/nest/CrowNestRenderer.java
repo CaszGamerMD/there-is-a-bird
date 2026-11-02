@@ -1,54 +1,47 @@
 package EdDYON.guaniao.client.nest;
 
-import EdDYON.guaniao.content.nest.CrowNestBlock;
 import EdDYON.guaniao.content.nest.CrowNestBlockEntity;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import com.geckolib.constant.dataticket.DataTicket;
+import com.geckolib.renderer.GeoBlockRenderer;
+import com.geckolib.renderer.base.BoneSnapshots;
+import com.geckolib.renderer.base.RenderPassInfo;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 
-public class CrowNestRenderer extends GeoBlockRenderer<CrowNestBlockEntity> {
+public class CrowNestRenderer extends GeoBlockRenderer<CrowNestBlockEntity, BlockEntityRenderState> {
+    private static final DataTicket<Integer> EGGS =
+            DataTicket.create("guaniao_nest_eggs", Integer.class);
+
     public CrowNestRenderer(BlockEntityRendererProvider.Context context) {
-        super(new CrowNestModel());
+        super(context, new CrowNestModel());
     }
 
     @Override
-    public void renderRecursively(PoseStack poseStack, CrowNestBlockEntity nest, GeoBone bone, RenderType renderType,
-                                  MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender,
-                                  float partialTick, int packedLight, int packedOverlay,
-                                  float red, float green, float blue, float alpha) {
-        int eggs = nest.getBlockState().hasProperty(CrowNestBlock.EGGS)
-                ? nest.getBlockState().getValue(CrowNestBlock.EGGS)
-                : 0;
-        applyEggVisibility(bone, eggs);
-        super.renderRecursively(poseStack, nest, bone, renderType, bufferSource, buffer, isReRender,
-                partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+    public void addRenderData(CrowNestBlockEntity nest, Void unused, BlockEntityRenderState state, float partialTick) {
+        super.addRenderData(nest, unused, state, partialTick);
+        state.addGeckolibData(EGGS, nest.getEggCount());
     }
 
     @Override
-    public boolean shouldRenderOffScreen(CrowNestBlockEntity blockEntity) {
+    public void adjustModelBonesForRender(RenderPassInfo<BlockEntityRenderState> info, BoneSnapshots snapshots) {
+        super.adjustModelBonesForRender(info, snapshots);
+        int eggs = info.getOrDefaultGeckolibData(EGGS, 0);
+        for (int index = 1; index <= 3; index++) {
+            boolean visible = eggs >= index;
+            snapshots.ifPresent("egg" + index, bone -> {
+                bone.skipRender(!visible);
+                bone.skipChildrenRender(!visible);
+            });
+        }
+    }
+
+    @Override
+    public boolean shouldRenderOffScreen() {
         return true;
     }
 
     @Override
     public int getViewDistance() {
         return 96;
-    }
-
-    static void applyEggVisibility(GeoBone bone, int eggs) {
-        int eggIndex = switch (bone.getName()) {
-            case "egg1" -> 1;
-            case "egg2" -> 2;
-            case "egg3" -> 3;
-            default -> 0;
-        };
-        if (eggIndex > 0) {
-            boolean visible = eggs >= eggIndex;
-            bone.setHidden(!visible);
-            bone.setChildrenHidden(!visible);
-        }
     }
 }

@@ -65,7 +65,7 @@ public final class GuaniaoBreadcrumbItemProof extends Item {
 
     private static void throwTrail(ServerLevel level, BlockPos pos, BlockState state, Block block, ItemStack stack) {
         RandomSource random = level.getRandom();
-        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, stack.copy());
+        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, stack.getItem());
         level.sendParticles(particle, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
                 12 + random.nextInt(7), 0.34, 0.08, 0.34, 0.02);
         level.setBlock(pos, state, Block.UPDATE_CLIENTS);

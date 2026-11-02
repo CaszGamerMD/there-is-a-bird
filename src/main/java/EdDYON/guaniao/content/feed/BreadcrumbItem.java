@@ -161,7 +161,7 @@ public class BreadcrumbItem extends Item {
         this.spawnThrowTrail(level, handPos, aimedPoint, random);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, 0.28f, Mth.nextFloat(random, 1.15f, 1.35f));
         level.playSound(null, center.x, center.y, center.z, SoundEvents.SAND_BREAK, SoundSource.BLOCKS, 0.18f, Mth.nextFloat(random, 1.25f, 1.5f));
-        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(GuaniaoItems.BREADCRUMBS.get()));
+        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, GuaniaoItems.BREADCRUMBS.get());
         level.sendParticles(particle, center.x, center.y + 0.08, center.z, 12 + random.nextInt(7), 0.34, 0.08, 0.34, 0.02);
         SparrowEntity.alertNearbyBreadcrumbs(level, originPos, player);
         return true;
@@ -197,7 +197,7 @@ public class BreadcrumbItem extends Item {
     private void spawnThrowTrail(ServerLevel level, Vec3 start, Vec3 aimedPoint, RandomSource random) {
         Vec3 end = aimedPoint.add(0.0, 0.1, 0.0);
         Vec3 delta = end.subtract(start);
-        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(GuaniaoItems.BREADCRUMBS.get()));
+        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, GuaniaoItems.BREADCRUMBS.get());
         int steps = 7;
         for (int i = 0; i <= steps; ++i) {
             double progress = (double)i / (double)steps;

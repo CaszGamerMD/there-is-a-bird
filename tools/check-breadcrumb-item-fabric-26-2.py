@@ -26,6 +26,7 @@ replacements = (
     ("InteractionResult.sidedSuccess(level.isClientSide)", "level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME"),
     ("!level.isClientSide", "!level.isClientSide()"),
     ("level.random", "level.getRandom()"),
+    ("new ItemStack(GuaniaoItems.BREADCRUMBS.get())", "GuaniaoItems.BREADCRUMBS.get()"),
 )
 
 

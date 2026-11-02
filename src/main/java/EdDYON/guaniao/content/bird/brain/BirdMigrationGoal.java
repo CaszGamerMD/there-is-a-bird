@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.PathfinderMob;
@@ -185,7 +185,7 @@ public class BirdMigrationGoal extends Goal {
         }
         TagKey<Biome> habitatTag = TagKey.create(
                 Registries.BIOME,
-                new ResourceLocation("guaniao", species.id() + "_habitat")
+                Identifier.fromNamespaceAndPath("guaniao", species.id() + "_habitat")
         );
         int regionSize = Math.max(32, BirdConfigManager.migrationRadius());
         for (int attempt = 0; attempt < 8; attempt++) {

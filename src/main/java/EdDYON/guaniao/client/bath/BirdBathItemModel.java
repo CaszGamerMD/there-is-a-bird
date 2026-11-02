@@ -33,7 +33,7 @@ public class BirdBathItemModel extends GeoModel<BirdBathItem> {
         return this.animation;
     }
 
-    private static Identifier normalizedId(Identifier authored, String suffix) {
+    static Identifier normalizedId(Identifier authored, String suffix) {
         String path = authored.getPath();
         if (!path.endsWith(suffix)) {
             throw new IllegalArgumentException("Unexpected GeckoLib bath asset: " + authored);

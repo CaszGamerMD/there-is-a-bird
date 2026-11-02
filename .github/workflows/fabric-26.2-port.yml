@@ -140,6 +140,8 @@ jobs:
         run: python3 tools/check-bird-bath-item-visuals-fabric-26-2.py
       - name: Verify bath water, food and dirt bone visibility on GeckoLib 5 snapshots
         run: python3 tools/check-bird-bath-bones-fabric-26-2.py
+      - name: Verify six placed-bath GeoModel variants and 26.2 render-state asset mapping
+        run: python3 tools/check-bird-bath-model-fabric-26-2.py
       - name: Verify 26.2 plume enchantment data and original custom-anvil rules
         run: python3 tools/check-feather-fan-enchantments-26-2.py
       - name: Verify polluted cake SavedData format and original runtime behavior

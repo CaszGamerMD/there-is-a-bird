@@ -199,6 +199,7 @@ tasks.register('verifyRegistriesPort', JavaCompile) {
     source files('tools/port-probes/GuaniaoBirdBathBlockRendererProof.java')
     source files('tools/port-probes/GuaniaoNikonCameraItemProof.java')
     source files('tools/port-probes/GuaniaoNikonCameraRendererProof.java')
+    source files('tools/port-probes/GuaniaoFilmItemProof.java')
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
     options.release = 25

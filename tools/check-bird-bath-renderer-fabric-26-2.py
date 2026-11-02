@@ -51,6 +51,7 @@ for control in ["skipRender(!visible)", "skipChildrenRender(!visible)"]:
 for source in (original, renderer):
     assert "shouldRenderOffScreen(" in source and "return false;" in source
     assert "getViewDistance()" in source and "return 48;" in source
+assert "shouldRenderOffScreen()" in renderer
 assert "software.bernie.geckolib" not in renderer
 assert "public void renderRecursively(" not in renderer
 assert "super.renderRecursively(" not in renderer

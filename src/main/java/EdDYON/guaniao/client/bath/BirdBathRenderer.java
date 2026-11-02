@@ -129,7 +129,7 @@ public class BirdBathRenderer extends GeoBlockRenderer<BirdBathBlockEntity, Bloc
     }
 
     @Override
-    public boolean shouldRenderOffScreen(BirdBathBlockEntity blockEntity) {
+    public boolean shouldRenderOffScreen() {
         return false;
     }
 

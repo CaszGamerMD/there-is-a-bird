@@ -85,7 +85,7 @@ public abstract class GuaniaoBirdBathBlockRendererProof<T extends BlockEntity & 
     }
 
     @Override
-    public boolean shouldRenderOffScreen(T entity) { return false; }
+    public boolean shouldRenderOffScreen() { return false; }
 
     @Override
     public int getViewDistance() { return 48; }

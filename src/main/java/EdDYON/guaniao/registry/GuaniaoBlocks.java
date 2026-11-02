@@ -19,7 +19,8 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 public final class GuaniaoBlocks {
     public static final FabricRegistryQueue<Block> BLOCKS = new FabricRegistryQueue<>(BuiltInRegistries.BLOCK, "guaniao");
     public static final FabricRegistryQueue.Ref<Block> FRAME_WORKBENCH = BLOCKS.register("frame_workbench", () ->
-            new FrameWorkbenchBlock(BlockBehaviour.Properties.of().setId(GuaniaoRegistryIds.block("frame_workbench")).strength(2.5F).sound(SoundType.WOOD).noOcclusion()));
+            new FrameWorkbenchBlock(BlockBehaviour.Properties.of().setId(GuaniaoRegistryIds.block("frame_workbench"))
+                    .strength(2.5F).sound(SoundType.WOOD).noOcclusion().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)));
     public static final FabricRegistryQueue.Ref<Block> BREADCRUMBS = BLOCKS.register("breadcrumbs", () ->
             new BreadcrumbPileBlock(BlockBehaviour.Properties.of().setId(GuaniaoRegistryIds.block("breadcrumbs"))
                     .noCollision()

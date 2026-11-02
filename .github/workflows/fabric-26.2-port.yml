@@ -124,6 +124,8 @@ jobs:
         run: python3 tools/check-feather-fan-unload-port.py
       - name: Verify all four dropping dispenser projectiles use vanilla 26.2 launch contract
         run: python3 tools/check-dropping-dispenser-fabric-26-2.py
+      - name: Verify charged dropping throw and 3x3 fertilization parity on 26.2 item APIs
+        run: python3 tools/check-bird-dropping-item-fabric-26-2.py
       - name: Verify 26.2 plume enchantment data and original custom-anvil rules
         run: python3 tools/check-feather-fan-enchantments-26-2.py
       - name: Verify polluted cake SavedData format and original runtime behavior

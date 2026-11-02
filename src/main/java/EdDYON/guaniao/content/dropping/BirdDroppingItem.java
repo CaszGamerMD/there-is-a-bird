@@ -21,7 +21,7 @@ import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BonemealableBlock;
-import net.minecraft.world.level.block.FarmBlock;
+import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
@@ -52,7 +52,7 @@ public class BirdDroppingItem extends Item {
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         BlockState clickedState = level.getBlockState(context.getClickedPos());
-        if (clickedState.getBlock() instanceof FarmBlock) {
+        if (clickedState.getBlock() instanceof FarmlandBlock) {
             return this.fertilizeAroundFarmland(context);
         }
 
@@ -60,14 +60,14 @@ public class BirdDroppingItem extends Item {
     }
 
     @Override
-    public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeLeft) {
+    public boolean releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeLeft) {
         if (!(entity instanceof Player player)) {
-            return;
+            return false;
         }
 
         int chargeTicks = this.getUseDuration(stack, entity) - timeLeft;
         if (chargeTicks < MIN_THROW_CHARGE_TICKS) {
-            return;
+            return false;
         }
 
         float power = getThrowPower(chargeTicks);
@@ -87,6 +87,7 @@ public class BirdDroppingItem extends Item {
                 stack.shrink(1);
             }
         }
+        return true;
     }
 
     @Override

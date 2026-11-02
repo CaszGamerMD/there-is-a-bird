@@ -14,7 +14,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -35,19 +34,19 @@ public class BreadcrumbItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         Vec3 aimedPoint = this.resolveAirAimPoint(level, player);
         if (aimedPoint == null) {
-            return InteractionResultHolder.pass(stack);
+            return InteractionResult.PASS;
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (!this.tossBreadcrumbs((ServerLevel)level, player, hand, stack, aimedPoint)) {
-                return InteractionResultHolder.pass(stack);
+                return InteractionResult.PASS;
             }
         }
         player.swing(hand, true);
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override
@@ -61,13 +60,13 @@ public class BreadcrumbItem extends Item {
         if (aimedPoint == null) {
             return InteractionResult.PASS;
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (!this.tossBreadcrumbs((ServerLevel)level, player, context.getHand(), context.getItemInHand(), aimedPoint)) {
                 return InteractionResult.PASS;
             }
         }
         player.swing(context.getHand(), true);
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     private Vec3 resolveAirAimPoint(Level level, Player player) {
@@ -148,7 +147,7 @@ public class BreadcrumbItem extends Item {
     }
 
     private boolean scatterBreadcrumbs(ServerLevel level, Player player, InteractionHand hand, BlockPos originPos, ItemStack stack, Vec3 aimedPoint) {
-        RandomSource random = level.random;
+        RandomSource random = level.getRandom();
         if (!this.addServing(level, originPos)) {
             return false;
         }

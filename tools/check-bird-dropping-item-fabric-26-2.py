@@ -36,6 +36,7 @@ replacements = (
     ("UseAnim.BOW", "ItemUseAnimation.BOW"),
     ("super.inventoryTick(stack, level, entity, slotId, isSelected)", "super.inventoryTick(stack, level, entity, slot)"),
     ("crop.isValidBonemealTarget(level, pos, state, false)", "crop.isValidBonemealTarget(level, pos, state)"),
+    ("instanceof FarmBlock", "instanceof FarmlandBlock"),
 )
 
 
@@ -48,7 +49,7 @@ def converted(body: str) -> str:
 methods = (
     ("public InteractionResultHolder<ItemStack> use(", "public InteractionResult use("),
     ("public InteractionResult useOn(", "public InteractionResult useOn("),
-    ("public void releaseUsing(", "public void releaseUsing("),
+    ("public void releaseUsing(", "public boolean releaseUsing("),
     ("public int getUseDuration(", "public int getUseDuration("),
     ("public UseAnim getUseAnimation(", "public ItemUseAnimation getUseAnimation("),
     ("public void inventoryTick(", "public void inventoryTick("),
@@ -60,6 +61,10 @@ methods = (
 for old_signature, new_signature in methods:
     before = converted(method_body(original, old_signature))
     after = method_body(current, new_signature)
+    if new_signature == "public boolean releaseUsing(":
+        before = before.replace("return;", "return false;")
+        assert before.endswith("\n    ")
+        before = before[:-5] + "\n        return true;\n    "
     assert before == after, f"Authored dropping gameplay drifted in {new_signature}"
 
 for old, new in (
@@ -74,6 +79,7 @@ for old, new in (
 
 for marker in (
     "public InteractionResult use(Level level, Player player, InteractionHand hand)",
+    "public boolean releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeLeft)",
     "public int getUseDuration(ItemStack stack, LivingEntity user)",
     "public ItemUseAnimation getUseAnimation(ItemStack stack)",
     "public void inventoryTick(@NotNull ItemStack stack, @NotNull ServerLevel level, @NotNull Entity entity, EquipmentSlot slot)",

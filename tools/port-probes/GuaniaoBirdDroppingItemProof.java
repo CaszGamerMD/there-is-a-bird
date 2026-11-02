@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** Compile the 26.2 throwing, inventory, cooldown and fertilizing contracts in isolation. */
@@ -31,15 +32,20 @@ public final class GuaniaoBirdDroppingItemProof extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
+        if (context.getLevel().getBlockState(context.getClickedPos()).getBlock() instanceof FarmlandBlock) {
+            return InteractionResult.SUCCESS;
+        }
         return context.getLevel().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override
-    public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeLeft) {
+    public boolean releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeLeft) {
         int chargeTicks = this.getUseDuration(stack, entity) - timeLeft;
         if (entity instanceof Player player && chargeTicks >= 3) {
             player.getCooldowns().addCooldown(stack, 10);
+            return true;
         }
+        return false;
     }
 
     @Override

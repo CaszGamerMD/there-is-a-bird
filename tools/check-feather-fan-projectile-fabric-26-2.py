@@ -9,10 +9,10 @@ old = subprocess.check_output(["git", "show", f"origin/main:{PATH}"], text=True)
 new = Path(PATH).read_text(encoding="utf-8")
 
 for pattern in (
-    r"private static final (?:int|float|double) \\w+ = [^;]+;",
-    r"public static final (?:int|float|double) \\w+ = [^;]+;",
-    r"public enum FanState \\{[\\s\\S]*?    \\}",
-    r"private enum PiercingArt \\{[\\s\\S]*?    \\}",
+    r"private static final (?:int|float|double) \w+ = [^;]+;",
+    r"public static final (?:int|float|double) \w+ = [^;]+;",
+    r"public enum FanState \{[\s\S]*?    \}",
+    r"private enum PiercingArt \{[\s\S]*?    \}",
 ):
     before = re.findall(pattern, old)
     after = re.findall(pattern, new)
@@ -21,7 +21,7 @@ for pattern in (
 def saved_keys(src):
     start = src.index("addAdditionalSaveData(")
     stop = src.index("readAdditionalSaveData(", start)
-    return set(re.findall(r'tag\\.(?:put\\w*|store)\\("([^"]+)"', src[start:stop]))
+    return set(re.findall(r'tag\.(?:put\w*|store)\("([^"]+)"', src[start:stop]))
 
 assert saved_keys(old) == saved_keys(new), "A saved field name was added or lost"
 assert "ValueOutput tag" in new and "ValueInput tag" in new

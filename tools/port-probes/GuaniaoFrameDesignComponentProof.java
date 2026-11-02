@@ -20,6 +20,16 @@ public final class GuaniaoFrameDesignComponentProof {
                 custom->custom.put("FrameDesign",design));
     }
 
+    public static boolean safeForWorkbench(ItemStack stack, int maxBytes) {
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return data == null || data.copyTag().sizeInBytes() <= maxBytes;
+    }
+
+    public static void copyPhotoReference(ItemStack source, ItemStack photograph) {
+        CustomData data = source.get(DataComponents.CUSTOM_DATA);
+        if (data != null) photograph.set(DataComponents.CUSTOM_DATA, data);
+    }
+
     public static int version(CompoundTag tag) {return tag.getIntOr("Version",0);}
 
     public static boolean hasMask(CompoundTag tag) {

@@ -5,6 +5,7 @@ import EdDYON.guaniao.content.fan.FeatherFanProjectileEntity;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import EdDYON.guaniao.registry.GuaniaoParticleTypes;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -23,6 +24,13 @@ public final class FeatherFanCombatEvents {
     public static void registerCallbacks() {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(FeatherFanCombatEvents::allowDamage);
         ServerLivingEntityEvents.AFTER_DEATH.register(FeatherFanCombatEvents::afterDeath);
+        // A fan can unload with its chunk without remove() running. Release
+        // its temporary burial physics and slowdown on that Fabric lifecycle.
+        ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
+            if (entity instanceof FeatherFanProjectileEntity fan) {
+                fan.cleanupOnUnload();
+            }
+        });
     }
 
     /** Return false only for feather-fan damage to a bird. */

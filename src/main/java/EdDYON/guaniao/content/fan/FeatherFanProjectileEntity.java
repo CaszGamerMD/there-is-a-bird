@@ -240,12 +240,10 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         super.remove(reason);
     }
 
-    @Override
-    public void onRemovedFromWorld() {
-        // Chunk unloading calls setRemoved directly rather than remove.
+    /** Fabric server entity-unload callback; chunk unloads do not call remove(). */
+    public void cleanupOnUnload() {
         this.releaseBurialTargets();
         this.removeStuckSlowdown();
-        super.onRemovedFromWorld();
     }
 
     @Override

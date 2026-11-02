@@ -178,6 +178,18 @@ def expected_port(source, photograph, dropping, splat):
         source = source.replace(
             "protected float getGravity() {\n        return 0.0F;",
             "protected double getDefaultGravity() {\n        return 0.0D;")
+        source = source.replace(
+            "    @Override\n    public void onRemovedFromWorld() {\n"
+            "        // Chunk unloading calls setRemoved directly rather than remove.\n"
+            "        this.releaseBurialTargets();\n"
+            "        this.removeStuckSlowdown();\n"
+            "        super.onRemovedFromWorld();\n"
+            "    }",
+            "    /** Fabric server entity-unload callback; chunk unloads do not call remove(). */\n"
+            "    public void cleanupOnUnload() {\n"
+            "        this.releaseBurialTargets();\n"
+            "        this.removeStuckSlowdown();\n"
+            "    }")
         source = source.replace("import net.minecraft.network.syncher.SynchedEntityData;\n",
                                 "import net.minecraft.network.syncher.SynchedEntityData;\n"
                                 "import net.minecraft.server.level.ServerEntity;\n")

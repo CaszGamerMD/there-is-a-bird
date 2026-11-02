@@ -146,6 +146,8 @@ jobs:
         run: python3 tools/check-bird-bath-renderer-fabric-26-2.py
       - name: Verify all three bird cage items keep authored GeckoLib 5 inventory visuals
         run: python3 tools/check-bird-cage-item-visuals-fabric-26-2.py
+      - name: Verify empty crow nest inventory model and GeckoLib 5 bone visibility
+        run: python3 tools/check-crow-nest-item-visuals-fabric-26-2.py
       - name: Verify Nikon camera use and all authored item display transforms on GeckoLib 5
         run: python3 tools/check-nikon-camera-geoitem-fabric-26-2.py
       - name: Verify FilmItem's 26.2 migration, right-click preview and original tooltips

@@ -3,6 +3,8 @@ package EdDYON.guaniao.fabric;
 import EdDYON.guaniao.client.camera.CameraTooltipEvents;
 import EdDYON.guaniao.client.bath.BirdBathItemRenderer;
 import EdDYON.guaniao.client.cage.BirdCageItemRenderer;
+import EdDYON.guaniao.client.nest.CrowNestItemRenderer;
+import EdDYON.guaniao.content.nest.CrowNestItem;
 import EdDYON.guaniao.content.cage.BirdCageItem;
 import EdDYON.guaniao.client.camera.NikonD750ItemRenderer;
 import EdDYON.guaniao.content.bath.BirdBathItem;
@@ -62,6 +64,7 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
         // Six GeckoLib bath block-items retain a cached authored model renderer.
         registerBirdBathItemRenderers();
         registerBirdCageItemRenderers();
+        registerCrowNestItemRenderer();
         registerNikonCameraRenderer();
         CameraTooltipEvents.registerCallbacks();
         CameraKeyMappings.register();
@@ -173,6 +176,22 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
 
             @Override
             public GeoItemRenderer<BirdCageItem> getGeoItemRenderer() {
+                return this.renderer.get();
+            }
+        });
+    }
+
+    private static void registerCrowNestItemRenderer() {
+        Item item = GuaniaoItems.CROW_NEST.get();
+        if (!(item instanceof CrowNestItem nest)) {
+            throw new IllegalStateException("Expected the authored crow nest item for " + item);
+        }
+        nest.geoRenderProvider.setValue(new GeoRenderProvider() {
+            private final Supplier<GeoItemRenderer<CrowNestItem>> renderer =
+                    com.google.common.base.Suppliers.memoize(CrowNestItemRenderer::new);
+
+            @Override
+            public GeoItemRenderer<CrowNestItem> getGeoItemRenderer() {
                 return this.renderer.get();
             }
         });

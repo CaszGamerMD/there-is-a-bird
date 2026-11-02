@@ -105,6 +105,14 @@ variant_expected = variant_expected.replace("    public String id() {\n        r
     "    @Override\n    public String getSerializedName() {\n        return this.id;\n    }")
 assert Path(variant_file).read_text(encoding="utf-8").replace("\r\n", "\n") == variant_expected, "Bird bath variants or model mappings changed"
 
+effects_file = "src/main/java/EdDYON/guaniao/content/bath/BirdBathEffects.java"
+effects_original = subprocess.check_output(["git", "show", f"origin/main:{effects_file}"], text=True).replace("\r\n", "\n")
+assert "RandomSource random = serverLevel.random;" in effects_original
+effects_expected = effects_original.replace("RandomSource random = serverLevel.random;",
+    "RandomSource random = serverLevel.getRandom();")
+assert Path(effects_file).read_text(encoding="utf-8").replace("\r\n", "\n") == effects_expected, "Bird bath particles or sounds changed"
+
 print("PASS: 26.2 potion data rejects effect-bearing bottles and accepts plain water only")
 print("PASS: six bath variants retain original IDs, geometries and assets through the 26.2 codec")
 print("PASS: 26.2 block hooks preserve original sweetening, refilling, cleaning and item-remainder rules")
+print("PASS: authored bath sound and dirt particles preserved with 26.2 ServerLevel randomness")

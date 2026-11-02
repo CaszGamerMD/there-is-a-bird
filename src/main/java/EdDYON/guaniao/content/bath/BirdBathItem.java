@@ -1,19 +1,20 @@
 package EdDYON.guaniao.content.bath;
 
-import EdDYON.guaniao.client.bath.BirdBathItemRenderer;
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 import java.util.function.Consumer;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import org.apache.commons.lang3.mutable.MutableObject;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class BirdBathItem extends BlockItem implements GeoItem {
     private final BirdBathVariant variant;
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+    // Populated by the Fabric client entrypoint; the common item never loads a client renderer.
+    public final MutableObject<GeoRenderProvider> geoRenderProvider = new MutableObject<>();
 
     public BirdBathItem(BirdBathVariant variant, Block block, Properties properties) {
         super(block, properties);
@@ -25,18 +26,8 @@ public class BirdBathItem extends BlockItem implements GeoItem {
     }
 
     @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-            private BirdBathItemRenderer renderer;
-
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                if (this.renderer == null) {
-                    this.renderer = new BirdBathItemRenderer();
-                }
-                return this.renderer;
-            }
-        });
+    public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
+        consumer.accept(this.geoRenderProvider.getValue());
     }
 
     @Override

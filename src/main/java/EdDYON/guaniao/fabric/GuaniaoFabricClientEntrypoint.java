@@ -1,6 +1,12 @@
 package EdDYON.guaniao.fabric;
 
 import EdDYON.guaniao.client.camera.CameraTooltipEvents;
+import EdDYON.guaniao.client.bath.BirdBathItemRenderer;
+import EdDYON.guaniao.content.bath.BirdBathItem;
+import EdDYON.guaniao.registry.GuaniaoItems;
+import com.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.renderer.GeoItemRenderer;
+import java.util.function.Supplier;
 import EdDYON.guaniao.client.dropping.PrankFoodClientEvents;
 import EdDYON.guaniao.client.fan.FeatherFanClientEvents;
 import EdDYON.guaniao.client.hummingbird.HummingbirdSoundEvents;
@@ -31,6 +37,7 @@ import net.minecraft.client.gui.screens.MenuScreens;
 import EdDYON.guaniao.client.config.BirdConfigClient;
 import EdDYON.guaniao.network.OpenBirdConfigPacket;
 import net.fabricmc.api.ClientModInitializer;
+import net.minecraft.world.item.Item;
 import EdDYON.guaniao.client.particle.KillFeatherParticle;
 import EdDYON.guaniao.client.particle.BurialWindParticle;
 import EdDYON.guaniao.client.particle.BurialCycloneParticle;
@@ -48,6 +55,8 @@ import EdDYON.guaniao.client.camera.frame.FrameWorkbenchPreview3DRenderer;
 public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        // Six GeckoLib bath block-items retain a cached authored model renderer.
+        registerBirdBathItemRenderers();
         CameraTooltipEvents.registerCallbacks();
         CameraKeyMappings.register();
         // Real world-frame snapshots must happen in the GPU draw phase.
@@ -116,5 +125,29 @@ public final class GuaniaoFabricClientEntrypoint implements ClientModInitializer
                 (packet, context) -> BirdConfigClient.open(packet.data()));
         // Camera screens, remaining GeckoLib bird renderers and layers
         // still need Fabric client hooks.
+    }
+
+    private static void registerBirdBathItemRenderers() {
+        registerBirdBathItemRenderer(GuaniaoItems.WOODEN_BIRD_BATH.get());
+        registerBirdBathItemRenderer(GuaniaoItems.STONE_BIRD_BATH.get());
+        registerBirdBathItemRenderer(GuaniaoItems.BIRD_BATH.get());
+        registerBirdBathItemRenderer(GuaniaoItems.WOODEN_BIRD_BATH_2.get());
+        registerBirdBathItemRenderer(GuaniaoItems.STONE_BIRD_BATH_2.get());
+        registerBirdBathItemRenderer(GuaniaoItems.BIRD_BATH_2.get());
+    }
+
+    private static void registerBirdBathItemRenderer(Item item) {
+        if (!(item instanceof BirdBathItem bath)) {
+            throw new IllegalStateException("Expected the authored bird bath item for " + item);
+        }
+        bath.geoRenderProvider.setValue(new GeoRenderProvider() {
+            private final Supplier<GeoItemRenderer<BirdBathItem>> renderer =
+                    com.google.common.base.Suppliers.memoize(BirdBathItemRenderer::new);
+
+            @Override
+            public GeoItemRenderer<BirdBathItem> getGeoItemRenderer() {
+                return this.renderer.get();
+            }
+        });
     }
 }

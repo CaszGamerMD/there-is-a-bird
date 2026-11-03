@@ -33,7 +33,7 @@ final class FrameWorkbenchPreview3DFactory {
      */
     static FrameWorkbenchPreview3DState captureWithPhoto(FrameDesign design,
             float yaw,float pitch,int x0,int y0,int x1,int y1,float scale,
-            @Nullable ScreenRectangle scissor,@Nullable net.minecraft.resources.Identifier texture,
+            @Nullable ScreenRectangle scissor,net.minecraft.resources.@Nullable Identifier texture,
             int imageWidth,int imageHeight) {
         var basic=capture(design,yaw,pitch,x0,y0,x1,y1,scale,scissor);
         if(texture==null || imageWidth<=0 || imageHeight<=0) return basic;

@@ -13,7 +13,7 @@ assert "ServerLivingEntityEvents.ALLOW_DAMAGE.register(FeatherFanCombatEvents::a
 assert "ServerLivingEntityEvents.AFTER_DEATH.register(FeatherFanCombatEvents::afterDeath)" in new
 assert "FeatherFanCombatEvents.registerCallbacks();" in boot
 assert "return false;" in new and "return true;" in new
-assert "if (!victim.getType().is(BirdTags.BIRDS))" in new
+assert "if (!victim.getType().builtInRegistryHolder().is(BirdTags.BIRDS))" in new
 for start, finish in (
     ("boolean projectileAttack =", "if (projectileAttack || meleeAttack)"),
     ("boolean projectileKill =", "if (!projectileKill && !meleeKill)"),

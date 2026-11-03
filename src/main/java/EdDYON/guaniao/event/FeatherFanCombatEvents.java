@@ -35,7 +35,7 @@ public final class FeatherFanCombatEvents {
 
     /** Return false only for feather-fan damage to a bird. */
     public static boolean allowDamage(LivingEntity victim, DamageSource source, float amount) {
-        if (!victim.getType().is(BirdTags.BIRDS)) {
+        if (!victim.getType().builtInRegistryHolder().is(BirdTags.BIRDS)) {
             return true;
         }
 

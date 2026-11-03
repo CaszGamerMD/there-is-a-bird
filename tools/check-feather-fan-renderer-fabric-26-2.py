@@ -21,6 +21,8 @@ assert 'state.mainFan.submit(poseStack, collector,' in renderer
 assert 'state.rivenFans[i].submit(poseStack, collector,' in renderer
 assert 'MultiBufferSource' not in renderer and 'renderStatic' not in renderer
 assert 'public void render(' not in renderer
+registry = Path('src/main/java/EdDYON/guaniao/fabric/GuaniaoFabricEntityRenderers.java').read_text(encoding='utf-8')
+assert 'EntityRendererRegistry.register(GuaniaoEntityTypes.FEATHER_FAN_PROJECTILE.get(), FeatherFanProjectileRenderer::new)' in registry
 assert 'public ResourceLocation getTextureLocation(' not in renderer
 for fragment in (
     'private static final float RENDER_SCALE = 1.35F;',

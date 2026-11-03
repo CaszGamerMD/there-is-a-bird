@@ -21,6 +21,7 @@ import EdDYON.guaniao.client.entity.macaw.MacawRenderer;
 import EdDYON.guaniao.client.entity.myna.MynaRenderer;
 import EdDYON.guaniao.client.entity.sparrow.SparrowRenderer;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
+import EdDYON.guaniao.client.fan.FeatherFanProjectileRenderer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 
 /**
@@ -33,6 +34,7 @@ public final class GuaniaoFabricEntityRenderers {
 
     public static void register() {
         EntityRendererRegistry.register(GuaniaoEntityTypes.KIWI.get(), KiwiRenderer::new);
+        EntityRendererRegistry.register(GuaniaoEntityTypes.FEATHER_FAN_PROJECTILE.get(), FeatherFanProjectileRenderer::new);
         EntityRendererRegistry.register(GuaniaoEntityTypes.SPARROW.get(), SparrowRenderer::new);
         EntityRendererRegistry.register(GuaniaoEntityTypes.MYNA.get(), MynaRenderer::new);
         EntityRendererRegistry.register(GuaniaoEntityTypes.LONG_TAILED_TIT.get(), LongTailedTitRenderer::new);

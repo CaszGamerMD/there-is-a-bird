@@ -479,6 +479,9 @@ registered = {
 }
 for entity, name in registered.items():
     assert "EntityRendererRegistry.register(GuaniaoEntityTypes." + entity + ".get(), " + name + "Renderer::new)" in registry
-assert registry.count("EntityRendererRegistry.register(") == len(registered)
+# The feather fan is not a bird species, but now has its own 26.2 renderer.
+# Keep all 19 bird entries mandatory while accounting for this registered projectile.
+assert "EntityRendererRegistry.register(GuaniaoEntityTypes.FEATHER_FAN_PROJECTILE.get(), FeatherFanProjectileRenderer::new)" in registry
+assert registry.count("EntityRendererRegistry.register(") == len(registered) + 1
 assert "net.minecraftforge" not in registry
 print("GECKOLIB 5 BIRD STATE PARITY OK: 15 mutation bird models plus hummingbird, 19 renderer registrations, unmodified mutation color formulas")

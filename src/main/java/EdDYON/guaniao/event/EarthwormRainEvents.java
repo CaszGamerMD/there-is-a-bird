@@ -53,7 +53,7 @@ public final class EarthwormRainEvents {
         }
     }
 
-    /** Same signed X/Z bit layout as the removed ChunkPos.asLong(x,z) helper. */
+    /** Same signed X/Z bit layout used by vanilla chunk-coordinate packing. */
     private static long cellKey(int x, int z) {
         return (x & 0xffffffffL) | ((long) z << 32);
     }

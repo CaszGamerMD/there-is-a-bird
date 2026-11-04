@@ -9,6 +9,9 @@ old=subprocess.check_output(["git","show","origin/main:"+BASE+"FrameCraftingProg
 new=(ROOT/(BASE+"FrameCraftingMeadow.java")).read_text("utf-8")
 screen=(ROOT/(BASE+"FrameWorkbenchScreen.java")).read_text("utf-8")
 progress=(ROOT/(BASE+"FrameCraftingProgress.java")).read_text("utf-8")
+bird=(ROOT/(BASE+"FrameWorkshopBird.java")).read_text("utf-8")
+old_bird=subprocess.check_output(["git","show","origin/main:"+BASE+"FrameWorkshopBird.java"],
+                                 cwd=ROOT,text=True).replace("\\r\\n","\\n")
 for sprite in ("block/grass_block_side","block/grass_block_side_overlay",
                "block/cornflower","block/dandelion","block/grass"):
     assert sprite in old and sprite in new,sprite
@@ -30,6 +33,21 @@ for obsolete in ("GuiGraphics;", "getTextureAtlas(", "getBlockColors().getColor(
 # extracted GUI lifecycle. The legacy immediate-mode GeckoLib bird call is
 # intentionally NOT counted as migrated; its dedicated 3D PiP work remains pending.
 assert "FrameCraftingProgress2D.extract(graphics, food, eatingTicks)" in progress
+# The renderer shell is now deferred, but job-seeded species/food and animation
+# choices remain identical to the original author implementation.
+for token in ('new Species("sparrow",1.30F,1.65F,.65F)',
+              'new Species("long_tailed_tit",2.30F,2.60F,.85F)',
+              'new Species("cockatiel",.95F,1.10F,.65F)',
+              'new Species("budgerigar",.90F,1.15F,.60F)',
+              'new Species("myna",1.20F,1.55F,.70F)',
+              '0x6a09e667f3bcc909L',
+              'Items.SWEET_BERRIES','Items.MELON_SEEDS','Items.APPLE','Items.WHEAT_SEEDS',
+              'Mth.clamp(size,0,56)', 'myna.setGuidePreviewAnimation',
+              'sparrow.setGuidePreviewAnimation','budgerigar.setGuidePreviewAnimation'):
+    assert token in bird,token
+for obsolete in ('net.minecraftforge.', 'GuiGraphics', 'Lighting.setupFor',
+                 'new GeoEntityRenderer', 'BakedGeoModel', 'LocalBones'):
+    assert obsolete not in bird,obsolete
 assert "FrameCraftingProgress2D.extract(graphics," in screen
 assert "FrameWorkshopBird.progressFood(this.activeWorkSeed)" in screen
 assert "FrameWorkshopBird.progressFood(this.progressBirdClock.seed())" in screen
@@ -39,4 +57,4 @@ for obsolete in ("import net.minecraft.client.gui.GuiGraphics;", "renderBg(", "v
                  "FrameCraftingAnimation.renderPreview(", "FrameCraftingAnimation.renderObserver("):
     assert obsolete not in screen, obsolete
 print("FRAME CRAFTING MEADOW 26.2 PARITY OK: 11 grass tiles, four plants,"
-      " original positions and inventory-tinted resource-pack sprites; 3D progress bird pending PiP")
+      " original positions, seeded bird/food parity and inventory-tinted sprites; bird PiP pending")

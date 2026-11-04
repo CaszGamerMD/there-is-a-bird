@@ -8,16 +8,12 @@ import EdDYON.guaniao.content.camera.frame.FrameWorkbenchMenu;
 import EdDYON.guaniao.network.CraftFramePacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import EdDYON.guaniao.registry.GuaniaoItems;
-import com.mojang.blaze3d.platform.Lighting;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.math.Axis;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -26,7 +22,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -812,179 +807,10 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         FrameWorkbenchPipBridge.submit(graphics,state);
     }
 
-    @Override public void render(GuiGraphics graphics,int mouseX,int mouseY,float partialTick) {
-        if(this.isWorkshopVisible())this.frameWorkTicks=this.workshopClock.render(System.nanoTime(),this.minecraft.isPaused());
-        this.renderBackground(graphics);
-        int x=(int)this.localX(mouseX),y=(int)this.localY(mouseY);
-        graphics.pose().pushPose();
-        graphics.pose().translate(this.originX,this.originY,0);
-        graphics.pose().scale(this.uiScale,this.uiScale,1);
-        if(this.paletteKind!=null || this.outlineEditor!=null) {
-            this.renderModal(graphics,x,y,partialTick);
-            graphics.pose().popPose();
-            this.renderModalTooltip(graphics,mouseX,mouseY,x,y);
-            this.renderObserver(graphics);
-            return;
-        }
-        super.render(graphics,x,y,partialTick);
-        if(this.isWorkshopVisible()) {
-            FrameCraftingAnimation.renderDelivery(graphics,this.craftingPreview,this.workDesign,this.workshopProgressTicks(partialTick),this.activeWorkSeed);
-        }
-        graphics.pose().popPose();
-        // Tooltips use actual GUI coordinates and normal font size. Passing the
-        // virtual 390px canvas to vanilla's screen-edge clamp broke small screens.
-        this.renderTooltip(graphics,mouseX,mouseY);
-        if(this.hoveredSlot==null && this.menu.getCarried().isEmpty()) {
-            for(var child:this.children()) {
-                if(child instanceof AbstractWidget widget && widget.isMouseOver(x,y)
-                        && this.font.width(widget.getMessage())>widget.getWidth()-8) {
-                    graphics.renderTooltip(this.font,widget.getMessage(),mouseX,mouseY);
-                    break;
-                }
-            }
-        }
-        this.renderObserver(graphics);
-    }
-
-    /** Only entrance and departure cross the preview edge; their paths use real screen bounds. */
-    private void renderObserver(GuiGraphics graphics) {
-        float progress,exitTicks;
-        if(this.isWorkshopVisible()) {
-            this.observerClock.observe(this.activeWorkSeed);
-            this.observerDesign=this.workDesign;
-            progress=this.frameWorkTicks;
-            exitTicks=0;
-        } else {
-            // Completion can arrive between client ticks. Keep the observer visible
-            // on that very frame, and do not depend on when the player takes the result.
-            if(!this.awaitingCraftResponse && !this.menu.isCrafting()) {
-                this.observerClock.complete(this.menu.getWorkSeed(),System.nanoTime(),this.minecraft.isPaused());
-            }
-            if(!this.observerClock.isDeparting())return;
-            exitTicks=this.observerClock.renderExit(System.nanoTime(),this.minecraft.isPaused());
-            if(exitTicks>=FrameObserverClock.EXIT_TICKS) {this.observerClock.clear();return;}
-            progress=FrameWorkbenchMenu.CRAFT_DURATION_TICKS;
-        }
-        graphics.flush();
-        graphics.pose().pushPose();
-        boolean insidePreview=progress>=28 && progress<FrameWorkbenchMenu.CRAFT_DURATION_TICKS;
-        try {
-            graphics.pose().translate(this.originX,this.originY,0);
-            graphics.pose().scale(this.uiScale,this.uiScale,1);
-            if(insidePreview)graphics.enableScissor(Math.round(this.originX+79*this.uiScale),Math.round(this.originY+41*this.uiScale),
-                    Math.round(this.originX+231*this.uiScale),Math.round(this.originY+191*this.uiScale));
-            FrameCraftingAnimation.renderObserver(graphics,this.observerDesign,progress,this.observerClock.seed(),exitTicks,
-                    -this.originX/this.uiScale,-this.originY/this.uiScale,
-                    (this.width-this.originX)/this.uiScale,(this.height-this.originY)/this.uiScale);
-            graphics.flush();
-        } finally {
-            if(insidePreview)graphics.disableScissor();
-            graphics.pose().popPose();
-        }
-    }
-
     @Override public void removed() {
         this.observerClock.clear();
         this.progressBirdClock.clear();
         super.removed();
-    }
-
-    @Override protected void renderBg(GuiGraphics g,float partialTick,int mouseX,int mouseY) {
-        panel(g,0,0,PANEL_WIDTH,PANEL_HEIGHT);
-        recess(g,7,36,65,163,0xFFB8B8B8);
-        FrameWorkbenchBackdrop.render(g,8,37,63,161);
-        recess(g,78,40,154,152,0xFF565656);
-        FrameWorkbenchBackdrop.render(g);
-        recess(g,240,40,140,155,0xFFB8B8B8);
-        recess(g,240,202,140,73,0xFFB8B8B8);
-        FrameWorkbenchBackdrop.render(g,241,203,138,71);
-        slot(g,18,54);
-        this.renderCraftingArea(g,partialTick);
-        for(int row=0;row<3;row++) for(int col=0;col<9;col++) slot(g,18+col*18,212+row*18);
-        for(int col=0;col<9;col++) slot(g,18+col*18,270);
-        if(this.isWorkshopVisible())this.renderWorkshop(g,partialTick);
-        else if(this.editShape || this.invalidOutline) this.renderCanvas(g,mouseX,mouseY);
-        else this.renderPreview(g,partialTick);
-    }
-
-    private float workshopProgressTicks(float partialTick) {
-        return this.frameWorkTicks;
-    }
-
-    private void renderWorkshop(GuiGraphics graphics,float partialTick) {
-        graphics.flush();
-        graphics.enableScissor(Math.round(this.originX+79*this.uiScale),Math.round(this.originY+41*this.uiScale),
-                Math.round(this.originX+231*this.uiScale),Math.round(this.originY+191*this.uiScale));
-        FrameCraftingAnimation.renderPreview(graphics,this.craftingPreview,this.workDesign,this.workshopProgressTicks(partialTick),this.activeWorkSeed);
-        graphics.flush();
-        graphics.disableScissor();
-        Lighting.setupFor3DItems();
-    }
-
-    private void renderCraftingArea(GuiGraphics graphics,float partialTick) {
-        panel(graphics,331,230,30,30);
-        slot(graphics,FrameWorkbenchMenu.OUTPUT_X,FrameWorkbenchMenu.OUTPUT_Y);
-        if(this.isWorkshopVisible()) {
-            this.progressBirdClock.observe(this.activeWorkSeed);
-            int stage=workshopStage((int)this.frameWorkTicks);
-            String label=stage==2 && !PhotographData.hasImage(this.craftingPreview) ? "work_stage.lining_only" : "work_stage."+stage;
-            graphics.drawString(this.font,text(label),247,211,WOOD_TEXT,false);
-            Component countdown=text("seconds_remaining",(Math.max(0,this.menu.getCraftTicksRemaining())+19)/20);
-            graphics.drawString(this.font,countdown,285-this.font.width(countdown)/2,224,WOOD_TEXT,false);
-            FrameCraftingProgress.render(graphics,this.workshopProgressTicks(partialTick),-1,this.activeWorkSeed);
-        } else if(this.isCraftingUi()) {
-            graphics.drawString(this.font,text("waiting"),247,237,WOOD_TEXT,false);
-        } else {
-            // This is only a visual finish: taking the result does not cut off the meal.
-            this.progressBirdClock.complete(this.menu.getWorkSeed(),System.nanoTime(),this.minecraft.isPaused());
-            if(this.progressBirdClock.isDeparting()) {
-                float eating=this.progressBirdClock.renderExit(System.nanoTime(),this.minecraft.isPaused());
-                if(eating<FrameObserverClock.EXIT_TICKS) {
-                    FrameCraftingProgress.render(graphics,FrameWorkbenchMenu.CRAFT_DURATION_TICKS,eating,this.progressBirdClock.seed());
-                } else this.progressBirdClock.clear();
-            }
-        }
-        if(this.readyFlashTicks>0) {
-            int alpha=Math.round(255*Math.min(1,this.readyFlashTicks/10F));
-            graphics.renderOutline(331,230,30,30,(alpha<<24)|0xFFF0B8);
-            graphics.renderOutline(332,231,28,28,(alpha<<24)|0xFFFFFF);
-        }
-    }
-
-    private void renderModal(GuiGraphics graphics,int mouseX,int mouseY,float partialTick) {
-        panel(graphics,0,0,PANEL_WIDTH,PANEL_HEIGHT);
-        if(this.paletteKind!=null) {
-            graphics.drawString(this.font,text("palette."+this.paletteKind.name().toLowerCase(Locale.ROOT)),14,10,0x404040,false);
-            recess(graphics,PALETTE_X-4,PALETTE_Y-4,PALETTE_COLUMNS*PALETTE_STEP+8,PALETTE_ROWS*PALETTE_STEP+8,0xFF8B8B8B);
-            int start=this.palettePage*PALETTE_PAGE_SIZE;
-            for(int cell=0;cell<PALETTE_PAGE_SIZE;cell++) {
-                int x=PALETTE_X+(cell%PALETTE_COLUMNS)*PALETTE_STEP,y=PALETTE_Y+(cell/PALETTE_COLUMNS)*PALETTE_STEP;
-                slot(graphics,x,y);
-                if(start+cell>=this.paletteEntries.size())continue;
-                graphics.renderItem(this.paletteEntries.get(start+cell),x,y);
-                if(mouseX>=x && mouseX<x+18 && mouseY>=y && mouseY<y+18) {
-                    graphics.pose().pushPose();graphics.pose().translate(0,0,200);
-                    graphics.fill(x,y,x+16,y+16,0x80FFFFFF);graphics.pose().popPose();
-                }
-            }
-            int pages=Math.max(1,(this.paletteEntries.size()+PALETTE_PAGE_SIZE-1)/PALETTE_PAGE_SIZE);
-            Component pageLabel=text("palette_page",this.palettePage+1,pages,this.paletteEntries.size());
-            graphics.drawString(this.font,pageLabel,195-this.font.width(pageLabel)/2,248,0x404040,false);
-        } else if(this.outlineEditor!=null) {
-            graphics.drawString(this.font,text("edit_shape"),14,10,0x404040,false);
-            graphics.drawString(this.font,Component.literal(this.outlineEditor.zoomPercent()+"%"),228,10,0x404040,false);
-            this.outlineEditor.render(graphics,mouseX,mouseY);
-            graphics.drawWordWrap(this.font,text("outline_help"),276,216,100,0x404040);
-            if(!this.outlineEditor.valid())graphics.drawString(this.font,text("invalid_shape"),276,252,0x9B3030,false);
-            if(this.outlineConfirm!=null)this.outlineConfirm.active=this.outlineEditor.valid();
-        }
-        for(var renderable:this.renderables)renderable.render(graphics,mouseX,mouseY,partialTick);
-    }
-
-    private void renderModalTooltip(GuiGraphics graphics,int mouseX,int mouseY,int localX,int localY) {
-        if(this.paletteKind==null)return;
-        int cell=this.paletteCell(localX,localY),index=this.palettePage*PALETTE_PAGE_SIZE+cell;
-        if(cell>=0 && index<this.paletteEntries.size())graphics.renderTooltip(this.font,this.paletteEntries.get(index),mouseX,mouseY);
     }
 
     private int paletteCell(double x,double y) {
@@ -1041,85 +867,10 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
         g.text(this.font,this.font.plainSubstrByWidth(label(key,value).getString(),88),244,y+6,0x404040,false);
     }
 
-    private void renderPreview(GuiGraphics g,float partialTick) {
-        g.flush();
-        // 1.20.1 scissor coordinates are screen-space, independent of the pose matrix.
-        g.enableScissor(Math.round(this.originX+79*this.uiScale),Math.round(this.originY+41*this.uiScale),
-                Math.round(this.originX+231*this.uiScale),Math.round(this.originY+191*this.uiScale));
-        g.pose().pushPose();
-        g.pose().translate(155,116,120);
-        float scale=this.previewScale();
-        FrameDesignRenderer.scaleForGui(g.pose(),scale);
-        if(this.page!=3) {
-            g.pose().mulPose(Axis.XP.rotationDegrees(this.viewPitch));
-            g.pose().mulPose(Axis.YP.rotationDegrees(this.viewYaw));
-        }
-        Lighting.setupForFlatItems();
-        RenderSystem.enableDepthTest();
-        FrameDesignRenderer.render(this.previewStack,this.design,0,g.pose(),this.minecraft.renderBuffers().bufferSource(),LightTexture.FULL_BRIGHT);
-        g.flush();
-        g.pose().popPose();
-        if(this.page==3 && !this.isCraftingUi())this.renderDecorationSelection(g);
-        g.disableScissor();
-        Lighting.setupFor3DItems();
-    }
-
     private float previewScale() {
         float span=this.page==3 ? 100.0F : 120.0F*this.viewZoom;
         return span/Math.max(0.0625F,Math.max(this.design.widthPixels()/16.0F,this.design.heightPixels()/16.0F));
     }
-
-    private void renderDecorationSelection(GuiGraphics g) {
-        if(this.design.widthPixels()==0 || this.design.heightPixels()==0)return;
-        FrameDesign.Decoration piece=this.selectedDecoration();
-        if(piece==null) return;
-        float scale=this.previewScale();
-        var bounds=FrameDesignRenderer.decorationBounds(this.design,piece);
-        int x=Math.round(155+bounds.x0()*scale)-1,y=Math.round(116-bounds.y1()*scale)-1;
-        int width=Math.round((bounds.x1()-bounds.x0())*scale)+2,height=Math.round((bounds.y1()-bounds.y0())*scale)+2;
-        g.pose().pushPose();
-        g.pose().translate(0,0,180);
-        g.renderOutline(x,y,width,height,piece.locked() ? 0xFFFFCE61 : 0xFFFFFFFF);
-        g.pose().popPose();
-    }
-
-    private void renderCanvas(GuiGraphics g,int mouseX,int mouseY) {
-        int[] mask=this.painting ? this.strokeMask : this.workingMask==null ? this.design.mask() : this.workingMask;
-        int[] inner=FrameDesign.erode(mask,this.design.borderCells());
-        for(int y=0;y<32;y++) for(int x=0;x<32;x++) {
-            boolean filled=(mask[y]&(1<<x))!=0,window=(inner[y]&(1<<x))!=0;
-            int color=filled ? (window ? 0xFFC9C0A6 : 0xFF86613D) : ((x+y)%2==0 ? 0xFF686868 : 0xFF777777);
-            g.fill(CANVAS_X+x*CELL,CANVAS_Y+y*CELL,CANVAS_X+(x+1)*CELL,CANVAS_Y+(y+1)*CELL,color);
-        }
-        for(int i=0;i<=32;i+=4) {
-            g.fill(CANVAS_X+i*CELL,CANVAS_Y,CANVAS_X+i*CELL+1,CANVAS_Y+128,0x44666666);
-            g.fill(CANVAS_X,CANVAS_Y+i*CELL,CANVAS_X+128,CANVAS_Y+i*CELL+1,0x44666666);
-        }
-        if(inCanvas(mouseX,mouseY)) {
-            int x=(mouseX-CANVAS_X)/CELL,y=(mouseY-CANVAS_Y)/CELL;
-            g.renderOutline(CANVAS_X+x*CELL,CANVAS_Y+y*CELL,CELL,CELL,this.eraser ? 0xFFFF7777 : 0xFFFFFFFF);
-        }
-    }
-
-    private static void panel(GuiGraphics g,int x,int y,int width,int height) {
-        g.fill(x,y,x+width,y+height,0xFF161616);
-        g.fill(x+1,y+1,x+width-1,y+height-1,0xFFC6C6C6);
-        g.fill(x+2,y+2,x+width-2,y+4,0xFFFFFFFF);
-        g.fill(x+2,y+2,x+4,y+height-2,0xFFFFFFFF);
-        g.fill(x+4,y+height-4,x+width-2,y+height-2,0xFF555555);
-        g.fill(x+width-4,y+4,x+width-2,y+height-2,0xFF555555);
-    }
-
-    private static void recess(GuiGraphics g,int x,int y,int width,int height,int fill) {
-        g.fill(x,y,x+width,y+height,0xFF373737);
-        g.fill(x+1,y+1,x+width,y+height,0xFFFFFFFF);
-        g.fill(x+1,y+1,x+width-1,y+height-1,fill);
-    }
-    private static void slot(GuiGraphics g,int x,int y) {recess(g,x-1,y-1,18,18,0xFF8B8B8B);}
-    private double localX(double x) {return (x-this.originX)/this.uiScale;}
-    private double localY(double y) {return (y-this.originY)/this.uiScale;}
-    private static boolean inCanvas(double x,double y) {return x>=CANVAS_X && x<CANVAS_X+128 && y>=CANVAS_Y && y<CANVAS_Y+128;}
-    private static boolean inPreview(double x,double y) {return x>=79 && x<231 && y>=41 && y<191;}
 
     private int decorationAt(double x,double y) {
         if(this.design.widthPixels()==0 || this.design.heightPixels()==0)return -1;

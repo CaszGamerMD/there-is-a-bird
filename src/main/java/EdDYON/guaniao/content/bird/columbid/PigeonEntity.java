@@ -54,7 +54,7 @@ public class PigeonEntity extends AbstractColumbidEntity {
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, compoundTag);
-        if (compoundTag == null || !compoundTag.contains("PigeonVariant", 3)) {
+        if (compoundTag == null || compoundTag.getInt("PigeonVariant").isEmpty()) {
             this.setPigeonVariant(this.getRandom().nextBoolean() ? ColumbidVariant.GRAY_PIGEON : ColumbidVariant.WHITE_PIGEON);
         }
         return data;
@@ -69,7 +69,7 @@ public class PigeonEntity extends AbstractColumbidEntity {
     @Override
     public void readAdditionalSaveData(CompoundTag compoundTag) {
         super.readAdditionalSaveData(compoundTag);
-        this.setPigeonVariant(ColumbidVariant.pigeonByOrdinal(compoundTag.getInt("PigeonVariant")));
+        this.setPigeonVariant(ColumbidVariant.pigeonByOrdinal(compoundTag.getInt("PigeonVariant").orElse(ColumbidVariant.GRAY_PIGEON.ordinal())));
     }
 
     @Override
@@ -109,7 +109,7 @@ public class PigeonEntity extends AbstractColumbidEntity {
 
     @Override
     protected AbstractColumbidEntity createChildEntity(ServerLevel level) {
-        PigeonEntity child = GuaniaoEntityTypes.PIGEON.get().create(level);
+        PigeonEntity child = GuaniaoEntityTypes.PIGEON.get().create(level, EntitySpawnReason.BREEDING);
         if (child != null) {
             child.setPigeonVariant(this.getColumbidVariant());
         }

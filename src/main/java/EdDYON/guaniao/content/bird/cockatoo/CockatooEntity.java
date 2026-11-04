@@ -106,7 +106,7 @@ public class CockatooEntity extends BudgerigarEntity {
     @Nullable
     @Override
     public CockatooEntity getBreedOffspring(ServerLevel level, AgeableMob mate) {
-        CockatooEntity child = GuaniaoEntityTypes.COCKATOO.get().create(level);
+        CockatooEntity child = GuaniaoEntityTypes.COCKATOO.get().create(level, EntitySpawnReason.BREEDING);
         if (child != null) {
             float otherScale = mate instanceof CockatooEntity other ? other.getIndividualModelScale() : getIndividualModelScale();
             child.setIndividualModelScale(BirdModelScale.inheritIndividualScale(

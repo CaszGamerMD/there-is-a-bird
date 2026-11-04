@@ -37,8 +37,10 @@ public final class NightHeronFishTask {
     }
 
     Player owner() {
-        if (!(this.bird.level() instanceof ServerLevel level) || !this.bird.isTame() || this.bird.getOwnerUUID() == null) return null;
-        Player player = level.getPlayerByUUID(this.bird.getOwnerUUID());
+        if (!(this.bird.level() instanceof ServerLevel level) || !this.bird.isTame()) return null;
+        var ownerReference = this.bird.getOwnerReference();
+        if (ownerReference == null) return null;
+        Player player = level.getPlayerByUUID(ownerReference.getUUID());
         return player != null && player.isAlive() && !player.isSpectator() && player.level() == level ? player : null;
     }
 
@@ -54,7 +56,7 @@ public final class NightHeronFishTask {
     }
 
     void tick() {
-        if (this.bird.level().isClientSide || !this.bird.isTame() || !BirdConfigManager.nightHeronGiftsEnabled()
+        if (this.bird.level().isClientSide() || !this.bird.isTame() || !BirdConfigManager.nightHeronGiftsEnabled()
                 || this.bird.hasHeldFishForRendering() || !this.permitsTravel() || this.nearbyOwner() == null
                 || !this.safe() || !this.bird.isActiveTime()) return;
         if (this.giftRemaining < 0) this.resetGiftTimer();
@@ -79,7 +81,7 @@ public final class NightHeronFishTask {
     }
 
     boolean deliver(Player owner, boolean intoInventory) {
-        if (this.delivering || this.bird.level().isClientSide || !this.bird.isAlive() || !this.bird.hasDeliveryFish()
+        if (this.delivering || this.bird.level().isClientSide() || !this.bird.isAlive() || !this.bird.hasDeliveryFish()
                 || !this.bird.isOwnedBy(owner) || !owner.isAlive() || owner.level() != this.bird.level()
                 || this.bird.distanceToSqr(owner) > 9 || !this.bird.hasLineOfSight(owner)
                 || !intoInventory && (!this.permitsTravel() || !this.safe() || this.nearbyOwner() != owner)) return false;

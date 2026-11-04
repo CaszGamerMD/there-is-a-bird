@@ -27,6 +27,10 @@ assert "getDefaultClockTime() % 24000L" in files["BirdSenses.java"]
 for name, content in files.items():
     assert "contains(\"" not in content or ", " not in content, name
 extra = {
+    "NightHeronFishTask.java": (root / "src/main/java/EdDYON/guaniao/content/bird/nightheron/NightHeronFishTask.java").read_text("utf-8"),
+    "AbstractColumbidEntity.java": (root / "src/main/java/EdDYON/guaniao/content/bird/columbid/AbstractColumbidEntity.java").read_text("utf-8"),
+    "MacawEntity.java": (root / "src/main/java/EdDYON/guaniao/content/bird/macaw/MacawEntity.java").read_text("utf-8"),
+    "CockatooEntity.java": (root / "src/main/java/EdDYON/guaniao/content/bird/cockatoo/CockatooEntity.java").read_text("utf-8"),
     "PigeonEntity.java": (root / "src/main/java/EdDYON/guaniao/content/bird/columbid/PigeonEntity.java").read_text("utf-8"),
     "WoodcockEntity.java": (root / "src/main/java/EdDYON/guaniao/content/bird/woodcock/WoodcockEntity.java").read_text("utf-8"),
     "BirdModelScale.java": (root / "src/main/java/EdDYON/guaniao/content/bird/scale/BirdModelScale.java").read_text("utf-8"),

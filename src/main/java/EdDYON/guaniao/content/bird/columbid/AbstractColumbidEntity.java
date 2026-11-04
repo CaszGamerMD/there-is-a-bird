@@ -858,7 +858,8 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     }
 
     private boolean isOwnedBy(Player player) {
-        return this.isTame() && this.getOwnerUUID() != null && this.getOwnerUUID().equals(player.getUUID());
+        var ownerReference = this.getOwnerReference();
+        return this.isTame() && ownerReference != null && ownerReference.getUUID().equals(player.getUUID());
     }
 
     private void spawnTrustParticles(boolean success) {

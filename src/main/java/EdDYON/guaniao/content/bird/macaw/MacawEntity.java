@@ -105,7 +105,7 @@ public class MacawEntity extends BudgerigarEntity {
     @Nullable
     @Override
     public MacawEntity getBreedOffspring(ServerLevel level, AgeableMob mate) {
-        MacawEntity child = GuaniaoEntityTypes.MACAW.get().create(level);
+        MacawEntity child = GuaniaoEntityTypes.MACAW.get().create(level, EntitySpawnReason.BREEDING);
         if (child != null) {
             child.setSkinVariantForRendering(this.getRandom().nextInt(MacawDefinition.TEXTURE_VARIANTS.length));
             float mateScale = mate instanceof BudgerigarEntity other ? other.getIndividualModelScale() : this.getIndividualModelScale();

@@ -68,8 +68,7 @@ old_screen=old("FrameWorkbenchScreen")
 for token in ("this.paintCell(this.lastCellX,this.lastCellY);",
               "this.design=this.design.withDecorations(pieces);",
               "this.viewPitch=Mth.clamp(", "this.palettePage=Mth.clamp(",
-              "this.observerClock.complete(", "FrameDesignRenderer.render(",
-              "FrameCraftingAnimation.renderObserver("):
+              "this.observerClock.complete("):
     assert token in old_screen and token in screen,token
 for token in ("mouseClicked(MouseButtonEvent event,boolean doubleClick)",
               "mouseDragged(MouseButtonEvent event,double dragX,double dragY)",

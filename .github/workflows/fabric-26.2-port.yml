@@ -44,6 +44,8 @@ jobs:
         run: python3 tools/check-bird-entity-enums.py
       - name: Verify bird synced-data initial values and inheritance order
         run: python3 tools/check-bird-synced-data-port.py
+      - name: Verify bird-brain 26.2 optional NBT reads and saved-key parity
+        run: python3 tools/check-bird-brain-persistence-26-2.py
       - name: Verify authored projectile and photograph entity gameplay after 26.2 API updates
         run: python3 tools/check-bird-projectile-entity-api.py
       - name: Verify droppings projectile 26.2 saves, gravity and impact/strip gameplay

@@ -30,7 +30,7 @@ for obsolete in ("GuiGraphics;", "getTextureAtlas(", "getBlockColors().getColor(
 # extracted GUI lifecycle. The legacy immediate-mode GeckoLib bird call is
 # intentionally NOT counted as migrated; its dedicated 3D PiP work remains pending.
 assert "FrameCraftingProgress2D.extract(graphics, food, eatingTicks)" in progress
-assert "FrameCraftingProgress.extract(graphics," in screen
+assert "FrameCraftingProgress2D.extract(graphics," in screen
 assert "FrameWorkshopBird.progressFood(this.activeWorkSeed)" in screen
 assert "FrameWorkshopBird.progressFood(this.progressBirdClock.seed())" in screen
 assert "FrameWorkshopBird.renderProgress(" not in progress

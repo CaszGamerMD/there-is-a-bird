@@ -378,14 +378,15 @@ public class WoodcockEntity extends SparrowEntity
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        if (tag.contains(TERRITORY_X_TAG, 3) && tag.contains(TERRITORY_Y_TAG, 3)
-                && tag.contains(TERRITORY_Z_TAG, 3)) {
-            this.territoryCenter = new BlockPos(
-                    tag.getInt(TERRITORY_X_TAG), tag.getInt(TERRITORY_Y_TAG), tag.getInt(TERRITORY_Z_TAG));
+        var territoryX = tag.getInt(TERRITORY_X_TAG);
+        var territoryY = tag.getInt(TERRITORY_Y_TAG);
+        var territoryZ = tag.getInt(TERRITORY_Z_TAG);
+        if (territoryX.isPresent() && territoryY.isPresent() && territoryZ.isPresent()) {
+            this.territoryCenter = new BlockPos(territoryX.get(), territoryY.get(), territoryZ.get());
         }
-        this.forageCooldown = Math.max(0, tag.getInt(FORAGE_COOLDOWN_TAG));
-        this.spawnAwakeTicks = Math.max(0, tag.getInt(SPAWN_AWAKE_TICKS_TAG));
-        this.sleepCooldown = Math.max(0, tag.getInt(SLEEP_COOLDOWN_TAG));
+        this.forageCooldown = Math.max(0, tag.getInt(FORAGE_COOLDOWN_TAG).orElse(0));
+        this.spawnAwakeTicks = Math.max(0, tag.getInt(SPAWN_AWAKE_TICKS_TAG).orElse(0));
+        this.sleepCooldown = Math.max(0, tag.getInt(SLEEP_COOLDOWN_TAG).orElse(0));
         this.setWoodcockBehaviorState(WoodcockBehaviorState.IDLE, 0);
     }
 

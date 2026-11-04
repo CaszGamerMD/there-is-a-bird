@@ -25,6 +25,6 @@ public final class EarthwormItem extends Item {
             if (worm == null) return InteractionResult.FAIL;
             if (!player.getAbilities().instabuild) context.getItemInHand().shrink(1);
         }
-        return InteractionResult.sidedSuccess(context.getLevel().isClientSide);
+        return InteractionResult.sidedSuccess(context.getLevel().isClientSide());
     }
 }

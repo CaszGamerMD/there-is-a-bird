@@ -42,4 +42,14 @@ for token in ('tag.getInt(TERRITORY_X_TAG)', 'tag.getInt(TERRITORY_Y_TAG)',
               'getInt(SLEEP_COOLDOWN_TAG).orElse(0)'):
     assert token in extra["WoodcockEntity.java"], token
 assert 'compoundTag.getFloat(NBT_KEY).orElse(DEFAULT_INDIVIDUAL_SCALE)' in extra["BirdModelScale.java"]
-print("BIRD BRAIN/PERSISTENCE 26.2 PARITY OK: saved keys, optional typed reads, missing-tag defaults and breed spawn")
+client_files = {
+    "EarthwormItem.java": (root / "src/main/java/EdDYON/guaniao/content/earthworm/EarthwormItem.java").read_text("utf-8"),
+    "BirdCommandInteraction.java": (root / "src/main/java/EdDYON/guaniao/content/bird/command/BirdCommandInteraction.java").read_text("utf-8"),
+    "BirdBodyRotationControl.java": (root / "src/main/java/EdDYON/guaniao/content/bird/BirdBodyRotationControl.java").read_text("utf-8"),
+}
+assert "context.getLevel().isClientSide()" in client_files["EarthwormItem.java"]
+assert "bird.level().isClientSide()" in client_files["BirdCommandInteraction.java"]
+assert "this.bird.level().isClientSide()" in client_files["BirdBodyRotationControl.java"]
+for name, content in client_files.items():
+    assert ".isClientSide)" not in content, name
+print("BIRD 26.2 PERSISTENCE/LEVEL API PARITY OK: original NBT defaults and client/server guards")

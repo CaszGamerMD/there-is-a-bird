@@ -30,7 +30,7 @@ public final class BirdBodyRotationControl extends BodyRotationControl {
         // This method also runs on the server. Keep vanilla control and all
         // navigation/motor rotations there, and retain vanilla idle head turning.
         super.clientTick();
-        boolean eligible = this.bird.level().isClientSide
+        boolean eligible = this.bird.level().isClientSide()
                 && this.bird.isAlive()
                 && !this.bird.isNoAi()
                 && !this.bird.isPassenger()

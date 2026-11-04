@@ -55,6 +55,16 @@ for path in sorted(base.rglob("*Entity.java")):
         if path.name in ["BudgerigarEntity.java","AbstractColumbidEntity.java","CrowEntity.java","KestrelEntity.java","NightHeronEntity.java"]:
             expected = expected.replace("getMinBuildHeight()", "getMinY()")
             expected = expected.replace("getMaxBuildHeight()", "getMaxY()")
+        if path.name == "PigeonEntity.java":
+            expected = expected.replace(
+                'compoundTag == null || !compoundTag.contains("PigeonVariant", 3)',
+                'compoundTag == null || compoundTag.getInt("PigeonVariant").isEmpty()')
+            expected = expected.replace(
+                'ColumbidVariant.pigeonByOrdinal(compoundTag.getInt("PigeonVariant"))',
+                'ColumbidVariant.pigeonByOrdinal(compoundTag.getInt("PigeonVariant").orElse(ColumbidVariant.GRAY_PIGEON.ordinal()))')
+            expected = expected.replace(
+                'GuaniaoEntityTypes.PIGEON.get().create(level)',
+                'GuaniaoEntityTypes.PIGEON.get().create(level, EntitySpawnReason.BREEDING)')
         if path.name in ["BudgerigarEntity.java","AbstractColumbidEntity.java","CrowEntity.java","NightHeronEntity.java","SeagullEntity.java","SparrowEntity.java","WoodcockEntity.java"]:
             expected = re.sub(r"\bhasImpulse\b", "needsSync", expected)
         assert current == expected, f"{path.name}: unrelated gameplay edit"

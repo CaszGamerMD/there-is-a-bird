@@ -1,6 +1,7 @@
 package EdDYON.guaniao.content.bird.nightheron;
 
 import EdDYON.guaniao.config.BirdConfigManager;
+import EdDYON.guaniao.content.bird.BirdEntityAttachments;
 import EdDYON.guaniao.content.bird.command.BirdCommandMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -14,7 +15,6 @@ import net.minecraft.world.phys.Vec3;
 
 /** An occasional gift in the existing mouth slot; no fishing trip or world scan. */
 public final class NightHeronFishTask {
-    public static final String DELIVERED_MARKER = "guaniao:night_heron_delivery";
     static final float CATCH_CHANCE = 0.5F;
     private final NightHeronEntity bird;
     private int giftRemaining = -1;
@@ -22,14 +22,25 @@ public final class NightHeronFishTask {
 
     NightHeronFishTask(NightHeronEntity bird) { this.bird = bird; }
 
+    /** Item entities delivered to an owner must not be picked up as foraging fish. */
+    static boolean wasOwnerDelivery(ItemEntity item) {
+        return item.getAttachedOrElse(BirdEntityAttachments.NIGHT_HERON_DELIVERED_FISH, false);
+    }
+
+    static void markOwnerDelivery(ItemEntity item) {
+        item.setAttached(BirdEntityAttachments.NIGHT_HERON_DELIVERED_FISH, true);
+    }
+
     boolean permitsTravel() {
         BirdCommandMode mode = this.bird.getBirdCommandMode();
         return mode == BirdCommandMode.FREE || mode == BirdCommandMode.FOLLOW;
     }
 
     Player owner() {
-        if (!(this.bird.level() instanceof ServerLevel level) || !this.bird.isTame() || this.bird.getOwnerUUID() == null) return null;
-        Player player = level.getPlayerByUUID(this.bird.getOwnerUUID());
+        if (!(this.bird.level() instanceof ServerLevel level) || !this.bird.isTame()) return null;
+        var ownerReference = this.bird.getOwnerReference();
+        if (ownerReference == null) return null;
+        Player player = level.getPlayerByUUID(ownerReference.getUUID());
         return player != null && player.isAlive() && !player.isSpectator() && player.level() == level ? player : null;
     }
 
@@ -45,7 +56,7 @@ public final class NightHeronFishTask {
     }
 
     void tick() {
-        if (this.bird.level().isClientSide || !this.bird.isTame() || !BirdConfigManager.nightHeronGiftsEnabled()
+        if (this.bird.level().isClientSide() || !this.bird.isTame() || !BirdConfigManager.nightHeronGiftsEnabled()
                 || this.bird.hasHeldFishForRendering() || !this.permitsTravel() || this.nearbyOwner() == null
                 || !this.safe() || !this.bird.isActiveTime()) return;
         if (this.giftRemaining < 0) this.resetGiftTimer();
@@ -70,7 +81,7 @@ public final class NightHeronFishTask {
     }
 
     boolean deliver(Player owner, boolean intoInventory) {
-        if (this.delivering || this.bird.level().isClientSide || !this.bird.isAlive() || !this.bird.hasDeliveryFish()
+        if (this.delivering || this.bird.level().isClientSide() || !this.bird.isAlive() || !this.bird.hasDeliveryFish()
                 || !this.bird.isOwnedBy(owner) || !owner.isAlive() || owner.level() != this.bird.level()
                 || this.bird.distanceToSqr(owner) > 9 || !this.bird.hasLineOfSight(owner)
                 || !intoInventory && (!this.permitsTravel() || !this.safe() || this.nearbyOwner() != owner)) return false;
@@ -95,7 +106,7 @@ public final class NightHeronFishTask {
                 drop.setDeltaMovement(Vec3.ZERO);
                 drop.setTarget(owner.getUUID());
                 drop.setPickUpDelay(10);
-                drop.getPersistentData().putBoolean(DELIVERED_MARKER, true);
+                markOwnerDelivery(drop);
                 transferred = this.bird.level().addFreshEntity(drop);
             }
             if (!transferred) return false;

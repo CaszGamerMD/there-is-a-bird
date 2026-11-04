@@ -5,11 +5,9 @@ import EdDYON.guaniao.content.bird.BirdAmbientDropControl;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -30,19 +28,19 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.BasePressurePlateBlock;
 import net.minecraft.world.level.block.piston.PistonMovingBlockEntity;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.UUID;
 
@@ -64,7 +62,7 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
     private static final EntityDataAccessor<Integer> DATA_MAX_AGE_TICKS = SynchedEntityData.defineId(BirdDroppingSplatEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_STRIP_DROPPING = SynchedEntityData.defineId(BirdDroppingSplatEntity.class, EntityDataSerializers.BOOLEAN);
 
-    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache((GeoAnimatable)this);
+    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private int ageTicks;
     private BlockPos anchorBlock = BlockPos.ZERO;
     private UUID attachedEntityUuid;
@@ -117,7 +115,7 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
         splat.setPos(position.add(offset));
         splat.setSurfaceDirection(direction);
         splat.anchorBlock = anchorBlock.immutable();
-        splat.setMaxAgeTicks(BirdAmbientDropControl.randomLifetime(level.random));
+        splat.setMaxAgeTicks(BirdAmbientDropControl.randomLifetime(level.getRandom()));
         return splat;
     }
 
@@ -126,21 +124,21 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
         splat.setPos(position);
         splat.setSurfaceDirection(direction);
         splat.setAttachedEntity(target, position, direction);
-        splat.setMaxAgeTicks(BirdAmbientDropControl.randomLifetime(level.random));
+        splat.setMaxAgeTicks(BirdAmbientDropControl.randomLifetime(level.getRandom()));
         return splat;
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(DATA_SURFACE_DIRECTION, Direction.UP.get3DDataValue());
-        this.entityData.define(DATA_ATTACHED_ENTITY_ID, -1);
-        this.entityData.define(DATA_ATTACHMENT_PART, AttachmentPart.BODY.id);
-        this.entityData.define(DATA_LOCAL_DIRECTION, Direction.SOUTH.get3DDataValue());
-        this.entityData.define(DATA_LOCAL_X, 0.0F);
-        this.entityData.define(DATA_LOCAL_Y, 0.0F);
-        this.entityData.define(DATA_LOCAL_Z, 0.0F);
-        this.entityData.define(DATA_MAX_AGE_TICKS, MIN_AGE_TICKS);
-        this.entityData.define(DATA_STRIP_DROPPING, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(DATA_SURFACE_DIRECTION, Direction.UP.get3DDataValue());
+        builder.define(DATA_ATTACHED_ENTITY_ID, -1);
+        builder.define(DATA_ATTACHMENT_PART, AttachmentPart.BODY.id);
+        builder.define(DATA_LOCAL_DIRECTION, Direction.SOUTH.get3DDataValue());
+        builder.define(DATA_LOCAL_X, 0.0F);
+        builder.define(DATA_LOCAL_Y, 0.0F);
+        builder.define(DATA_LOCAL_Z, 0.0F);
+        builder.define(DATA_MAX_AGE_TICKS, MIN_AGE_TICKS);
+        builder.define(DATA_STRIP_DROPPING, false);
     }
 
     @Override
@@ -171,7 +169,7 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
             }
         }
 
-        if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+        if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
             if (this.isTouchingWater()) {
                 this.washAway(serverLevel, ParticleTypes.SPLASH);
                 return;
@@ -182,7 +180,7 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
             }
         }
 
-        if (!this.level().isClientSide && this.ageTicks >= this.getMaxAgeTicks()) {
+        if (!this.level().isClientSide() && this.ageTicks >= this.getMaxAgeTicks()) {
             this.discard();
         }
     }
@@ -214,9 +212,9 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
         if (this.isRemoved() || !(this.level() instanceof ServerLevel level)) {
             return;
         }
-        this.dropCollectible(BirdDroppingUtil.randomDroppingStack(level.random));
+        this.dropCollectible(BirdDroppingUtil.randomDroppingStack(level.getRandom()));
         level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK,
-                SoundSource.NEUTRAL, 0.5F, 0.9F + level.random.nextFloat() * 0.2F);
+                SoundSource.NEUTRAL, 0.5F, 0.9F + level.getRandom().nextFloat() * 0.2F);
         this.discard();
     }
 
@@ -248,31 +246,35 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
     }
 
     @Override
-    public boolean hurt(@NotNull DamageSource source, float amount) {
-        if (this.isInvulnerableTo(source)) {
+    public boolean hurtServer(ServerLevel level, @NotNull DamageSource source, float amount) {
+        if (this.isInvulnerable()) {
             return false;
         }
-        if (!this.level().isClientSide) {
-            Entity attacker = source.getEntity();
-            if (!(attacker instanceof Player player) || !player.isCreative()) {
-                this.dropCollectible(BirdDroppingUtil.randomDroppingStack(this.level().random));
-            }
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK, SoundSource.NEUTRAL, 0.5F, 0.9F + this.level().random.nextFloat() * 0.2F);
-            this.discard();
+        Entity attacker = source.getEntity();
+        if (!(attacker instanceof Player player) || !player.isCreative()) {
+            this.dropCollectible(BirdDroppingUtil.randomDroppingStack(level.getRandom()));
         }
+        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK,
+                SoundSource.NEUTRAL, 0.5F, 0.9F + level.getRandom().nextFloat() * 0.2F);
+        this.discard();
         return true;
     }
 
     @Override
-    public InteractionResult interact(Player player, InteractionHand hand) {
+    public boolean hurtClient(DamageSource source) {
+        return true;
+    }
+
+    @Override
+    public InteractionResult interact(Player player, InteractionHand hand, Vec3 hitLocation) {
         ItemStack stack = player.getItemInHand(hand);
         if (!stack.is(Items.BRUSH)) {
             return InteractionResult.PASS;
         }
-        if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+        if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
             this.cleanWithBrush(serverLevel, player, hand, stack);
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     public Direction getSurfaceDirection() {
@@ -380,23 +382,24 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
     }
 
     private void cleanWithBrush(ServerLevel level, Player player, InteractionHand hand, ItemStack brush) {
-        this.dropCollectible(BirdDroppingUtil.randomDroppingStack(level.random));
+        this.dropCollectible(BirdDroppingUtil.randomDroppingStack(level.getRandom()));
         level.sendParticles(ParticleTypes.POOF, this.getX(), this.getY() + 0.05D, this.getZ(), 8, 0.22D, 0.06D, 0.22D, 0.01D);
-        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK, SoundSource.NEUTRAL, 0.6F, 0.85F + level.random.nextFloat() * 0.25F);
+        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK, SoundSource.NEUTRAL, 0.6F, 0.85F + level.getRandom().nextFloat() * 0.25F);
         if (!player.getAbilities().instabuild) {
-            brush.hurtAndBreak(1, player, brokenPlayer -> brokenPlayer.broadcastBreakEvent(hand));
+            brush.hurtAndBreak(1, player, hand);
         }
         this.discard();
     }
 
     private void washAway(ServerLevel level, ParticleOptions particles) {
         level.sendParticles(particles, this.getX(), this.getY() + 0.05D, this.getZ(), 5, 0.2D, 0.05D, 0.2D, 0.01D);
-        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK, SoundSource.NEUTRAL, 0.35F, 1.1F + level.random.nextFloat() * 0.25F);
+        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK, SoundSource.NEUTRAL, 0.35F, 1.1F + level.getRandom().nextFloat() * 0.25F);
         this.discard();
     }
 
     private void dropCollectible(ItemStack stack) {
-        ItemEntity itemEntity = this.spawnAtLocation(stack);
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        ItemEntity itemEntity = this.spawnAtLocation(serverLevel, stack);
         if (itemEntity != null) {
             BirdAmbientDropControl.applyDroppingLifetime(itemEntity);
         }
@@ -418,7 +421,7 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(ValueOutput tag) {
         tag.putInt("Age", this.ageTicks);
         tag.putInt("MaxAge", this.getMaxAgeTicks());
         tag.putBoolean("StripDropping", this.isStripDropping());
@@ -430,32 +433,25 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
         tag.putFloat("LocalY", this.entityData.get(DATA_LOCAL_Y));
         tag.putFloat("LocalZ", this.entityData.get(DATA_LOCAL_Z));
         if (this.attachedEntityUuid != null) {
-            tag.putUUID("AttachedEntity", this.attachedEntityUuid);
+            tag.store("AttachedEntity", UUIDUtil.CODEC, this.attachedEntityUuid);
         }
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
-        this.ageTicks = tag.getInt("Age");
-        this.setStripDropping(tag.getBoolean("StripDropping"));
-        if (tag.contains("MaxAge")) {
-            this.setMaxAgeTicks(tag.getInt("MaxAge"));
+    protected void readAdditionalSaveData(ValueInput tag) {
+        this.ageTicks = tag.getIntOr("Age", 0);
+        this.setStripDropping(tag.getBooleanOr("StripDropping", false));
+        if (tag.getInt("MaxAge").isPresent()) {
+            this.setMaxAgeTicks(tag.getIntOr("MaxAge", MIN_AGE_TICKS));
         }
-        this.setSurfaceDirection(Direction.from3DDataValue(tag.getInt("SurfaceDirection")));
-        this.anchorBlock = BlockPos.of(tag.getLong("AnchorPos"));
-        this.entityData.set(DATA_ATTACHMENT_PART, tag.getInt("AttachmentPart"));
-        this.entityData.set(DATA_LOCAL_DIRECTION, tag.getInt("LocalDirection"));
-        this.entityData.set(DATA_LOCAL_X, tag.getFloat("LocalX"));
-        this.entityData.set(DATA_LOCAL_Y, tag.getFloat("LocalY"));
-        this.entityData.set(DATA_LOCAL_Z, tag.getFloat("LocalZ"));
-        if (tag.hasUUID("AttachedEntity")) {
-            this.attachedEntityUuid = tag.getUUID("AttachedEntity");
-        }
-    }
-
-    @Override
-    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+        this.setSurfaceDirection(Direction.from3DDataValue(tag.getIntOr("SurfaceDirection", 0)));
+        this.anchorBlock = BlockPos.of(tag.getLongOr("AnchorPos", 0L));
+        this.entityData.set(DATA_ATTACHMENT_PART, tag.getIntOr("AttachmentPart", 0));
+        this.entityData.set(DATA_LOCAL_DIRECTION, tag.getIntOr("LocalDirection", 0));
+        this.entityData.set(DATA_LOCAL_X, tag.getFloatOr("LocalX", 0.0F));
+        this.entityData.set(DATA_LOCAL_Y, tag.getFloatOr("LocalY", 0.0F));
+        this.entityData.set(DATA_LOCAL_Z, tag.getFloatOr("LocalZ", 0.0F));
+        this.attachedEntityUuid = tag.read("AttachedEntity", UUIDUtil.CODEC).orElse(null);
     }
 
     @Override

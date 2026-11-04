@@ -1,23 +1,26 @@
 package EdDYON.guaniao.client.entity.seagull;
 
+import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
 import EdDYON.guaniao.content.bird.seagull.SeagullEntity;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.MultiBufferSource;
+import com.geckolib.renderer.GeoEntityRenderer;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.RenderPassInfo;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 
-public class SeagullRenderer extends GeoEntityRenderer<SeagullEntity> {
-    public SeagullRenderer(EntityRendererProvider.Context renderManager) {
-        super(renderManager, (GeoModel)new SeagullModel());
-        this.addRenderLayer(new SeagullHeldFoodLayer(this));
+public class SeagullRenderer<R extends LivingEntityRenderState & GeoRenderState>
+        extends GeoEntityRenderer<SeagullEntity, R> {
+    public SeagullRenderer(EntityRendererProvider.Context context) {
+        super(context, new SeagullModel());
+        this.addRenderLayer(new SeagullHeldFoodLayer<>(context, this));
         this.shadowRadius = 0.20F;
     }
 
     @Override
-    public void preRender(PoseStack poseStack, SeagullEntity animatable, BakedGeoModel model, MultiBufferSource bufferSource, com.mojang.blaze3d.vertex.VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        this.withScale(animatable.getModelRenderScale());
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+    public void scaleModelForRender(RenderPassInfo<R> renderPassInfo,
+                                    float widthScale, float heightScale) {
+        float scale = renderPassInfo.renderState().getOrDefaultGeckolibData(
+                BirdMutationRenderData.MODEL_SCALE, 1.0F);
+        super.scaleModelForRender(renderPassInfo, widthScale * scale, heightScale * scale);
     }
 }

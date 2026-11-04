@@ -21,7 +21,7 @@ import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
 import EdDYON.guaniao.content.bird.species.WoodcockProfile;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import java.util.EnumSet;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -40,10 +40,9 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -63,12 +62,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
 /**
  * A solitary woodland ground bird. Its signature locomotion alternates two
@@ -76,7 +75,7 @@ import software.bernie.geckolib.core.object.PlayState;
  * ordinary walk cycle inherited from the shared navigation foundation.
  */
 public class WoodcockEntity extends SparrowEntity
-        implements FlyingAnimal, BirdSleepWakeable, BirdLoudSoundListener {
+        implements BirdSleepWakeable, BirdLoudSoundListener {
     private static final EntityDataAccessor<Integer> ACTION_STATE =
             SynchedEntityData.defineId(WoodcockEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> SPONTANEOUS_STILL =
@@ -174,7 +173,7 @@ public class WoodcockEntity extends SparrowEntity
     }
 
     public static boolean canWoodcockSpawn(EntityType<WoodcockEntity> entityType, ServerLevelAccessor level,
-                                            MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+                                            EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean suitableGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)
@@ -230,15 +229,15 @@ public class WoodcockEntity extends SparrowEntity
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(ACTION_STATE, WoodcockBehaviorState.IDLE.ordinal());
-        this.entityData.define(SPONTANEOUS_STILL, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ACTION_STATE, WoodcockBehaviorState.IDLE.ordinal());
+        builder.define(SPONTANEOUS_STILL, false);
     }
 
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, net.minecraft.world.DifficultyInstance difficulty,
-                                        MobSpawnType spawnType, @Nullable SpawnGroupData spawnData,
+                                        EntitySpawnReason spawnType, @Nullable SpawnGroupData spawnData,
                                         @Nullable CompoundTag tag) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, spawnData, tag);
         if (this.territoryCenter == null) {
@@ -254,7 +253,7 @@ public class WoodcockEntity extends SparrowEntity
     public void aiStep() {
         super.aiStep();
         this.alignFlightFacingToTravel();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (this.territoryCenter == null) {
@@ -379,14 +378,15 @@ public class WoodcockEntity extends SparrowEntity
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        if (tag.contains(TERRITORY_X_TAG, 3) && tag.contains(TERRITORY_Y_TAG, 3)
-                && tag.contains(TERRITORY_Z_TAG, 3)) {
-            this.territoryCenter = new BlockPos(
-                    tag.getInt(TERRITORY_X_TAG), tag.getInt(TERRITORY_Y_TAG), tag.getInt(TERRITORY_Z_TAG));
+        var territoryX = tag.getInt(TERRITORY_X_TAG);
+        var territoryY = tag.getInt(TERRITORY_Y_TAG);
+        var territoryZ = tag.getInt(TERRITORY_Z_TAG);
+        if (territoryX.isPresent() && territoryY.isPresent() && territoryZ.isPresent()) {
+            this.territoryCenter = new BlockPos(territoryX.get(), territoryY.get(), territoryZ.get());
         }
-        this.forageCooldown = Math.max(0, tag.getInt(FORAGE_COOLDOWN_TAG));
-        this.spawnAwakeTicks = Math.max(0, tag.getInt(SPAWN_AWAKE_TICKS_TAG));
-        this.sleepCooldown = Math.max(0, tag.getInt(SLEEP_COOLDOWN_TAG));
+        this.forageCooldown = Math.max(0, tag.getInt(FORAGE_COOLDOWN_TAG).orElse(0));
+        this.spawnAwakeTicks = Math.max(0, tag.getInt(SPAWN_AWAKE_TICKS_TAG).orElse(0));
+        this.sleepCooldown = Math.max(0, tag.getInt(SLEEP_COOLDOWN_TAG).orElse(0));
         this.setWoodcockBehaviorState(WoodcockBehaviorState.IDLE, 0);
     }
 
@@ -583,7 +583,7 @@ public class WoodcockEntity extends SparrowEntity
             }
             this.setDeltaMovement(horizontal.x,
                     Math.max(this.controlledFlightInitialLift(true), motion.y), horizontal.z);
-            this.hasImpulse = true;
+            this.needsSync = true;
             if (this.getRandom().nextFloat() < 0.32F && BirdFlockSoundLimiter.allowAmbient(this)) {
                 this.playSound(GuaniaoSoundEvents.WOODCOCK_AMBIENT.get(), 0.9F,
                         0.92F + this.getRandom().nextFloat() * 0.16F);
@@ -675,7 +675,7 @@ public class WoodcockEntity extends SparrowEntity
         boolean calmingPlayerAlert = (state == WoodcockBehaviorState.ALERT
                 || state == WoodcockBehaviorState.FREEZE)
                 && !player.isSprinting()
-                && (this.level().isClientSide || this.currentThreat() == player);
+                && (this.level().isClientSide() || this.currentThreat() == player);
         boolean canHandFeed = state == WoodcockBehaviorState.IDLE
                 || state == WoodcockBehaviorState.SPECIAL_IDLE
                 || state == WoodcockBehaviorState.STILL
@@ -686,7 +686,7 @@ public class WoodcockEntity extends SparrowEntity
                 || this.isInWaterOrBubble() || this.hurtTime > 0) {
             return InteractionResult.PASS;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.cancelSpontaneousStillness();
             this.getNavigation().stop();
             this.setDeltaMovement(this.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));
@@ -698,7 +698,7 @@ public class WoodcockEntity extends SparrowEntity
                 stack.shrink(1);
             }
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return InteractionResult.sidedSuccess(this.level().isClientSide());
     }
 
     private void alignFlightFacingToTravel() {
@@ -706,7 +706,7 @@ public class WoodcockEntity extends SparrowEntity
             return;
         }
         Vec3 movement;
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             Vec3 actualMovement = new Vec3(
                     this.getX() - this.xo,
                     this.getY() - this.yo,
@@ -834,6 +834,10 @@ public class WoodcockEntity extends SparrowEntity
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         GuidePreviewAnimation preview = this.getGuidePreviewAnimation();
         if (preview != GuidePreviewAnimation.NONE) {
@@ -850,7 +854,7 @@ public class WoodcockEntity extends SparrowEntity
 
     @Override
     public void onLoudSound(Vec3 soundPosition, float volume) {
-        if (this.level().isClientSide || soundPosition == null) {
+        if (this.level().isClientSide() || soundPosition == null) {
             return;
         }
         this.cancelSpontaneousStillness();
@@ -869,7 +873,7 @@ public class WoodcockEntity extends SparrowEntity
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.cancelSpontaneousStillness();
@@ -885,7 +889,7 @@ public class WoodcockEntity extends SparrowEntity
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.cancelSpontaneousStillness();
             Vec3 sourcePosition = source.getEntity() == null ? this.position() : source.getEntity().position();
             this.wakeFromLoudSound(sourcePosition);
@@ -914,9 +918,9 @@ public class WoodcockEntity extends SparrowEntity
                 this.getDeltaMovement(), 6);
     }
 
-    private <T extends WoodcockEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(1);
+    private <T extends WoodcockEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(1);
         // The handbook selects Sparrow's shared preview modes, but this species
         // owns its controller and animation names. Keep previews out of live AI.
         RawAnimation preview = switch (this.getGuidePreviewAnimation()) {
@@ -931,14 +935,14 @@ public class WoodcockEntity extends SparrowEntity
             return animationState.setAndContinue(preview);
         }
         if (this.isSpontaneouslyStill()) {
-            animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+            animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
             return animationState.setAndContinue(IDLE_ANIMATION);
         }
         if (this.getWoodcockBehaviorState() == WoodcockBehaviorState.SLEEP_PREP) {
             return animationState.setAndContinue(SLEEP_ENTER_ANIMATION);
         }
         if (this.getWoodcockBehaviorState() == WoodcockBehaviorState.SLEEPING) {
-            animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+            animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
             return animationState.setAndContinue(SLEEP_LOOP_ANIMATION);
         }
         if (this.shouldPlayFlyAnimation()) {
@@ -946,40 +950,40 @@ public class WoodcockEntity extends SparrowEntity
         }
         return switch (this.getWoodcockBehaviorState()) {
             case STEP_1 -> {
-                animationState.getController().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
+                animationState.controller().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
                 yield animationState.setAndContinue(STEP_1_ANIMATION);
             }
             case ROCK_1 -> {
-                animationState.getController().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
+                animationState.controller().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
                 yield animationState.setAndContinue(ROCK_1_ANIMATION);
             }
             case STEP_2 -> {
-                animationState.getController().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
+                animationState.controller().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
                 yield animationState.setAndContinue(STEP_2_ANIMATION);
             }
             case ROCK_2 -> {
-                animationState.getController().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
+                animationState.controller().setAnimationSpeed(ROCK_WALK_ANIMATION_SPEED);
                 yield animationState.setAndContinue(ROCK_2_ANIMATION);
             }
             case FORAGING -> animationState.setAndContinue(PROBE_ANIMATION);
             case EATING -> animationState.setAndContinue(EAT_ANIMATION);
             case SPECIAL_IDLE -> animationState.setAndContinue(IDLE_VARIATION_ANIMATION);
             case STILL -> {
-                animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+                animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
                 yield animationState.setAndContinue(IDLE_ANIMATION);
             }
             case NORMAL_WALK, FORAGE_APPROACH, SEEK_COVER -> {
                 if (BirdGroundAnimation.hasWalkMotion(this, animationState.isMoving())) {
                     yield BirdGroundAnimation.play(animationState, this, WALK_ANIMATION);
                 }
-                animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+                animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
                 yield animationState.setAndContinue(IDLE_ANIMATION);
             }
             default -> {
                 if (BirdGroundAnimation.hasWalkMotion(this, animationState.isMoving())) {
                     yield BirdGroundAnimation.play(animationState, this, WALK_ANIMATION);
                 }
-                animationState.getController().setAnimationSpeed(this.individualAnimationCadence());
+                animationState.controller().setAnimationSpeed(this.individualAnimationCadence());
                 yield animationState.setAndContinue(IDLE_ANIMATION);
             }
         };

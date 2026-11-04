@@ -1,32 +1,35 @@
 package EdDYON.guaniao.client.entity.umbrellacockatoo;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.bird.umbrellacockatoo.UmbrellaCockatooEntity;
 import EdDYON.guaniao.content.bird.umbrellacockatoo.CockatooSpecialCall;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.client.event.sound.SoundEngineLoadEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.entity.Entity;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID, value = Dist.CLIENT)
 public final class CockatooSpecialCallSoundEvents {
     private record Call(UmbrellaCockatooEntity bird, long startedAt, CockatooSpecialCallSound sound) { }
     private static final Map<UUID, Call> CALLS = new HashMap<>();
 
     private CockatooSpecialCallSoundEvents() { }
 
-    @SubscribeEvent public static void onLivingTick(LivingEvent.LivingTickEvent event) {
-        if (!(event.getEntity() instanceof UmbrellaCockatooEntity bird) || !bird.level().isClientSide
-                || !bird.isSpecialPerformanceActive()) return;
+    public static void registerCallbacks() {
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.level != null) {
+                for (Entity entity : client.level.entitiesForRendering()) {
+                    if (entity instanceof UmbrellaCockatooEntity bird) onLivingTick(bird);
+                }
+            }
+            onClientTick();
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clear());
+    }
+
+    private static void onLivingTick(UmbrellaCockatooEntity bird) {
+        if (!bird.level().isClientSide() || !bird.isSpecialPerformanceActive()) return;
         Call previous = CALLS.get(bird.getUUID());
         if (previous != null && previous.bird() == bird && previous.startedAt() == bird.getSpecialCallStartTick()) return;
         if (previous != null) finish(previous);
@@ -37,8 +40,7 @@ public final class CockatooSpecialCallSoundEvents {
         Minecraft.getInstance().getSoundManager().play(sound);
     }
 
-    @SubscribeEvent public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+    private static void onClientTick() {
         Minecraft minecraft = Minecraft.getInstance();
         var iterator = CALLS.values().iterator();
         while (iterator.hasNext()) {
@@ -46,14 +48,13 @@ public final class CockatooSpecialCallSoundEvents {
             if (call.bird().level() != minecraft.level || !call.sound().canPlaySound()) {
                 finish(call);
                 iterator.remove();
+            } else if (call.bird().getSpecialCallElapsedTicks() > 2
+                    && !minecraft.getSoundManager().isActive(call.sound())) {
+                // Sound-engine reloads retire active sounds. Keep the call marker
+                // until the performance ends so the 13-second take never replays.
+                call.sound().finish();
             }
         }
-    }
-
-    @SubscribeEvent public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) { clear(); }
-
-    @SubscribeEvent public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ClientLevel) clear();
     }
 
     private static void finish(Call call) {
@@ -70,13 +71,4 @@ public final class CockatooSpecialCallSoundEvents {
         CALLS.clear();
     }
 
-    @Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
-    public static final class EngineEvents {
-        private EngineEvents() { }
-
-        @SubscribeEvent public static void onEngineLoad(SoundEngineLoadEvent event) {
-            // Keep each session remembered until it ends, so a reload cannot replay the recording.
-            Minecraft.getInstance().execute(CockatooSpecialCallSoundEvents::stopSounds);
-        }
-    }
 }

@@ -2,11 +2,14 @@ package EdDYON.guaniao.network;
 
 import EdDYON.guaniao.content.camera.PhotoTransferLimits;
 import java.util.UUID;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraftforge.network.NetworkEvent;
+import EdDYON.guaniao.GuaniaoMod;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 public record BeginPhotoUploadPacket(
         UUID uploadId,
@@ -15,7 +18,16 @@ public record BeginPhotoUploadPacket(
         int width,
         int height,
         String contentHash
-) {
+) implements CustomPacketPayload {
+    public static final Type<BeginPhotoUploadPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "begin_photo_upload"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, BeginPhotoUploadPacket> CODEC =
+            StreamCodec.of((RegistryFriendlyByteBuf buffer, BeginPhotoUploadPacket packet) ->
+                    encode(packet, buffer), BeginPhotoUploadPacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+
     public static void encode(BeginPhotoUploadPacket packet, FriendlyByteBuf buffer) {
         buffer.writeUUID(packet.uploadId);
         buffer.writeEnum(packet.hand);
@@ -36,12 +48,7 @@ public record BeginPhotoUploadPacket(
         );
     }
 
-    public static void handle(BeginPhotoUploadPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        ServerPlayer player = context.getSender();
-        if (player != null) {
-            PhotoUploadManager.begin(player, packet.uploadId, packet.hand, packet.totalBytes, packet.width, packet.height, packet.contentHash);
-        }
-        context.setPacketHandled(true);
+    public void handle(ServerPlayer player) {
+        PhotoUploadManager.begin(player, uploadId, hand, totalBytes, width, height, contentHash);
     }
 }

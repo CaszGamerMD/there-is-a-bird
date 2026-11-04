@@ -1,15 +1,11 @@
 package EdDYON.guaniao.client.entity.umbrellacockatoo;
 
-import software.bernie.geckolib.cache.object.GeoBone;
-
-import java.util.Collections;
-import java.util.IdentityHashMap;
+import com.geckolib.renderer.base.BoneSnapshots;
+import java.util.HashSet;
 import java.util.Set;
 
-/** Adds to local channels before their matrix is built, then restores values AND dirty flags. */
+/** Apply expression deltas to this render pass's snapshots, never shared cached bones. */
 final class CockatooPoseComposer {
-    private final Set<GeoBone> active = Collections.newSetFromMap(new IdentityHashMap<>());
-
     record RenderPose(CockatooExpressionSampler.Pose emotion, float headRoll) {
         CockatooExpressionSampler.Delta bone(String name) {
             var delta = emotion.bone(name);
@@ -20,43 +16,23 @@ final class CockatooPoseComposer {
         }
     }
 
-    Scope apply(GeoBone bone, CockatooExpressionSampler.Delta delta) {
-        if (delta.equals(CockatooExpressionSampler.Delta.ZERO) || !active.add(bone)) return null;
-        Scope scope = new Scope(bone);
-        var rotation = delta.rotation();
-        var position = delta.position();
-        bone.setRotX(scope.rx - (float) Math.toRadians(rotation.x()));
-        bone.setRotY(scope.ry - (float) Math.toRadians(rotation.y()));
-        bone.setRotZ(scope.rz + (float) Math.toRadians(rotation.z()));
-        bone.setPosX(scope.px + (float) position.x());
-        bone.setPosY(scope.py + (float) position.y());
-        bone.setPosZ(scope.pz + (float) position.z());
-        return scope;
-    }
-
-    final class Scope implements AutoCloseable {
-        private final GeoBone bone;
-        private final float rx, ry, rz, px, py, pz;
-        private final boolean rotationChanged, positionChanged, scaleChanged;
-
-        private Scope(GeoBone bone) {
-            this.bone = bone;
-            rx = bone.getRotX(); ry = bone.getRotY(); rz = bone.getRotZ();
-            px = bone.getPosX(); py = bone.getPosY(); pz = bone.getPosZ();
-            rotationChanged = bone.hasRotationChanged();
-            positionChanged = bone.hasPositionChanged();
-            scaleChanged = bone.hasScaleChanged();
-        }
-
-        @Override
-        public void close() {
-            bone.setRotX(rx); bone.setRotY(ry); bone.setRotZ(rz);
-            bone.setPosX(px); bone.setPosY(py); bone.setPosZ(pz);
-            bone.resetStateChanges();
-            if (rotationChanged) bone.markRotationAsChanged();
-            if (positionChanged) bone.markPositionAsChanged();
-            if (scaleChanged) bone.markScaleAsChanged();
-            active.remove(bone);
+    static void apply(BoneSnapshots snapshots, RenderPose pose) {
+        Set<String> names = new HashSet<>(CockatooExpressionSampler.BONES);
+        names.add("head");
+        names.add("neck");
+        for (String name : names) {
+            CockatooExpressionSampler.Delta delta = pose.bone(name);
+            if (delta.equals(CockatooExpressionSampler.Delta.ZERO)) continue;
+            snapshots.get(name).ifPresent(bone -> {
+                var r = delta.rotation();
+                var p = delta.position();
+                bone.setRotX(bone.getRotX() - (float)Math.toRadians(r.x()));
+                bone.setRotY(bone.getRotY() - (float)Math.toRadians(r.y()));
+                bone.setRotZ(bone.getRotZ() + (float)Math.toRadians(r.z()));
+                bone.setTranslateX(bone.getTranslateX() + (float)p.x());
+                bone.setTranslateY(bone.getTranslateY() + (float)p.y());
+                bone.setTranslateZ(bone.getTranslateZ() + (float)p.z());
+            });
         }
     }
 }

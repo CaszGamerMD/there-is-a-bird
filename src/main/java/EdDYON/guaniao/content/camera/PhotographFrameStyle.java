@@ -1,7 +1,9 @@
 package EdDYON.guaniao.content.camera;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 
 /** Appearance belongs to this frame item, independently of the referenced photograph. */
 public record PhotographFrameStyle(Shape shape, Material material, Ornament ornament) {
@@ -15,12 +17,12 @@ public record PhotographFrameStyle(Shape shape, Material material, Ornament orna
     }
 
     public static PhotographFrameStyle read(ItemStack stack) {
-        CompoundTag tag = stack.getTagElement(TAG);
-        if (tag == null) {
+        CompoundTag custom = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        if (!(custom.get(TAG) instanceof CompoundTag tag)) {
             return DEFAULT;
         }
-        return new PhotographFrameStyle(Shape.fromId(tag.getString("Shape")),
-                Material.fromId(tag.getString("Material")), Ornament.fromId(tag.getString("Ornament")));
+        return new PhotographFrameStyle(Shape.fromId(tag.getStringOr("Shape", "")),
+                Material.fromId(tag.getStringOr("Material", "")), Ornament.fromId(tag.getStringOr("Ornament", "")));
     }
 
     public static void write(ItemStack stack, PhotographFrameStyle style) {
@@ -31,7 +33,7 @@ public record PhotographFrameStyle(Shape shape, Material material, Ornament orna
         tag.putString("Shape", style.shape.id());
         tag.putString("Material", style.material.id());
         tag.putString("Ornament", style.ornament.id());
-        stack.getOrCreateTag().put(TAG, tag);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, custom -> custom.put(TAG, tag));
     }
 
     public PhotographFrameStyle withShape(Shape shape) {

@@ -1,7 +1,7 @@
 package EdDYON.guaniao.content.bird.kiwi;
 
 import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class KiwiDefinition {
     public static final String ENTITY_ID = "kiwi";
@@ -26,14 +26,14 @@ public final class KiwiDefinition {
     public static final int PECK_FOOD_TICK = 36;
     public static final int MAX_FIGHT_TICKS = 240;
 
-    public static final ResourceLocation MODEL = resource("geo/kiwi.geo.json");
-    public static final ResourceLocation TEXTURE = resource("textures/entity/kiwi.png");
-    public static final ResourceLocation ANIMATION = resource("animations/kiwi.animation.json");
+    public static final Identifier MODEL = resource("geo/kiwi.geo.json");
+    public static final Identifier TEXTURE = resource("textures/entity/kiwi.png");
+    public static final Identifier ANIMATION = resource("animations/kiwi.animation.json");
 
     private KiwiDefinition() {
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation(GuaniaoMod.MOD_ID, path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, path);
     }
 }

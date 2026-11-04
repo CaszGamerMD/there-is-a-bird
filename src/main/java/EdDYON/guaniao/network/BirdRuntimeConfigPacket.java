@@ -1,28 +1,35 @@
 package EdDYON.guaniao.network;
 
+import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
-import java.util.function.Supplier;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
+/**
+ * Server-authoritative three-boolean runtime configuration snapshot.
+ * Wire order is unchanged: leaves, April Fools, sky-bird ecology.
+ */
 public record BirdRuntimeConfigPacket(boolean birdsPassThroughLeaves, boolean aprilFoolsMode,
-                                      boolean skyBirdEcologyEnabled) {
-    public static void encode(BirdRuntimeConfigPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeBoolean(packet.birdsPassThroughLeaves);
-        buffer.writeBoolean(packet.aprilFoolsMode);
-        buffer.writeBoolean(packet.skyBirdEcologyEnabled);
+                                      boolean skyBirdEcologyEnabled) implements CustomPacketPayload {
+    public static final Type<BirdRuntimeConfigPacket> TYPE = new Type<>(
+            Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "bird_runtime_config"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, BirdRuntimeConfigPacket> CODEC =
+            StreamCodec.composite(
+                    ByteBufCodecs.BOOL, BirdRuntimeConfigPacket::birdsPassThroughLeaves,
+                    ByteBufCodecs.BOOL, BirdRuntimeConfigPacket::aprilFoolsMode,
+                    ByteBufCodecs.BOOL, BirdRuntimeConfigPacket::skyBirdEcologyEnabled,
+                    BirdRuntimeConfigPacket::new);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public static BirdRuntimeConfigPacket decode(FriendlyByteBuf buffer) {
-        return new BirdRuntimeConfigPacket(buffer.readBoolean(), buffer.readBoolean(), buffer.readBoolean());
-    }
-
-    public static void handle(BirdRuntimeConfigPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> BirdConfigManager.applyRemoteRuntime(
-                packet.birdsPassThroughLeaves,
-                packet.aprilFoolsMode,
-                packet.skyBirdEcologyEnabled));
-        context.setPacketHandled(true);
+    public void applyOnClient() {
+        BirdConfigManager.applyRemoteRuntime(
+                birdsPassThroughLeaves, aprilFoolsMode, skyBirdEcologyEnabled);
     }
 }

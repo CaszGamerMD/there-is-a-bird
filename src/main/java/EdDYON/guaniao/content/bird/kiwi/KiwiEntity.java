@@ -36,7 +36,7 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -57,15 +57,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 public class KiwiEntity extends PathfinderMob
         implements GeoEntity, ScalableBirdModel, BirdSleepWakeable, BirdLoudSoundListener, BirdMutationHolder {
@@ -148,9 +148,9 @@ public class KiwiEntity extends PathfinderMob
 
     public KiwiEntity(EntityType<? extends KiwiEntity> entityType, Level level) {
         super(entityType, level);
-        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.BlockPathTypes.WATER, 4.0F);
-        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.BlockPathTypes.DANGER_FIRE, 16.0F);
-        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.BlockPathTypes.DAMAGE_FIRE, 16.0F);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, 4.0F);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.DANGER_FIRE, 16.0F);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.DAMAGE_FIRE, 16.0F);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -161,7 +161,7 @@ public class KiwiEntity extends PathfinderMob
     }
 
     public static boolean canSpawn(EntityType<KiwiEntity> entityType, ServerLevelAccessor level,
-                                   MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+                                   EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)
@@ -200,18 +200,18 @@ public class KiwiEntity extends PathfinderMob
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEHAVIOR_STATE, KiwiBehaviorState.AWAKE.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
-        this.entityData.define(CONFLICT_STATE, KiwiConflictState.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEHAVIOR_STATE, KiwiBehaviorState.AWAKE.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
+        builder.define(CONFLICT_STATE, KiwiConflictState.NONE.ordinal());
     }
 
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.birdBrain.tick();
@@ -251,7 +251,7 @@ public class KiwiEntity extends PathfinderMob
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             if (source.getEntity() instanceof KiwiEntity rival && this.isFightingWith(rival)) {
                 this.fightMorale = Math.max(0.0F,
                         this.fightMorale - (0.12F + this.getRandom().nextFloat() * 0.08F));
@@ -294,7 +294,7 @@ public class KiwiEntity extends PathfinderMob
 
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty,
-                                        MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag tag) {
+                                        EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag tag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, tag);
         if (tag == null || !tag.contains(BirdModelScale.NBT_KEY, 5)) {
             this.setIndividualModelScale(BirdModelScale.randomIndividualScale(this.getRandom(), this.modelScaleProfile()));
@@ -474,7 +474,7 @@ public class KiwiEntity extends PathfinderMob
 
     @Override
     public void onLoudSound(Vec3 soundPosition, float volume) {
-        if (this.level().isClientSide || soundPosition == null) {
+        if (this.level().isClientSide() || soundPosition == null) {
             return;
         }
         this.lastHeardSound = soundPosition;
@@ -485,7 +485,7 @@ public class KiwiEntity extends PathfinderMob
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (this.isBirdSleeping()) {
@@ -717,13 +717,13 @@ public class KiwiEntity extends PathfinderMob
         this.entityData.set(MODEL_SCALE, BirdModelScale.sanitize(scale, this.modelScaleProfile()));
     }
 
-    private <T extends KiwiEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
+    private <T extends KiwiEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
         if (this.guidePreviewAnimation.animation != null) {
             return animationState.setAndContinue(this.guidePreviewAnimation.animation);
         }
         if (this.getConflictState() == KiwiConflictState.FIGHTING) {
-            animationState.getController().setAnimationSpeed(2.25D);
+            animationState.controller().setAnimationSpeed(2.25D);
             return animationState.setAndContinue(WALK_ANIMATION);
         }
         return switch (this.getBehaviorState()) {

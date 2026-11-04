@@ -6,25 +6,26 @@ import EdDYON.guaniao.registry.GuaniaoItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
 /** A small server-controlled crawler; it only burrows while supported by soil. */
@@ -36,9 +37,6 @@ public final class EarthwormEntity extends Entity {
     private int burrowAfter;
     private float desiredYaw;
     private int turnTicks;
-    private int lerpSteps;
-    private double lerpX, lerpY, lerpZ;
-    private float lerpYaw;
 
     public EarthwormEntity(EntityType<? extends EarthwormEntity> type, Level level) {
         super(type, level);
@@ -56,11 +54,12 @@ public final class EarthwormEntity extends Entity {
                 new AABB(position, position).inflate(16.0D, 4.0D, 16.0D), Entity::isAlive).size() >= cap) {
             return null;
         }
-        EarthwormEntity worm = GuaniaoEntityTypes.EARTHWORM.get().create(level);
+        EarthwormEntity worm = GuaniaoEntityTypes.EARTHWORM.get().create(level,
+                natural ? EntitySpawnReason.NATURAL : EntitySpawnReason.TRIGGERED);
         if (worm == null) return null;
         worm.setPos(position);
         worm.home = position;
-        worm.setYRot(level.random.nextFloat() * 360.0F);
+        worm.setYRot(level.getRandom().nextFloat() * 360.0F);
         worm.desiredYaw = worm.getYRot();
         if (!level.noCollision(worm) || !worm.hasSupport(position)) return null;
         if (!level.addFreshEntity(worm)) return null;
@@ -82,21 +81,16 @@ public final class EarthwormEntity extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(BURROW, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(BURROW, 0);
     }
 
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide) {
-            if (this.lerpSteps > 0) {
-                this.setPos(this.getX() + (this.lerpX - this.getX()) / this.lerpSteps,
-                        this.getY() + (this.lerpY - this.getY()) / this.lerpSteps,
-                        this.getZ() + (this.lerpZ - this.getZ()) / this.lerpSteps);
-                this.setYRot(this.getYRot() + Mth.wrapDegrees(this.lerpYaw - this.getYRot()) / this.lerpSteps);
-                --this.lerpSteps;
-            }
+        if (this.level().isClientSide()) {
+            // Position updates are handled by vanilla's 26.2 client packet path;
+            // Entity no longer exposes the old seven-argument lerpTo hook.
             return;
         }
         if (this.home == null) this.home = this.position();
@@ -141,36 +135,36 @@ public final class EarthwormEntity extends Entity {
     }
 
     public boolean tryEat() {
-        if (this.level().isClientSide || !this.isAlive() || this.burrowProgress() > 0.0F) return false;
+        if (this.level().isClientSide() || !this.isAlive() || this.burrowProgress() > 0.0F) return false;
         this.discard();
         return true;
     }
 
     @Override
-    public InteractionResult interact(Player player, InteractionHand hand) {
+    public InteractionResult interact(Player player, InteractionHand hand, Vec3 hitLocation) {
         if (!player.getItemInHand(hand).isEmpty() || !this.isAlive() || player.isSpectator()) {
             return InteractionResult.PASS;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             ItemStack stack = new ItemStack(GuaniaoItems.EARTHWORM.get());
             if (!player.getInventory().add(stack)) player.drop(stack, false);
             this.discard();
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override public boolean isPickable() { return this.isAlive(); }
     @Override public float getPickRadius() { return 0.08F; }
 
     @Override
-    public void lerpTo(double x, double y, double z, float yaw, float pitch, int steps, boolean teleport) {
-        this.lerpX = x; this.lerpY = y; this.lerpZ = z;
-        this.lerpYaw = yaw;
-        this.lerpSteps = Math.max(1, steps);
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        // As before, earthworms are collected through an empty-hand interaction,
+        // not killed by ordinary entity damage.
+        return false;
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(ValueOutput tag) {
         Vec3 center = this.home == null ? this.position() : this.home;
         tag.putDouble("HomeX", center.x); tag.putDouble("HomeY", center.y); tag.putDouble("HomeZ", center.z);
         tag.putInt("SoilAge", this.soilAge);
@@ -179,16 +173,15 @@ public final class EarthwormEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
-        this.home = tag.contains("HomeX") ? new Vec3(tag.getDouble("HomeX"), tag.getDouble("HomeY"), tag.getDouble("HomeZ")) : this.position();
-        this.soilAge = Mth.clamp(tag.getInt("SoilAge"), 0, 1800);
-        this.burrowAfter = tag.contains("BurrowAfter") ? Mth.clamp(tag.getInt("BurrowAfter"), 900, 1800) : this.burrowAfter;
-        this.entityData.set(BURROW, Mth.clamp(tag.getInt("Burrow"), 0, EarthwormMotion.BURROW_TICKS));
+    protected void readAdditionalSaveData(ValueInput tag) {
+        double homeX = tag.getDoubleOr("HomeX", Double.NaN);
+        this.home = !Double.isNaN(homeX)
+                ? new Vec3(homeX, tag.getDoubleOr("HomeY", 0.0D), tag.getDoubleOr("HomeZ", 0.0D))
+                : this.position();
+        this.soilAge = Mth.clamp(tag.getIntOr("SoilAge", 0), 0, 1800);
+        this.burrowAfter = tag.getInt("BurrowAfter").isPresent()
+                ? Mth.clamp(tag.getIntOr("BurrowAfter", this.burrowAfter), 900, 1800) : this.burrowAfter;
+        this.entityData.set(BURROW, Mth.clamp(tag.getIntOr("Burrow", 0), 0, EarthwormMotion.BURROW_TICKS));
         this.desiredYaw = this.getYRot();
-    }
-
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
     }
 }

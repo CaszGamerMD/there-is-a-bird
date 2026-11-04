@@ -5,7 +5,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** Versioned, offline content. Web markup is converted at authoring time, never executed in game. */
 record HandbookData(int schema, List<Page> pages, List<Category> categories) {
@@ -26,11 +26,11 @@ record HandbookData(int schema, List<Page> pages, List<Category> categories) {
                 && page.kind != null && page.title != null, "page identity/title");
         if (page.kind.equals("bird")) {
             require(page.model != null && !page.model.isBlank()
-                    && ResourceLocation.tryBuild("guaniao", page.model) != null, "bird model");
+                    && Identifier.tryBuild("guaniao", page.model) != null, "bird model");
         }
         String icon = optional(page.icon);
         if (page.kind.equals("item") || page.catalog && !page.kind.equals("bird")) {
-            require(icon.isEmpty() || ResourceLocation.tryParse(icon) != null, "item icon");
+            require(icon.isEmpty() || Identifier.tryParse(icon) != null, "item icon");
         }
         List<Fact> facts = page.facts == null ? List.of() : page.facts;
         for (Fact fact : facts) require(fact != null && fact.label != null && fact.text != null, "fact");
@@ -70,7 +70,7 @@ record HandbookData(int schema, List<Page> pages, List<Category> categories) {
     }
 
     private static void requireResource(String id, String field) {
-        require(id != null && !id.isBlank() && ResourceLocation.tryParse(id) != null, field);
+        require(id != null && !id.isBlank() && Identifier.tryParse(id) != null, field);
     }
 
     private static String optional(String value) { return value == null ? "" : value; }

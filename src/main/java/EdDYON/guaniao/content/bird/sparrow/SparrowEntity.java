@@ -85,7 +85,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -112,17 +112,17 @@ import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdMutationHolder {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(SparrowEntity.class, (EntityDataSerializer)EntityDataSerializers.INT);
@@ -223,10 +223,10 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     protected SparrowEntity(EntityType<? extends SparrowEntity> entityType, Level level, BirdSpeciesProfile profile) {
         super(entityType, level);
         this.birdBrain = new BirdBrain(this, profile);
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0f);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0f);
-        this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0f);
-        this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 16.0f);
+        this.setPathfindingMalus(PathType.LEAVES, 0.0f);
+        this.setPathfindingMalus(PathType.WATER, -1.0f);
+        this.setPathfindingMalus(PathType.DANGER_FIRE, 16.0f);
+        this.setPathfindingMalus(PathType.DAMAGE_FIRE, 16.0f);
         this.satiatedTicks = this.getRandom().nextFloat() < 0.62f ? 0 : 300 + this.getRandom().nextInt(1800);
     }
 
@@ -237,7 +237,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
                 .add(Attributes.FOLLOW_RANGE, SparrowDefinition.FOLLOW_RANGE);
     }
 
-    public static boolean canSpawn(EntityType<SparrowEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canSpawn(EntityType<SparrowEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(Blocks.FARMLAND)
@@ -319,12 +319,12 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEHAVIOR_STATE, SparrowBehaviorState.IDLE.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEHAVIOR_STATE, SparrowBehaviorState.IDLE.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
     }
 
     @Override
@@ -338,7 +338,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, compoundTag);
         if (compoundTag == null || !compoundTag.contains(BirdModelScale.NBT_KEY, 5)) {
             this.randomizeModelScale();
@@ -403,7 +403,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         if (this.forcedIdleAnimationTicks > 0) {
             --this.forcedIdleAnimationTicks;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.birdBrain.tick();
             if (this.usesSparrowSettlementHome()) {
                 this.ensureHomePos();
@@ -411,16 +411,16 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             this.tickStaleFlightRecovery();
             this.tickWaterEscape();
         }
-        if (!this.level().isClientSide && this.pendingScareTicks > 0) {
+        if (!this.level().isClientSide() && this.pendingScareTicks > 0) {
             --this.pendingScareTicks;
             if (this.pendingScareTicks <= 0) {
                 this.releasePendingScare();
             }
         }
-        if (!this.level().isClientSide && this.isControlledFlightActive()) {
+        if (!this.level().isClientSide() && this.isControlledFlightActive()) {
             this.tickControlledFlight();
         }
-        if (!this.level().isClientSide && this.onGround() && !this.isInWaterOrBubble()
+        if (!this.level().isClientSide() && this.onGround() && !this.isInWaterOrBubble()
                 && !this.blocksSparrowDecorativeBehavior()
                 && (!this.isTame() || this.isBirdCommandMode(BirdCommandMode.FREE))) {
             if (this.getNavigation().isDone() && this.getRandom().nextInt(160) == 0) {
@@ -438,7 +438,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         if (!this.onGround() || this.isControlledFlightActive()) {
             this.fallDistance = 0.0f;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.tickBehaviorStateFallback();
             this.tickGroundMovementFacing();
         }
@@ -453,13 +453,13 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         ItemStack stack = player.getItemInHand(hand);
         if (isCleanTamingItem(stack)) {
             if (this.isDistrusted(player)) {
-                if (!this.level().isClientSide) {
+                if (!this.level().isClientSide()) {
                     this.startEscapeFlight(player.position());
                 }
-                return InteractionResult.sidedSuccess(this.level().isClientSide);
+                return InteractionResult.sidedSuccess(this.level().isClientSide());
             }
             this.familiarTicks = Math.max(this.familiarTicks, 3600);
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
                 }
@@ -476,7 +476,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
                     this.birdBrain.onRest(0.05F);
                     this.level().broadcastEntityEvent(this, (byte)7);
                 } else if (this.getRandom().nextInt(3) == 0
-                        && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+                        && EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
                     this.tame(player);
                     this.setBirdCommandMode(BirdCommandMode.FOLLOW);
                     this.getNavigation().stop();
@@ -487,7 +487,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
                     this.level().broadcastEntityEvent(this, (byte)6);
                 }
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
         return super.mobInteract(player, hand);
     }
@@ -684,7 +684,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(movement);
         this.faceMovement(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1309,7 +1309,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         float yaw = this.getYRot() * ((float)Math.PI / 180.0f);
         double side = (this.getRandom().nextDouble() - 0.5) * 0.12;
         this.setDeltaMovement(-Math.sin(yaw) * 0.13 + side, 0.23, Math.cos(yaw) * 0.13 - side);
-        this.hasImpulse = true;
+        this.needsSync = true;
         if (this.getBehaviorState() == SparrowBehaviorState.FLEEING) {
             this.setBehaviorStateFor(SparrowBehaviorState.FLEEING, 24);
         } else {
@@ -1341,7 +1341,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         }
         if (!this.onGround() && this.getDeltaMovement().lengthSqr() < 0.0025) {
             this.setDeltaMovement(0.0, -0.08, 0.0);
-            this.hasImpulse = true;
+            this.needsSync = true;
             this.fallDistance = 0.0f;
         }
     }
@@ -1351,7 +1351,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             this.setNoGravity(false);
             if (!this.onGround() && this.getDeltaMovement().lengthSqr() < 0.0025) {
                 this.setDeltaMovement(0.0, -0.08, 0.0);
-                this.hasImpulse = true;
+                this.needsSync = true;
             }
         }
     }
@@ -1425,7 +1425,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(direction.scale(speed * 0.75).add(
                 0.0, this.controlledFlightInitialLift(escapeFlight), 0.0));
         this.faceMovement(this.getDeltaMovement());
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1564,7 +1564,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(movement);
         this.faceMovement(movement);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     /** Species may add a small steering signature without replacing the shared flight controller. */
@@ -1665,7 +1665,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.setDeltaMovement(movement);
         this.faceMovement(movement);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void finishControlledFlight(boolean landed) {
@@ -2268,9 +2268,9 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         return !state.isAirborne() && state != SparrowBehaviorState.SHORT_FLIGHT;
     }
 
-    private <T extends SparrowEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(4);
+    private <T extends SparrowEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(4);
         RawAnimation guidePreviewRawAnimation = this.guidePreviewAnimation.animation();
         if (guidePreviewRawAnimation != null) {
             return animationState.setAndContinue(guidePreviewRawAnimation);

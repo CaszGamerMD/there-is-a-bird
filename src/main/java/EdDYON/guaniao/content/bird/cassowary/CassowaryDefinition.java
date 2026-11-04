@@ -1,7 +1,7 @@
 package EdDYON.guaniao.content.bird.cassowary;
 
 import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class CassowaryDefinition {
     public static final String ENTITY_ID = "cassowary";
@@ -19,14 +19,14 @@ public final class CassowaryDefinition {
     public static final double WALK_SPEED = 0.26D;
     public static final double FOLLOW_RANGE = 32.0D;
 
-    public static final ResourceLocation MODEL = resource("geo/cassowary.geo.json");
-    public static final ResourceLocation TEXTURE = resource("textures/entity/cassowary.png");
-    public static final ResourceLocation ANIMATION = resource("animations/cassowary.animation.json");
+    public static final Identifier MODEL = resource("geo/cassowary.geo.json");
+    public static final Identifier TEXTURE = resource("textures/entity/cassowary.png");
+    public static final Identifier ANIMATION = resource("animations/cassowary.animation.json");
 
     private CassowaryDefinition() {
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation(GuaniaoMod.MOD_ID, path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, path);
     }
 }

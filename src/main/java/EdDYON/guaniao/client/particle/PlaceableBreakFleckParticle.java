@@ -1,23 +1,26 @@
 package EdDYON.guaniao.client.particle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
-import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.util.RandomSource;
 
-public final class PlaceableBreakFleckParticle extends TextureSheetParticle {
+/**
+ * Original colored/debris fleck, migrated from removed TextureSheetParticle
+ * to Minecraft 26.2's SingleQuadParticle. Retains color, rolling physics,
+ * random size/lifetime and late fade-out.
+ */
+public final class PlaceableBreakFleckParticle extends SingleQuadParticle {
     private float spinSpeed;
 
     private PlaceableBreakFleckParticle(ClientLevel level, double x, double y, double z,
                                         double xSpeed, double ySpeed, double zSpeed,
-                                        SpriteSet sprites) {
-        super(level, x, y, z, xSpeed, ySpeed, zSpeed);
-        this.pickSprite(sprites);
+                                        TextureAtlasSprite sprite) {
+        super(level, x, y, z, xSpeed, ySpeed, zSpeed, sprite);
         this.hasPhysics = true;
         this.gravity = 0.62F;
         this.friction = 0.76F;
@@ -45,13 +48,14 @@ public final class PlaceableBreakFleckParticle extends TextureSheetParticle {
         }
         float fadeStart = this.lifetime * 0.65F;
         if (this.age > fadeStart) {
-            this.alpha = Mth.clamp((this.lifetime - this.age) / (this.lifetime - fadeStart), 0.0F, 1.0F);
+            this.alpha = Mth.clamp((this.lifetime - this.age) /
+                    (this.lifetime - fadeStart), 0.0F, 1.0F);
         }
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    public SingleQuadParticle.Layer getLayer() {
+        return SingleQuadParticle.Layer.TRANSLUCENT;
     }
 
     public static final class Provider implements ParticleProvider<SimpleParticleType> {
@@ -62,10 +66,11 @@ public final class PlaceableBreakFleckParticle extends TextureSheetParticle {
         }
 
         @Override
-        public @Nullable Particle createParticle(SimpleParticleType type, ClientLevel level,
-                                                 double x, double y, double z,
-                                                 double xSpeed, double ySpeed, double zSpeed) {
-            return new PlaceableBreakFleckParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites);
+        public PlaceableBreakFleckParticle createParticle(SimpleParticleType type,
+                ClientLevel level, double x, double y, double z,
+                double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
+            return new PlaceableBreakFleckParticle(level, x, y, z,
+                    xSpeed, ySpeed, zSpeed, sprites.get(random));
         }
     }
 }

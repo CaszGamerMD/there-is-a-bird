@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -48,7 +48,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -56,7 +56,6 @@ import net.minecraft.world.entity.ai.control.BodyRotationControl;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -68,16 +67,16 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.util.GeckoLibUtil;
 
 /** A wild shore hunter: trust changes its tolerance, never its ownership. */
 public final class KingfisherEntity extends Animal
-        implements GeoEntity, FlyingAnimal, BirdFlightAware, BirdSleepWakeable, ScalableBirdModel {
+        implements GeoEntity, BirdFlightAware, BirdSleepWakeable, ScalableBirdModel {
     public enum Activity { OBSERVE, TRAVEL, DIVE, EMERGE, RETURN, EAT, SLEEP, FLEE, HOVER, ALERT, SHAKE, DEFECATE, SKIM, FISH_APPROACH, FISH_CRUISE }
     private enum PerchSearchStatus { FOUND, DEFERRED, NO_VALID_PERCH }
     private record PerchCandidate(BlockPos support, double score) { }
@@ -176,7 +175,7 @@ public final class KingfisherEntity extends Animal
         super(type, level);
         this.moveControl = new MoveControl(this) { @Override public void tick() { } };
         this.lookControl = new LookControl(this) { @Override public void tick() { } };
-        if (!level.isClientSide)
+        if (!level.isClientSide())
             this.setIndividualModelScale(BirdModelScale.randomIndividualScale(this.random, this.modelScaleProfile()));
         this.huntDelay = 80 + this.random.nextInt(100);
         this.perchSearchDelay = this.random.nextInt(20);
@@ -191,27 +190,27 @@ public final class KingfisherEntity extends Animal
     }
 
     public static boolean canSpawn(EntityType<KingfisherEntity> type, ServerLevelAccessor level,
-                                   MobSpawnType reason, BlockPos pos, RandomSource random) {
+                                   EntitySpawnReason reason, BlockPos pos, RandomSource random) {
         return KingfisherHabitat.canSpawn(level, reason, pos);
     }
 
-    @Override protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(ACTIVITY, Activity.OBSERVE.ordinal());
-        this.entityData.define(HELD_FISH, ItemStack.EMPTY);
-        this.entityData.define(SCALE, 1.0F);
-        this.entityData.define(FLIGHT_PITCH, 0.0F);
-        this.entityData.define(HOVER_MODE, 0);
-        this.entityData.define(PERCHED, false);
+    @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ACTIVITY, Activity.OBSERVE.ordinal());
+        builder.define(HELD_FISH, ItemStack.EMPTY);
+        builder.define(SCALE, 1.0F);
+        builder.define(FLIGHT_PITCH, 0.0F);
+        builder.define(HOVER_MODE, 0);
+        builder.define(PERCHED, false);
     }
 
     @Override protected void registerGoals() { /* One owner for quick flight and dive movement. */ }
 
     @Override public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
-        if (this.level().isClientSide && (ACTIVITY.equals(key) || HOVER_MODE.equals(key)))
+        if (this.level().isClientSide() && (ACTIVITY.equals(key) || HOVER_MODE.equals(key)))
             this.movementAnimationDirty = true;
-        if (this.level().isClientSide && ACTIVITY.equals(key)) {
+        if (this.level().isClientSide() && ACTIVITY.equals(key)) {
             this.clientEatingTicks = 0;
             this.clientDefecatingTicks = 0;
             this.droppingRenderOffset = null;
@@ -221,7 +220,7 @@ public final class KingfisherEntity extends Animal
     @Override public void tick() {
         this.previousFlightPitch = this.getFlightPitch();
         super.tick();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             this.clientEatingTicks = this.isEating() ? this.clientEatingTicks + 1 : 0;
             this.clientDefecatingTicks = this.getActivity() == Activity.DEFECATE ? this.clientDefecatingTicks + 1 : 0;
         }
@@ -535,7 +534,7 @@ public final class KingfisherEntity extends Animal
     }
 
     public boolean tryStartDefecation() {
-        if (this.level().isClientSide || !this.isAlive() || this.isInWaterOrBubble() || this.isPassenger()
+        if (this.level().isClientSide() || !this.isAlive() || this.isInWaterOrBubble() || this.isPassenger()
                 || this.getActivity() != Activity.OBSERVE || this.perch == null && !this.onGround()
                 || this.alertTicks > 0 || this.waterShakePending || !this.getHeldFish().isEmpty()) return false;
         this.droppingReleased = false;
@@ -1438,7 +1437,7 @@ public final class KingfisherEntity extends Animal
 
     @Override public boolean hurt(DamageSource source, float damage) {
         boolean hurt = super.hurt(source, damage);
-        if (hurt && !this.level().isClientSide && this.isAlive()) {
+        if (hurt && !this.level().isClientSide() && this.isAlive()) {
             if (source.getEntity() instanceof Player player) {
                 this.trust.remove(player.getUUID());
                 this.witnessedFeedings.remove(player.getUUID());
@@ -1509,7 +1508,7 @@ public final class KingfisherEntity extends Animal
         // Handbook previews advance tickCount without running the entity AI/tick.
         if ("eat".equals(this.guidePreview))
             return Mth.clamp(Math.floorMod(this.tickCount - this.guidePreviewStartedTick, 70) + partialTick, 0, 50);
-        return this.isEating() ? Mth.clamp((this.level().isClientSide ? this.clientEatingTicks : this.stateTicks) + partialTick, 0, 50) : 0;
+        return this.isEating() ? Mth.clamp((this.level().isClientSide() ? this.clientEatingTicks : this.stateTicks) + partialTick, 0, 50) : 0;
     }
     public boolean isSleeping() { return "sleep".equals(this.guidePreview) || this.guidePreview == null && this.getActivity() == Activity.SLEEP; }
     public boolean isDiving() { return "dive".equals(this.guidePreview) || "swoop".equals(this.guidePreview)
@@ -1547,13 +1546,13 @@ public final class KingfisherEntity extends Animal
                 && this.droppingRenderOffset != null && age >= 0 && age <= 1)
             return position.add(this.droppingRenderOffset);
         float yaw = Mth.rotLerp(partialTick, this.yBodyRotO, this.yBodyRot);
-        float ticks = (this.level().isClientSide ? this.clientDefecatingTicks : this.stateTicks) + partialTick;
+        float ticks = (this.level().isClientSide() ? this.clientDefecatingTicks : this.stateTicks) + partialTick;
         return position.add(this.droppingLaunchOffset(yaw, ticks));
     }
 
     /** Only a rendered world entity may supply this short-lived visual anchor. */
     public void setDroppingRenderOrigin(Vec3 origin, float partialTick) {
-        if (!this.level().isClientSide || this.guidePreview != null || this.getActivity() != Activity.DEFECATE
+        if (!this.level().isClientSide() || this.guidePreview != null || this.getActivity() != Activity.DEFECATE
                 || this.level().getEntity(this.getId()) != this) return;
         Vec3 position = new Vec3(Mth.lerp(partialTick, this.xOld, this.getX()),
                 Mth.lerp(partialTick, this.yOld, this.getY()), Mth.lerp(partialTick, this.zOld, this.getZ()));
@@ -1581,14 +1580,19 @@ public final class KingfisherEntity extends Animal
         }
         this.guidePreview = animation;
     }
-    @Override public boolean isFlying() { return this.shouldPlayFlyAnimation(); }
+    @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
+    public boolean isFlying() { return this.shouldPlayFlyAnimation(); }
     @Override public BirdFlightProfile birdFlightProfile() { return BirdFlightProfile.SPARROW; }
     @Override public boolean isBirdFlightActive() { return this.shouldPlayFlyAnimation(); }
     @Override public boolean isBirdLanding() { return this.landingPerch != null && this.landingPoint != null
             && this.approachPoint == null && this.position().distanceToSqr(this.landingPoint) < 4; }
     @Override public boolean isBirdEscaping() { return this.getActivity() == Activity.FLEE || this.getActivity() == Activity.EMERGE; }
     @Override public boolean isBirdSleeping() { return this.isSleeping(); }
-    @Override public void wakeFromLoudSound(Vec3 soundPosition) { if (!this.level().isClientSide && this.isSleeping()) this.startFlee(soundPosition); }
+    @Override public void wakeFromLoudSound(Vec3 soundPosition) { if (!this.level().isClientSide() && this.isSleeping()) this.startFlee(soundPosition); }
     @Override public BirdModelScaleProfile modelScaleProfile() { return BirdModelScaleProfile.KINGFISHER; }
     @Override public float getIndividualModelScale() { return this.entityData.get(SCALE); }
     @Override public void setIndividualModelScale(float scale) { this.entityData.set(SCALE, BirdModelScale.sanitize(scale, this.modelScaleProfile())); }

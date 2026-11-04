@@ -48,7 +48,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -69,15 +69,15 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 /**
  * A solitary, ground-only cassowary. Goals own movement and interaction while
@@ -189,9 +189,9 @@ public class CassowaryEntity extends PathfinderMob
 
     public CassowaryEntity(EntityType<? extends CassowaryEntity> entityType, Level level) {
         super(entityType, level);
-        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.BlockPathTypes.WATER, 8.0F);
-        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.BlockPathTypes.DANGER_FIRE, 16.0F);
-        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.BlockPathTypes.DAMAGE_FIRE, 16.0F);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, 8.0F);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.DANGER_FIRE, 16.0F);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.DAMAGE_FIRE, 16.0F);
         this.setMaxUpStep(1.1F);
     }
 
@@ -206,7 +206,7 @@ public class CassowaryEntity extends PathfinderMob
     }
 
     public static boolean canSpawn(EntityType<CassowaryEntity> entityType, ServerLevelAccessor level,
-                                   MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+                                   EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)
@@ -248,20 +248,20 @@ public class CassowaryEntity extends PathfinderMob
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEHAVIOR_STATE, CassowaryBehaviorState.CALM.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
-        this.entityData.define(GAZE_TARGET_ID, -1);
-        this.entityData.define(GAZE_YAW, 0.0F);
-        this.entityData.define(GAZE_PITCH, 0.0F);
-        this.entityData.define(GAZE_WEIGHT, 0.0F);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEHAVIOR_STATE, CassowaryBehaviorState.CALM.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
+        builder.define(GAZE_TARGET_ID, -1);
+        builder.define(GAZE_YAW, 0.0F);
+        builder.define(GAZE_PITCH, 0.0F);
+        builder.define(GAZE_WEIGHT, 0.0F);
     }
 
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty,
-                                        MobSpawnType spawnType, @Nullable SpawnGroupData spawnData,
+                                        EntitySpawnReason spawnType, @Nullable SpawnGroupData spawnData,
                                         @Nullable CompoundTag tag) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, spawnData, tag);
         if (tag == null || !tag.contains(BirdModelScale.NBT_KEY, Tag.TAG_FLOAT)) {
@@ -282,7 +282,7 @@ public class CassowaryEntity extends PathfinderMob
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             this.tickClientGaze();
             return;
         }
@@ -946,7 +946,7 @@ public class CassowaryEntity extends PathfinderMob
         }
         this.entityData.set(BEHAVIOR_STATE, state.ordinal());
         this.behaviorTicks = 0;
-        if (!this.level().isClientSide && state == CassowaryBehaviorState.WARNING) {
+        if (!this.level().isClientSide() && state == CassowaryBehaviorState.WARNING) {
             this.playSound(GuaniaoSoundEvents.CASSOWARY_WARNING.get(),
                     1.15F, 0.94F + this.getRandom().nextFloat() * 0.12F);
         }
@@ -1096,7 +1096,7 @@ public class CassowaryEntity extends PathfinderMob
         if (!BirdFoodSafety.matchesClean(BirdTags.CASSOWARY_FOODS, stack)) {
             return super.mobInteract(player, hand);
         }
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return InteractionResult.sidedSuccess(true);
         }
         if (!player.getAbilities().instabuild) {
@@ -1118,7 +1118,7 @@ public class CassowaryEntity extends PathfinderMob
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.triggerAnim("action", "hurt");
             if (source.getEntity() instanceof LivingEntity attacker) {
                 this.rememberThreat(attacker);
@@ -1256,8 +1256,8 @@ public class CassowaryEntity extends PathfinderMob
         this.guidePreviewAnimation = animation == null ? GuidePreviewAnimation.NONE : animation;
     }
 
-    private <T extends CassowaryEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
+    private <T extends CassowaryEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
         if (this.guidePreviewAnimation.animation != null) {
             return animationState.setAndContinue(this.guidePreviewAnimation.animation);
         }
@@ -1278,7 +1278,7 @@ public class CassowaryEntity extends PathfinderMob
             case SLEEP_ENTER -> animationState.setAndContinue(SLEEP_ENTER_ANIMATION);
             case SLEEPING -> animationState.setAndContinue(SLEEP_ANIMATION);
             case SLEEP_EXIT -> {
-                if (this.wasRecentlyProvoked()) animationState.getController().setAnimationSpeed(1.35D);
+                if (this.wasRecentlyProvoked()) animationState.controller().setAnimationSpeed(1.35D);
                 yield animationState.setAndContinue(SLEEP_EXIT_ANIMATION);
             }
             case CALM -> BirdGroundAnimation.hasWalkMotion(this, animationState.isMoving())
@@ -1287,7 +1287,7 @@ public class CassowaryEntity extends PathfinderMob
         };
     }
 
-    private <T extends CassowaryEntity> PlayState movementAnimation(AnimationState<T> animationState,
+    private <T extends CassowaryEntity> PlayState movementAnimation(AnimationTest<T> animationState,
                                                                      boolean forceFast) {
         double speed = BirdGroundAnimation.horizontalSpeed(this);
         if (!BirdGroundAnimation.hasWalkMotion(this)) return animationState.setAndContinue(IDLE_ANIMATION);

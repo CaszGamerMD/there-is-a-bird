@@ -10,6 +10,7 @@ import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -17,30 +18,30 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerEntity;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DiodeBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -68,9 +69,10 @@ public class PhotographEntity extends HangingEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.getEntityData().define(DATA_ITEM, ItemStack.EMPTY);
-        this.getEntityData().define(DATA_ROTATION, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_ITEM, ItemStack.EMPTY);
+        builder.define(DATA_ROTATION, 0);
     }
 
     @Override
@@ -88,8 +90,8 @@ public class PhotographEntity extends HangingEntity {
     }
 
     @Override
-    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return new ClientboundAddEntityPacket(this, this.direction.get3DDataValue(), this.getPos());
+    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, this.getDirection().get3DDataValue(), this.getPos());
     }
 
     @Override
@@ -100,48 +102,31 @@ public class PhotographEntity extends HangingEntity {
     }
 
     @Override
-    public void moveTo(double x, double y, double z, float yaw, float pitch) {
-        this.setPos(x, y, z);
-    }
-
-    @Override
-    public void lerpTo(double x, double y, double z, float yaw, float pitch, int steps, boolean teleport) {
-        this.setPos(x, y, z);
-    }
-
-    @Override
-    public void addAdditionalSaveData(@NotNull CompoundTag tag) {
+    protected void addAdditionalSaveData(@NotNull ValueOutput tag) {
         super.addAdditionalSaveData(tag);
         if (!this.getItem().isEmpty()) {
-            tag.put("Item", this.getItem().save(new CompoundTag()));
+            tag.store("Item", ItemStack.CODEC, this.getItem());
         }
-        tag.putByte("Facing", (byte)this.direction.get3DDataValue());
+        tag.putByte("Facing", (byte)this.getDirection().get3DDataValue());
         tag.putByte("Rotation", (byte)this.getRotation());
     }
 
     @Override
-    public void readAdditionalSaveData(@NotNull CompoundTag tag) {
+    protected void readAdditionalSaveData(@NotNull ValueInput tag) {
         super.readAdditionalSaveData(tag);
-        ItemStack item = ItemStack.of(tag.getCompound("Item"));
+        ItemStack item = tag.read("Item", ItemStack.CODEC).orElse(ItemStack.EMPTY);
         if (!item.isEmpty()) {
             LegacyPhotoMigration.migrateNow(this.level(), item);
             this.setItem(item);
         }
-        this.setDirection(Direction.from3DDataValue(tag.getByte("Facing")));
-        this.setRotation(tag.getByte("Rotation"));
+        this.setDirection(Direction.from3DDataValue(tag.getByteOr("Facing", (byte)this.getDirection().get3DDataValue())));
+        this.setRotation(tag.getByteOr("Rotation", (byte)0));
     }
 
-    @Override
-    protected float getEyeHeight(@NotNull Pose pose, @NotNull EntityDimensions dimensions) {
-        return 0.0F;
-    }
-
-    @Override
     public int getWidth() {
         return this.frameDesign == null ? this.getFrameStyle().shape().widthPixels() : this.frameDesign.widthPixels();
     }
 
-    @Override
     public int getHeight() {
         return this.frameDesign == null ? this.getFrameStyle().shape().heightPixels() : this.frameDesign.heightPixels();
     }
@@ -168,31 +153,31 @@ public class PhotographEntity extends HangingEntity {
         // A frame can straddle a chunk boundary. Do not load its neighbour just
         // to check support, or drop an existing frame while that chunk is absent.
         AABB box = this.getBoundingBox();
-        BlockPos support = this.pos.relative(this.direction.getOpposite());
+        BlockPos support = this.pos.relative(this.getDirection().getOpposite());
         BlockPos min = BlockPos.containing(Math.min(box.minX, support.getX()),
                 Math.min(box.minY, support.getY()), Math.min(box.minZ, support.getZ()));
         BlockPos max = BlockPos.containing(Math.max(box.maxX - 1.0E-7D, support.getX()),
                 Math.max(box.maxY - 1.0E-7D, support.getY()), Math.max(box.maxZ - 1.0E-7D, support.getZ()));
         if (!this.level().hasChunksAt(min, max)) {
-            return this.isAddedToWorld();
+            return this.isAddedToLevel();
         }
         if (!this.level().noCollision(this)) {
             return false;
         }
         int columns = Math.max(1, this.getWidth() / 16);
         int rows = Math.max(1, this.getHeight() / 16);
-        Direction horizontal = this.direction.getAxis().isHorizontal() ? this.direction.getCounterClockWise() : Direction.EAST;
-        Direction vertical = this.direction.getAxis().isHorizontal() ? Direction.UP : Direction.SOUTH;
+        Direction horizontal = this.getDirection().getAxis().isHorizontal() ? this.getDirection().getCounterClockWise() : Direction.EAST;
+        Direction vertical = this.getDirection().getAxis().isHorizontal() ? Direction.UP : Direction.SOUTH;
         for (int column = 0; column < columns; column++) {
             for (int row = 0; row < rows; row++) {
                 BlockPos backing = support.relative(horizontal, column - (columns - 1) / 2)
                         .relative(vertical, row - (rows - 1) / 2);
                 if (!this.level().hasChunkAt(backing)) {
-                    return this.isAddedToWorld();
+                    return this.isAddedToLevel();
                 }
                 BlockState state = this.level().getBlockState(backing);
-                if (!Block.canSupportCenter(this.level(), backing, this.direction) && !state.isSolid()
-                        && !(this.direction.getAxis().isHorizontal() && DiodeBlock.isDiode(state))) {
+                if (!Block.canSupportCenter(this.level(), backing, this.getDirection()) && !state.isSolid()
+                        && !(this.getDirection().getAxis().isHorizontal() && DiodeBlock.isDiode(state))) {
                     return false;
                 }
             }
@@ -203,12 +188,12 @@ public class PhotographEntity extends HangingEntity {
     @SuppressWarnings("deprecation")
     private boolean designSurvives() {
         AABB bounds = this.getBoundingBox();
-        BlockPos support = this.pos.relative(this.direction.getOpposite());
+        BlockPos support = this.pos.relative(this.getDirection().getOpposite());
         BlockPos min = BlockPos.containing(Math.min(bounds.minX, support.getX()), Math.min(bounds.minY, support.getY()),
                 Math.min(bounds.minZ, support.getZ()));
         BlockPos max = BlockPos.containing(Math.max(bounds.maxX - 1.0E-7D, support.getX()), Math.max(bounds.maxY - 1.0E-7D, support.getY()),
                 Math.max(bounds.maxZ - 1.0E-7D, support.getZ()));
-        if (!this.level().hasChunksAt(min, max)) return this.isAddedToWorld();
+        if (!this.level().hasChunksAt(min, max)) return this.isAddedToLevel();
         // The usual clear-space path is one query; detailed silhouettes are needed
         // only when another block intersects the outer bounding rectangle.
         if (!this.level().noCollision(this, bounds)) {
@@ -217,16 +202,17 @@ public class PhotographEntity extends HangingEntity {
             }
         }
         for (BlockPos backing : this.supportPositions) {
-            if (!this.level().hasChunkAt(backing)) return this.isAddedToWorld();
+            if (!this.level().hasChunkAt(backing)) return this.isAddedToLevel();
             BlockState state = this.level().getBlockState(backing);
-            if (!Block.canSupportCenter(this.level(), backing, this.direction) && !state.isSolid()
-                    && !(this.direction.getAxis().isHorizontal() && DiodeBlock.isDiode(state))) return false;
+            if (!Block.canSupportCenter(this.level(), backing, this.getDirection()) && !state.isSolid()
+                    && !(this.getDirection().getAxis().isHorizontal() && DiodeBlock.isDiode(state))) return false;
         }
         return !this.overlapsHangingEntity(this.occupiedBoxes);
     }
 
     private boolean overlapsHangingEntity(List<AABB> pieces) {
-        for (Entity other : this.level().getEntities(this, this.getBoundingBox(), HANGING_ENTITY)) {
+        for (Entity other : this.level().getEntities(this, this.getBoundingBox(),
+                entity -> entity instanceof HangingEntity)) {
             if (other == this.collisionIgnore) continue;
             if (other instanceof PhotographEntity photo && photo.frameDesign != null) {
                 for (AABB first : pieces) for (AABB second : photo.occupiedBoxes) {
@@ -241,7 +227,7 @@ public class PhotographEntity extends HangingEntity {
 
     @Override
     protected void recalculateBoundingBox() {
-        if (this.direction == null || this.pos == null) {
+        if (this.pos == null) {
             return;
         }
 
@@ -252,15 +238,16 @@ public class PhotographEntity extends HangingEntity {
 
         // Vanilla paintings anchor even-width/height frames between block centres.
         // Keep the existing item-frame transform for old floor/ceiling photographs.
-        if (this.direction.getAxis().isHorizontal()) {
+        if (this.getDirection().getAxis().isHorizontal()) {
             super.recalculateBoundingBox();
             return;
         }
 
+        Direction direction = this.getDirection();
         double hangOffset = 0.46875D;
-        double x = (double)this.pos.getX() + 0.5D - (double)this.direction.getStepX() * hangOffset;
-        double y = (double)this.pos.getY() + 0.5D - (double)this.direction.getStepY() * hangOffset;
-        double z = (double)this.pos.getZ() + 0.5D - (double)this.direction.getStepZ() * hangOffset;
+        double x = (double)this.pos.getX() + 0.5D - (double)direction.getStepX() * hangOffset;
+        double y = (double)this.pos.getY() + 0.5D - (double)direction.getStepY() * hangOffset;
+        double z = (double)this.pos.getZ() + 0.5D - (double)direction.getStepZ() * hangOffset;
         x += this.getWidth() % 32 == 0 ? 0.5D : 0.0D;
         z += this.getHeight() % 32 == 0 ? 0.5D : 0.0D;
         this.setPosRaw(x, y, z);
@@ -268,7 +255,7 @@ public class PhotographEntity extends HangingEntity {
         double xSize = this.getWidth();
         double ySize = this.getHeight();
         double zSize = this.getHeight();
-        switch (this.direction.getAxis()) {
+        switch (direction.getAxis()) {
             case X -> xSize = 1.0D;
             case Y -> ySize = 1.0D;
             case Z -> zSize = 1.0D;
@@ -280,16 +267,38 @@ public class PhotographEntity extends HangingEntity {
         this.setBoundingBox(new AABB(x - xSize, y - ySize, z - zSize, x + xSize, y + ySize, z + zSize));
     }
 
+    @Override
+    protected AABB calculateBoundingBox(BlockPos anchor, Direction facing) {
+        // 26.2 delegates a normal hanging frame's box to this method. Retain
+        // the original 1/16-block depth and pixel-based width/height.
+        Direction horizontal = facing.getCounterClockWise();
+        Vec3 center = Vec3.atCenterOf(anchor)
+                .add(-facing.getStepX() * 0.46875D, -facing.getStepY() * 0.46875D,
+                        -facing.getStepZ() * 0.46875D);
+        if (this.getWidth() % 32 == 0) {
+            center = center.add(horizontal.getStepX() * 0.5D, 0.0D, horizontal.getStepZ() * 0.5D);
+        }
+        if (this.getHeight() % 32 == 0) {
+            center = center.add(0.0D, 0.5D, 0.0D);
+        }
+        double xSize = facing.getAxis() == Direction.Axis.X ? 1.0D : this.getWidth();
+        double ySize = facing.getAxis() == Direction.Axis.Y ? 1.0D : this.getHeight();
+        double zSize = facing.getAxis() == Direction.Axis.Z ? 1.0D : this.getWidth();
+        return new AABB(center.x - xSize / 32.0D, center.y - ySize / 32.0D,
+                center.z - zSize / 32.0D, center.x + xSize / 32.0D,
+                center.y + ySize / 32.0D, center.z + zSize / 32.0D);
+    }
+
     private void recalculateDesignGeometry() {
         FrameDesign design = this.frameDesign;
         if (design == null) return;
-        Direction horizontal = this.direction.getAxis().isHorizontal() ? this.direction.getCounterClockWise() : Direction.EAST;
-        Direction vertical = this.direction.getAxis().isHorizontal() ? Direction.UP : Direction.SOUTH;
+        Direction horizontal = this.getDirection().getAxis().isHorizontal() ? this.getDirection().getCounterClockWise() : Direction.EAST;
+        Direction vertical = this.getDirection().getAxis().isHorizontal() ? Direction.UP : Direction.SOUTH;
         double offset = 0.5D - design.depthPixels() / 32.0D;
         double horizontalOffset = ((design.widthPixels() + 15) / 16) % 2 == 0 ? 0.5D : 0.0D;
         double verticalOffset = ((design.heightPixels() + 15) / 16) % 2 == 0 ? 0.5D : 0.0D;
-        Vec3 center = Vec3.atCenterOf(this.pos).add(-this.direction.getStepX() * offset, -this.direction.getStepY() * offset,
-                -this.direction.getStepZ() * offset).add(horizontal.getStepX() * horizontalOffset + vertical.getStepX() * verticalOffset,
+        Vec3 center = Vec3.atCenterOf(this.pos).add(-this.getDirection().getStepX() * offset, -this.getDirection().getStepY() * offset,
+                -this.getDirection().getStepZ() * offset).add(horizontal.getStepX() * horizontalOffset + vertical.getStepX() * verticalOffset,
                 horizontal.getStepY() * horizontalOffset + vertical.getStepY() * verticalOffset,
                 horizontal.getStepZ() * horizontalOffset + vertical.getStepZ() * verticalOffset);
         this.setPosRaw(center.x, center.y, center.z);
@@ -306,8 +315,8 @@ public class PhotographEntity extends HangingEntity {
             AABB part = new AABB(first, second);
             pieces.add(part);
             // Move the thin occupied rectangle half a block backwards into its backing plane.
-            AABB backing = part.move(-this.direction.getStepX() * 0.5D, -this.direction.getStepY() * 0.5D,
-                    -this.direction.getStepZ() * 0.5D).deflate(1.0E-7D);
+            AABB backing = part.move(-this.getDirection().getStepX() * 0.5D, -this.getDirection().getStepY() * 0.5D,
+                    -this.getDirection().getStepZ() * 0.5D).deflate(1.0E-7D);
             for (BlockPos block : BlockPos.betweenClosed(BlockPos.containing(backing.minX, backing.minY, backing.minZ),
                     BlockPos.containing(backing.maxX, backing.maxY, backing.maxZ))) supports.add(block.immutable());
         }
@@ -325,9 +334,9 @@ public class PhotographEntity extends HangingEntity {
     }
 
     private Vec3 localPoint(Vec3 center, Direction horizontal, Direction vertical, double x, double y, double z) {
-        return center.add(horizontal.getStepX() * x + vertical.getStepX() * y + this.direction.getStepX() * z,
-                horizontal.getStepY() * x + vertical.getStepY() * y + this.direction.getStepY() * z,
-                horizontal.getStepZ() * x + vertical.getStepZ() * y + this.direction.getStepZ() * z);
+        return center.add(horizontal.getStepX() * x + vertical.getStepX() * y + this.getDirection().getStepX() * z,
+                horizontal.getStepY() * x + vertical.getStepY() * y + this.getDirection().getStepY() * z,
+                horizontal.getStepZ() * x + vertical.getStepZ() * y + this.getDirection().getStepZ() * z);
     }
 
     /** Occupied, disjoint silhouette rectangles in world coordinates for placement previews. */
@@ -335,15 +344,14 @@ public class PhotographEntity extends HangingEntity {
         return this.frameDesign == null ? List.of(this.getBoundingBox()) : this.occupiedBoxes;
     }
 
-    @Override
     public @NotNull AABB getBoundingBoxForCulling() {
-        return this.frameDesign != null && this.designRenderBounds != null ? this.designRenderBounds : super.getBoundingBoxForCulling();
+        return this.frameDesign != null && this.designRenderBounds != null ? this.designRenderBounds : this.getBoundingBox();
     }
 
     @Override
     protected void setDirection(@NotNull Direction direction) {
         Validate.notNull(direction);
-        this.direction = direction;
+        super.setDirection(direction);
         if (direction.getAxis().isHorizontal()) {
             this.setXRot(0.0F);
             this.setYRot((float)(direction.get2DDataValue() * 90));
@@ -380,9 +388,6 @@ public class PhotographEntity extends HangingEntity {
     private void onItemChanged(ItemStack stack) {
         this.frameStyle = PhotographFrameStyle.read(stack);
         this.frameDesign = FrameDesign.read(stack);
-        if (!stack.isEmpty()) {
-            stack.setEntityRepresentation(this);
-        }
         this.recalculateBoundingBox();
     }
 
@@ -395,7 +400,7 @@ public class PhotographEntity extends HangingEntity {
     }
 
     @Override
-    public @NotNull InteractionResult interact(@NotNull Player player, @NotNull InteractionHand hand) {
+    public @NotNull InteractionResult interact(@NotNull Player player, @NotNull InteractionHand hand, Vec3 hitLocation) {
         if (this.isRemoved() || this.getItem().isEmpty()) {
             return InteractionResult.PASS;
         }
@@ -406,33 +411,31 @@ public class PhotographEntity extends HangingEntity {
                 return InteractionResult.PASS;
             }
             if (player.isShiftKeyDown()) {
-                if (this.level().isClientSide && PhotographData.hasImage(this.getItem())) {
+                if (this.level().isClientSide() && PhotographData.hasImage(this.getItem())) {
                     ItemStack copy = this.getItem().copy();
-                    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                        try {
-                            Class.forName("EdDYON.guaniao.client.camera.PhotographClientActions")
-                                    .getMethod("openScreen", ItemStack.class).invoke(null, copy);
-                        } catch (ReflectiveOperationException exception) {
-                            throw new IllegalStateException("Failed to open photograph screen", exception);
-                        }
-                    });
+                    try {
+                        Class.forName("EdDYON.guaniao.client.camera.PhotographClientActions")
+                                .getMethod("openScreen", ItemStack.class).invoke(null, copy);
+                    } catch (ReflectiveOperationException exception) {
+                        throw new IllegalStateException("Failed to open photograph screen", exception);
+                    }
                 }
-                return InteractionResult.sidedSuccess(this.level().isClientSide);
+                return this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
             }
             if (!this.mayModify(player, held)) {
                 return InteractionResult.FAIL;
             }
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 this.setRotation(this.getRotation() + 1);
                 this.playSound(SoundEvents.ITEM_FRAME_ROTATE_ITEM, 0.8F, 1.0F);
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
         }
 
         if (this.frameDesign != null && !PhotographData.hasImage(this.getItem())
                 && (held.is(GuaniaoItems.PHOTOGRAPH.get()) || held.is(GuaniaoItems.FILM.get())) && PhotographData.hasImage(held)) {
             if (!this.mayModify(player, held)) return InteractionResult.FAIL;
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 // Imported legacy pixels must finish conversion before copying the reference.
                 // The queue operates on the real held stack and does not consume it.
                 if (PhotographData.hasLegacyPixels(held)) {
@@ -442,21 +445,25 @@ public class PhotographEntity extends HangingEntity {
                 ItemStack inserted;
                 if (held.is(GuaniaoItems.FILM.get())) {
                     inserted = new ItemStack(GuaniaoItems.PHOTOGRAPH.get());
-                    if (held.getTag() != null) inserted.setTag(held.getTag().copy());
+                    CustomData imageReference = held.get(DataComponents.CUSTOM_DATA);
+                    if (imageReference != null) inserted.set(DataComponents.CUSTOM_DATA, imageReference);
                 } else {
                     inserted = held.copyWithCount(1);
                 }
                 FrameDesign.write(inserted, this.frameDesign);
-                CompoundTag previousStyle = this.getItem().getTagElement(PhotographFrameStyle.TAG);
-                if (previousStyle != null) inserted.addTagElement(PhotographFrameStyle.TAG, previousStyle.copy());
-                PhotographEntity candidate = new PhotographEntity(this.level(), this.pos, this.direction, inserted);
+                CompoundTag styleData = this.getItem().getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+                if (styleData.get(PhotographFrameStyle.TAG) instanceof CompoundTag previousStyle) {
+                    CustomData.update(DataComponents.CUSTOM_DATA, inserted,
+                            custom -> custom.put(PhotographFrameStyle.TAG, previousStyle.copy()));
+                }
+                PhotographEntity candidate = new PhotographEntity(this.level(), this.pos, this.getDirection(), inserted);
                 candidate.collisionIgnore = this;
                 if (!candidate.survives()) return InteractionResult.FAIL;
                 this.setItem(inserted);
                 if (!player.getAbilities().instabuild) held.shrink(1);
                 this.playSound(SoundEvents.ITEM_FRAME_ADD_ITEM, 0.8F, 1.0F);
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
         }
 
         if (this.frameDesign != null) return this.interactWithDesign(player, hand, held);
@@ -484,20 +491,20 @@ public class PhotographEntity extends HangingEntity {
         if (!this.mayModify(player, held)) {
             return InteractionResult.FAIL;
         }
-        if (!this.level().isClientSide && !changed.equals(style)) {
+        if (!this.level().isClientSide() && !changed.equals(style)) {
             ItemStack copy = this.getItem().copy();
             PhotographFrameStyle.write(copy, changed);
             this.setItem(copy);
             if (!player.getAbilities().instabuild) {
                 if (shears) {
-                    held.hurtAndBreak(1, player, user -> user.broadcastBreakEvent(hand));
+                    held.hurtAndBreak(1, player, hand);
                 } else {
                     held.shrink(1);
                 }
             }
             this.playSound(shears ? SoundEvents.SHEEP_SHEAR : SoundEvents.ITEM_FRAME_ADD_ITEM, 0.8F, 1.0F);
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     private InteractionResult interactWithDesign(Player player, InteractionHand hand, ItemStack held) {
@@ -513,45 +520,50 @@ public class PhotographEntity extends HangingEntity {
         else if (held.getItem() instanceof BlockItem) changed = changed.withFrameMaterial(BuiltInRegistries.ITEM.getKey(held.getItem()));
         else return InteractionResult.PASS;
         if (!this.mayModify(player, held)) return InteractionResult.FAIL;
-        if (!this.level().isClientSide && !changed.equals(this.frameDesign)) {
+        if (!this.level().isClientSide() && !changed.equals(this.frameDesign)) {
             ItemStack copy = this.getItem().copy();
             FrameDesign.write(copy, changed);
             this.setItem(copy);
             this.playSound(shears ? SoundEvents.SHEEP_SHEAR : SoundEvents.ITEM_FRAME_ADD_ITEM, 0.8F, 1.0F);
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     private boolean mayModify(Player player, ItemStack held) {
         return player.mayBuild() && this.level().mayInteract(player, this.pos)
-                && player.mayUseItemAt(this.pos, this.direction, held);
+                && player.mayUseItemAt(this.pos, this.getDirection(), held);
     }
 
     private static boolean isFeather(ItemStack stack) {
         if (stack.is(Items.FEATHER)) {
             return true;
         }
-        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         return id != null && id.getNamespace().equals("guaniao") && id.getPath().startsWith("feather_");
     }
 
     @Override
-    public boolean hurt(@NotNull DamageSource source, float amount) {
-        if (this.isInvulnerableTo(source)) {
+    public boolean hurtServer(ServerLevel level, @NotNull DamageSource source, float amount) {
+        if (this.isInvulnerable()) {
             return false;
         }
-        if (!this.isRemoved() && !this.level().isClientSide) {
-            this.dropItem(source.getEntity());
-            this.kill();
+        if (!this.isRemoved()) {
+            this.dropItem(level, source.getEntity());
+            this.kill(level);
             this.markHurt();
         }
         return true;
     }
 
     @Override
-    public void dropItem(@Nullable Entity breaker) {
+    public boolean hurtClient(DamageSource source) {
+        return true;
+    }
+
+    @Override
+    public void dropItem(ServerLevel level, @Nullable Entity breaker) {
         this.playSound(SoundEvents.ITEM_FRAME_BREAK, 0.8F, 1.0F);
-        if (!this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+        if (!level.getGameRules().get(GameRules.ENTITY_DROPS)) {
             return;
         }
         if (breaker instanceof Player player && player.isCreative()) {
@@ -561,7 +573,7 @@ public class PhotographEntity extends HangingEntity {
         if (!item.isEmpty()) {
             ItemStack drop = item.copy();
             drop.setCount(1);
-            this.spawnAtLocation(drop);
+            this.spawnAtLocation(level, drop);
         }
     }
 

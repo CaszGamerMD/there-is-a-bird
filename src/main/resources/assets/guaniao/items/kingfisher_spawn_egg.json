@@ -1,0 +1,16 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "guaniao:item/kingfisher_spawn_egg",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": 1146782
+      },
+      {
+        "type": "minecraft:constant",
+        "value": 13795893
+      }
+    ]
+  }
+}

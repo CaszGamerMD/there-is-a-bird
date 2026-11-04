@@ -1,28 +1,31 @@
 package EdDYON.guaniao.network;
 
+import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.fan.FeatherFanItem;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
 
-import java.util.function.Supplier;
+/**
+ * Zero-argument Fabric play C2S payload for the fully charged fan left-click.
+ * Never trust client-supplied charging state: the server rechecks the use item.
+ */
+public record FeatherFanPiercePacket() implements CustomPacketPayload {
+    public static final Type<FeatherFanPiercePacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "feather_fan_pierce"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, FeatherFanPiercePacket> CODEC =
+            StreamCodec.unit(new FeatherFanPiercePacket());
 
-public final class FeatherFanPiercePacket {
-    public static void encode(FeatherFanPiercePacket packet, FriendlyByteBuf buffer) {
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public static FeatherFanPiercePacket decode(FriendlyByteBuf buffer) {
-        return new FeatherFanPiercePacket();
-    }
-
-    public static void handle(FeatherFanPiercePacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player != null && player.getUseItem().getItem() instanceof FeatherFanItem fan) {
-                fan.tryLaunchPiercing(player);
-            }
-        });
-        context.setPacketHandled(true);
+    public void handle(ServerPlayer player) {
+        if (player.getUseItem().getItem() instanceof FeatherFanItem fan) {
+            fan.tryLaunchPiercing(player);
+        }
     }
 }

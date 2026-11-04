@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.nightheron;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class NightHeronDefinition {
     public static final String ENTITY_ID = "night_heron";
@@ -149,14 +149,14 @@ public final class NightHeronDefinition {
     public static final int IDLE_FEAR_STROLL_PENALTY = 8;
     public static final int IDLE_FEAR_LOOK_BONUS = 12;
     public static final int IDLE_FEAR_NECK_STRETCH_BONUS = 12;
-    public static final ResourceLocation MODEL = NightHeronDefinition.resource("geo/night_heron.geo.json");
-    public static final ResourceLocation TEXTURE = NightHeronDefinition.resource("textures/entity/night_heron.png");
-    public static final ResourceLocation ANIMATION = NightHeronDefinition.resource("animations/night_heron.animation.json");
+    public static final Identifier MODEL = NightHeronDefinition.resource("geo/night_heron.geo.json");
+    public static final Identifier TEXTURE = NightHeronDefinition.resource("textures/entity/night_heron.png");
+    public static final Identifier ANIMATION = NightHeronDefinition.resource("animations/night_heron.animation.json");
 
     private NightHeronDefinition() {
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation("guaniao", path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath("guaniao", path);
     }
 }

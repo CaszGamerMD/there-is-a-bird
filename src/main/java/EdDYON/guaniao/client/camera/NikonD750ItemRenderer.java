@@ -2,13 +2,13 @@ package EdDYON.guaniao.client.camera;
 
 import EdDYON.guaniao.content.camera.NikonD750Item;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.RenderPassInfo;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemDisplayContext;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
+import com.geckolib.renderer.GeoItemRenderer;
 
 public class NikonD750ItemRenderer extends GeoItemRenderer<NikonD750Item> {
     private static final float MODEL_SCALE = 1.5F;
@@ -18,9 +18,10 @@ public class NikonD750ItemRenderer extends GeoItemRenderer<NikonD750Item> {
     }
 
     @Override
-    public void preRender(PoseStack poseStack, NikonD750Item animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        applyDisplayTransform(poseStack, this.renderPerspective);
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+    public void adjustRenderPose(RenderPassInfo<GeoRenderState> info) {
+        applyDisplayTransform(info.poseStack(),
+                info.renderState().getGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE));
+        super.adjustRenderPose(info);
     }
 
     private static void applyDisplayTransform(PoseStack poseStack, ItemDisplayContext context) {

@@ -17,7 +17,7 @@ import EdDYON.guaniao.content.bird.scale.BirdModelScaleProfile;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.BlockTags;
@@ -27,7 +27,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -39,14 +39,14 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class MacawEntity extends BudgerigarEntity {
@@ -83,7 +83,7 @@ public class MacawEntity extends BudgerigarEntity {
                 .add(Attributes.FOLLOW_RANGE, MacawDefinition.FOLLOW_RANGE);
     }
 
-    public static boolean canMacawSpawn(EntityType<MacawEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canMacawSpawn(EntityType<MacawEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean canopyOrForestFloor = below.is(BlockTags.LEAVES)
                 || below.is(BlockTags.LOGS)
@@ -96,7 +96,7 @@ public class MacawEntity extends BudgerigarEntity {
     @Override
     public void aiStep() {
         super.aiStep();
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.tickHighPerchPreference();
             this.tickMimicry();
         }
@@ -105,7 +105,7 @@ public class MacawEntity extends BudgerigarEntity {
     @Nullable
     @Override
     public MacawEntity getBreedOffspring(ServerLevel level, AgeableMob mate) {
-        MacawEntity child = GuaniaoEntityTypes.MACAW.get().create(level);
+        MacawEntity child = GuaniaoEntityTypes.MACAW.get().create(level, EntitySpawnReason.BREEDING);
         if (child != null) {
             child.setSkinVariantForRendering(this.getRandom().nextInt(MacawDefinition.TEXTURE_VARIANTS.length));
             float mateScale = mate instanceof BudgerigarEntity other ? other.getIndividualModelScale() : this.getIndividualModelScale();
@@ -116,7 +116,7 @@ public class MacawEntity extends BudgerigarEntity {
     }
 
     @Override
-    public ResourceLocation getTextureResource() {
+    public Identifier getTextureResource() {
         return MacawDefinition.textureForVariant(this.getSkinVariant());
     }
 
@@ -189,17 +189,17 @@ public class MacawEntity extends BudgerigarEntity {
         controllers.add(new AnimationController[]{new BirdMovementAnimationController((GeoAnimatable) this, "movement", 5, this::movementController)});
     }
 
-    private <T extends MacawEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(5);
+    private <T extends MacawEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(5);
         RawAnimation preview = this.macawPreviewAnimation.animation;
         if (preview != null) {
             return animationState.setAndContinue(preview);
         }
         BudgerigarBehaviorState state = this.getBehaviorState();
         if (this.shouldPlayFlyAnimation()) {
-            animationState.getController().transitionLength(0);
-            animationState.getController().setAnimationSpeed(this.flightAnimationSpeed());
+            animationState.controller().setTransitionTicks(0);
+            animationState.controller().setAnimationSpeed(this.flightAnimationSpeed());
             return BirdFlightAnimation.play(animationState, FLY_ANIMATION);
         }
         if (state == BudgerigarBehaviorState.EATING) {

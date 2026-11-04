@@ -1,32 +1,27 @@
 package EdDYON.guaniao.content.camera;
 
-import EdDYON.guaniao.client.camera.PhotographItemRenderer;
 import EdDYON.guaniao.content.camera.frame.FrameDesign;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.fml.DistExecutor;
-import org.jetbrains.annotations.Nullable;
 
 public class PhotographItem extends Item {
     public PhotographItem(Properties properties) {
@@ -34,27 +29,26 @@ public class PhotographItem extends Item {
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
-        super.inventoryTick(stack, level, entity, slot, selected);
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
         LegacyPhotoMigration.queue(level, stack);
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level.isClientSide && PhotographData.hasImage(stack)) {
+        if (level.isClientSide() && PhotographData.hasImage(stack)) {
             ItemStack copy = stack.copy();
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                try {
-                    Class.forName("EdDYON.guaniao.client.camera.PhotographClientActions")
-                            .getMethod("openScreen", ItemStack.class)
-                            .invoke(null, copy);
-                } catch (ReflectiveOperationException exception) {
-                    throw new IllegalStateException("Failed to open photograph screen", exception);
-                }
-            });
+            // The photo viewer belongs to the client only, never the dedicated server.
+            try {
+                Class.forName("EdDYON.guaniao.client.camera.PhotographClientActions")
+                        .getMethod("openScreen", ItemStack.class)
+                        .invoke(null, copy);
+            } catch (ReflectiveOperationException exception) {
+                throw new IllegalStateException("Failed to open photograph screen", exception);
+            }
         }
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override
@@ -74,12 +68,12 @@ public class PhotographItem extends Item {
         if (!player.mayBuild() || !level.mayInteract(player, placePos) || !player.mayUseItemAt(placePos, face, stack)) {
             return InteractionResult.FAIL;
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             LegacyPhotoMigration.migrateNow(level, stack);
-            ItemStack photo = stack.copy();
-            photo.setCount(1);
-            LegacyPhotoMigration.queue(level, photo);
-            PhotographEntity entity = new PhotographEntity(level, placePos, face, photo);
+            ItemStack placedPhoto = stack.copy();
+            placedPhoto.setCount(1);
+            LegacyPhotoMigration.queue(level, placedPhoto);
+            PhotographEntity entity = new PhotographEntity(level, placePos, face, placedPhoto);
             if (!entity.survives()) {
                 return InteractionResult.FAIL;
             }
@@ -90,54 +84,40 @@ public class PhotographItem extends Item {
             if (!player.getAbilities().instabuild) stack.shrink(1);
         }
 
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display,
+                                Consumer<Component> tooltip, TooltipFlag flag) {
         FrameDesign design = FrameDesign.read(stack);
         if (design == null) {
             PhotographFrameStyle style = PhotographFrameStyle.read(stack);
-            tooltip.add(Component.translatable("item.guaniao.photograph.tooltip.style",
+            tooltip.accept(Component.translatable("item.guaniao.photograph.tooltip.style",
                     Component.translatable("frame.guaniao.shape." + style.shape().id()),
                     Component.translatable("frame.guaniao.material." + style.material().id()),
                     Component.translatable("frame.guaniao.ornament." + style.ornament().id())).withStyle(ChatFormatting.GRAY));
         } else {
-            tooltip.add(Component.translatable("item.guaniao.photograph.tooltip.design", blockSize(design.widthPixels()), blockSize(design.heightPixels()),
-                    BuiltInRegistries.ITEM.containsKey(design.frameMaterial())
-                            ? BuiltInRegistries.ITEM.get(design.frameMaterial()).getDescription()
+            Item material = BuiltInRegistries.ITEM.getValue(design.frameMaterial());
+            tooltip.accept(Component.translatable("item.guaniao.photograph.tooltip.design", blockSize(design.widthPixels()), blockSize(design.heightPixels()),
+                    material != null ? new ItemStack(material).getHoverName()
                             : Component.literal(design.frameMaterial().toString())).withStyle(ChatFormatting.GRAY));
         }
         if (!PhotographData.hasImage(stack)) {
-            tooltip.add(Component.translatable("item.guaniao.photograph.tooltip.empty").withStyle(ChatFormatting.GRAY));
+            tooltip.accept(Component.translatable("item.guaniao.photograph.tooltip.empty").withStyle(ChatFormatting.GRAY));
             return;
         }
 
         String photographer = PhotographData.photographer(stack);
         if (!photographer.isEmpty()) {
-            tooltip.add(Component.translatable("item.guaniao.photograph.tooltip.photographer",
+            tooltip.accept(Component.translatable("item.guaniao.photograph.tooltip.photographer",
                     PhotoAuthorText.component(photographer)).withStyle(ChatFormatting.GRAY));
         }
-        tooltip.add(Component.translatable("item.guaniao.photograph.tooltip.actions").withStyle(ChatFormatting.DARK_GRAY));
-        tooltip.add(Component.translatable("item.guaniao.photograph.tooltip.wall").withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.accept(Component.translatable("item.guaniao.photograph.tooltip.actions").withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.accept(Component.translatable("item.guaniao.photograph.tooltip.wall").withStyle(ChatFormatting.DARK_GRAY));
     }
 
     private static String blockSize(int pixels) {
         return BigDecimal.valueOf(pixels).divide(BigDecimal.valueOf(16)).stripTrailingZeros().toPlainString();
-    }
-
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-            private PhotographItemRenderer renderer;
-
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                if (this.renderer == null) {
-                    this.renderer = new PhotographItemRenderer();
-                }
-                return this.renderer;
-            }
-        });
     }
 }

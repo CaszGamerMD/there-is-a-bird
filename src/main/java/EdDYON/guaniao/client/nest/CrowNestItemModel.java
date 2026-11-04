@@ -1,26 +1,28 @@
 package EdDYON.guaniao.client.nest;
 
 import EdDYON.guaniao.content.nest.CrowNestItem;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
+import net.minecraft.resources.Identifier;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 
 public class CrowNestItemModel extends GeoModel<CrowNestItem> {
-    private static final ResourceLocation MODEL = new ResourceLocation("guaniao", "geo/crow_nest.geo.json");
-    private static final ResourceLocation TEXTURE = new ResourceLocation("guaniao", "textures/block/crow_nest.png");
-    private static final ResourceLocation ANIMATION = new ResourceLocation("guaniao", "animations/crow_nest.animation.json");
+    private static final Identifier MODEL = Identifier.fromNamespaceAndPath("guaniao", "geo/crow_nest.geo.json");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("guaniao", "textures/block/crow_nest.png");
+    private static final Identifier ANIMATION = Identifier.fromNamespaceAndPath("guaniao", "animations/crow_nest.animation.json");
 
     @Override
-    public ResourceLocation getModelResource(CrowNestItem animatable) {
-        return MODEL;
+    public Identifier getModelResource(GeoRenderState renderState) {
+        return GuaniaoGeckoAssets.model(MODEL);
     }
 
     @Override
-    public ResourceLocation getTextureResource(CrowNestItem animatable) {
+    public Identifier getTextureResource(GeoRenderState renderState) {
         return TEXTURE;
     }
 
     @Override
-    public ResourceLocation getAnimationResource(CrowNestItem animatable) {
-        return ANIMATION;
+    public Identifier getAnimationResource(CrowNestItem animatable) {
+        return GuaniaoGeckoAssets.animation(ANIMATION);
     }
 }

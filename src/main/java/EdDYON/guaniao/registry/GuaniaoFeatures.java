@@ -1,17 +1,15 @@
 package EdDYON.guaniao.registry;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.world.CrowNestFeature;
+import EdDYON.guaniao.fabric.FabricRegistryQueue;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
 public final class GuaniaoFeatures {
-    public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(ForgeRegistries.FEATURES, GuaniaoMod.MOD_ID);
+    public static final FabricRegistryQueue<Feature<?>> FEATURES = new FabricRegistryQueue<>(BuiltInRegistries.FEATURE, "guaniao");
 
-    public static final RegistryObject<Feature<NoneFeatureConfiguration>> CROW_NEST = FEATURES.register("crow_nest", () ->
+    public static final FabricRegistryQueue.Ref<Feature<NoneFeatureConfiguration>> CROW_NEST = FEATURES.register("crow_nest", () ->
             new CrowNestFeature(NoneFeatureConfiguration.CODEC));
 
     private GuaniaoFeatures() {

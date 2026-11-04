@@ -1,0 +1,16 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "guaniao:item/cockatoo_spawn_egg",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": 15658468
+      },
+      {
+        "type": "minecraft:constant",
+        "value": 15257433
+      }
+    ]
+  }
+}

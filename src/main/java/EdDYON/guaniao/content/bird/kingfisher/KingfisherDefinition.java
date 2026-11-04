@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.kingfisher;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class KingfisherDefinition {
     public static final String ENTITY_ID = "kingfisher";
@@ -9,9 +9,9 @@ public final class KingfisherDefinition {
     public static final int SPAWN_EGG_SPOT_COLOR = 0xD28235;
     public static final float WIDTH = 0.35F, HEIGHT = 0.45F;
     public static final double MAX_HEALTH = 6.0D;
-    public static final ResourceLocation MODEL = new ResourceLocation("guaniao", "geo/kingfisher.geo.json");
-    public static final ResourceLocation ANIMATION = new ResourceLocation("guaniao", "animations/kingfisher.animation.json");
-    public static final ResourceLocation TEXTURE = new ResourceLocation("guaniao", "textures/entity/kingfisher.png");
+    public static final Identifier MODEL = Identifier.fromNamespaceAndPath("guaniao", "geo/kingfisher.geo.json");
+    public static final Identifier ANIMATION = Identifier.fromNamespaceAndPath("guaniao", "animations/kingfisher.animation.json");
+    public static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("guaniao", "textures/entity/kingfisher.png");
 
     private KingfisherDefinition() { }
 }

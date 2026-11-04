@@ -106,7 +106,7 @@ public final class BirdBathEffects {
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
-        RandomSource random = serverLevel.random;
+        RandomSource random = serverLevel.getRandom();
         if (spoiled && random.nextInt(8) == 0) {
             serverLevel.sendParticles(ParticleTypes.SMOKE,
                     pos.getX() + 0.5D, pos.getY() + 0.9D, pos.getZ() + 0.5D,

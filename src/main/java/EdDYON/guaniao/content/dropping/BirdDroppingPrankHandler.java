@@ -9,8 +9,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
@@ -23,8 +22,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.animal.IronGolem;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
@@ -33,18 +32,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public final class BirdDroppingPrankHandler {
-    private static final ResourceLocation SKY_DELIVERY_ADVANCEMENT = new ResourceLocation(GuaniaoMod.MOD_ID, "husbandry/sky_delivery");
-    private static final ResourceLocation LUCKY_ADVANCEMENT = new ResourceLocation(GuaniaoMod.MOD_ID, "husbandry/good_luck_i_guess");
-    private static final ResourceLocation HELMET_ADVANCEMENT = new ResourceLocation(GuaniaoMod.MOD_ID, "husbandry/helmet_saved_the_day");
-    private static final ResourceLocation VILLAGER_ADVANCEMENT = new ResourceLocation(GuaniaoMod.MOD_ID, "husbandry/not_very_civilized");
-    private static final ResourceLocation CAKE_ADVANCEMENT = new ResourceLocation(GuaniaoMod.MOD_ID, "husbandry/cake_no_longer_cake");
+    private static final Identifier SKY_DELIVERY_ADVANCEMENT = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "husbandry/sky_delivery");
+    private static final Identifier LUCKY_ADVANCEMENT = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "husbandry/good_luck_i_guess");
+    private static final Identifier HELMET_ADVANCEMENT = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "husbandry/helmet_saved_the_day");
+    private static final Identifier VILLAGER_ADVANCEMENT = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "husbandry/not_very_civilized");
+    private static final Identifier CAKE_ADVANCEMENT = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "husbandry/cake_no_longer_cake");
 
-    private static final String VILLAGER_HIT_PREFIX = "GuaniaoDroppingHitBy_";
-    private static final String VILLAGER_TRADE_PENALTY = "GuaniaoDroppingTradePenalty";
-    private static final String VILLAGER_APPLIED_PENALTY = "GuaniaoDroppingAppliedTradePenalty";
-    private static final String VILLAGER_TRADE_PENALTY_UNTIL = "GuaniaoDroppingTradePenaltyUntil";
-    private static final String GOLEM_HIT_PREFIX = "GuaniaoDroppingGolemHitBy_";
-    private static final String GOLEM_HIT_TIME_PREFIX = "GuaniaoDroppingGolemHitTimeBy_";
     private static final int VILLAGER_TRADE_PENALTY_TICKS = 20 * 60 * 3;
     private static final int VILLAGER_TRADE_PENALTY_BASE = 2;
     private static final int VILLAGER_TRADE_PENALTY_MAX = 12;
@@ -61,15 +54,15 @@ public final class BirdDroppingPrankHandler {
             return;
         }
 
-        RandomSource random = level.random;
+        RandomSource random = level.getRandom();
         ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
         spawnPoof(level, player.position().add(0.0D, player.getBbHeight() * 0.72D, 0.0D), 8);
 
         if (!helmet.isEmpty()) {
             if (!player.getAbilities().instabuild && helmet.isDamageableItem()) {
-                helmet.hurtAndBreak(1, player, living -> living.broadcastBreakEvent(EquipmentSlot.HEAD));
+                helmet.hurtAndBreak(1, player, EquipmentSlot.HEAD);
             }
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0));
+            player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 20, 0));
             playWetHit(level, player.position(), 0.55F);
             if (player instanceof ServerPlayer serverPlayer) {
                 BirdDroppingMessageUtil.grant(serverPlayer, HELMET_ADVANCEMENT, "blocked_with_helmet");
@@ -77,8 +70,8 @@ public final class BirdDroppingPrankHandler {
             return;
         }
 
-        player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100 + random.nextInt(41), 0));
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40 + random.nextInt(21), 0));
+        player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 100 + random.nextInt(41), 0));
+        player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40 + random.nextInt(21), 0));
         playWetHit(level, player.position(), 0.75F);
         playLaughingBirds(level, player, random);
 
@@ -103,13 +96,15 @@ public final class BirdDroppingPrankHandler {
         }
 
         level.sendParticles(ParticleTypes.ANGRY_VILLAGER, villager.getX(), villager.getY(0.85D), villager.getZ(), 5, 0.25D, 0.22D, 0.25D, 0.02D);
-        level.playSound(null, villager.getX(), villager.getY(), villager.getZ(), SoundEvents.VILLAGER_NO, SoundSource.NEUTRAL, 0.75F, 0.85F + level.random.nextFloat() * 0.2F);
+        level.playSound(null, villager.getX(), villager.getY(), villager.getZ(), SoundEvents.VILLAGER_NO, SoundSource.NEUTRAL, 0.75F, 0.85F + level.getRandom().nextFloat() * 0.2F);
 
         if (owner instanceof ServerPlayer serverPlayer) {
-            String key = VILLAGER_HIT_PREFIX + serverPlayer.getUUID();
-            CompoundTag data = villager.getPersistentData();
-            int count = data.getInt(key) + 1;
-            data.putInt(key, count);
+            String key = serverPlayer.getUUID().toString();
+            Map<String, Integer> hits = new HashMap<>(villager.getAttachedOrElse(
+                    PrankEntityAttachments.VILLAGER_PLAYER_HITS, Map.of()));
+            int count = hits.getOrDefault(key, 0) + 1;
+            hits.put(key, count);
+            villager.setAttached(PrankEntityAttachments.VILLAGER_PLAYER_HITS, Map.copyOf(hits));
             applyTemporaryVillagerTradePenalty(level, villager, count);
             if (count >= 3) {
                 BirdDroppingMessageUtil.grant(serverPlayer, VILLAGER_ADVANCEMENT, "hit_same_villager");
@@ -130,14 +125,19 @@ public final class BirdDroppingPrankHandler {
 
         int warningLevel = 1;
         if (owner instanceof ServerPlayer serverPlayer) {
-            CompoundTag data = golem.getPersistentData();
-            String countKey = GOLEM_HIT_PREFIX + serverPlayer.getUUID();
-            String timeKey = GOLEM_HIT_TIME_PREFIX + serverPlayer.getUUID();
+            String playerId = serverPlayer.getUUID().toString();
+            Map<String, Integer> hits = new HashMap<>(golem.getAttachedOrElse(
+                    PrankEntityAttachments.GOLEM_PLAYER_HITS, Map.of()));
+            Map<String, Long> hitTimes = new HashMap<>(golem.getAttachedOrElse(
+                    PrankEntityAttachments.GOLEM_PLAYER_HIT_TIMES, Map.of()));
             long now = level.getGameTime();
-            int count = now - data.getLong(timeKey) > GOLEM_MEMORY_TICKS ? 0 : data.getInt(countKey);
+            int count = now - hitTimes.getOrDefault(playerId, 0L) > GOLEM_MEMORY_TICKS
+                    ? 0 : hits.getOrDefault(playerId, 0);
             count = Math.min(3, count + 1);
-            data.putInt(countKey, count);
-            data.putLong(timeKey, now);
+            hits.put(playerId, count);
+            hitTimes.put(playerId, now);
+            golem.setAttached(PrankEntityAttachments.GOLEM_PLAYER_HITS, Map.copyOf(hits));
+            golem.setAttached(PrankEntityAttachments.GOLEM_PLAYER_HIT_TIMES, Map.copyOf(hitTimes));
             warningLevel = count;
             if (count >= 3) {
                 makeGolemRetaliate(golem, serverPlayer);
@@ -147,7 +147,7 @@ public final class BirdDroppingPrankHandler {
         int particles = warningLevel == 1 ? 2 : warningLevel == 2 ? 5 : 8;
         level.sendParticles(warningLevel >= 2 ? ParticleTypes.ANGRY_VILLAGER : ParticleTypes.POOF, golem.getX(), golem.getY(0.72D), golem.getZ(), particles, 0.32D, 0.28D, 0.32D, 0.02D);
         SoundEvent sound = warningLevel >= 3 ? SoundEvents.IRON_GOLEM_HURT : SoundEvents.IRON_GOLEM_REPAIR;
-        level.playSound(null, golem.getX(), golem.getY(), golem.getZ(), sound, SoundSource.NEUTRAL, 0.65F, 0.75F + level.random.nextFloat() * 0.2F);
+        level.playSound(null, golem.getX(), golem.getY(), golem.getZ(), sound, SoundSource.NEUTRAL, 0.65F, 0.75F + level.getRandom().nextFloat() * 0.2F);
     }
 
     public static void tickVillagerTradePenalty(Villager villager) {
@@ -155,31 +155,30 @@ public final class BirdDroppingPrankHandler {
             return;
         }
 
-        CompoundTag data = villager.getPersistentData();
-        if (!data.contains(VILLAGER_TRADE_PENALTY_UNTIL) || !data.contains(VILLAGER_TRADE_PENALTY)) {
+        Long expiresAt = villager.getAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY_UNTIL);
+        if (expiresAt == null || villager.getAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY) == null) {
             return;
         }
 
-        if (level.getGameTime() < data.getLong(VILLAGER_TRADE_PENALTY_UNTIL)) {
+        if (level.getGameTime() < expiresAt) {
             return;
         }
 
         clearAppliedTradePenalty(villager);
-        data.remove(VILLAGER_TRADE_PENALTY);
-        data.remove(VILLAGER_TRADE_PENALTY_UNTIL);
+        villager.removeAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY);
+        villager.removeAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY_UNTIL);
     }
 
     public static void trackVillager(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return;
         }
-        CompoundTag data = villager.getPersistentData();
-        if (data.contains(VILLAGER_TRADE_PENALTY_UNTIL) && data.contains(VILLAGER_TRADE_PENALTY)) {
-            if (!data.contains(VILLAGER_APPLIED_PENALTY)) {
+        Long expiresAt = villager.getAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY_UNTIL);
+        if (expiresAt != null && villager.getAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY) != null) {
+            if (villager.getAttached(PrankEntityAttachments.VILLAGER_APPLIED_PENALTY) == null) {
                 clearAppliedTradePenalty(villager);
                 onTradePricesUpdated(villager);
             }
-            long expiresAt = data.getLong(VILLAGER_TRADE_PENALTY_UNTIL);
             TRACKED_VILLAGERS.computeIfAbsent(level, ignored -> new HashMap<>())
                     .put(villager.getUUID(), expiresAt);
             NEXT_VILLAGER_EXPIRY.merge(level, expiresAt, Math::min);
@@ -236,7 +235,7 @@ public final class BirdDroppingPrankHandler {
 
         Vec3 cakeTop = new Vec3(pos.getX() + 0.5D, pos.getY() + 0.58D, pos.getZ() + 0.5D);
         PollutedCakeData.get(level).pollute(level, pos);
-        level.playSound(null, cakeTop.x, cakeTop.y, cakeTop.z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, 0.82F, 0.48F + level.random.nextFloat() * 0.16F);
+        level.playSound(null, cakeTop.x, cakeTop.y, cakeTop.z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, 0.82F, 0.48F + level.getRandom().nextFloat() * 0.16F);
 
         if (projectile.getOwner() instanceof ServerPlayer serverPlayer) {
             BirdDroppingMessageUtil.grant(serverPlayer, CAKE_ADVANCEMENT, "ruin_cake");
@@ -249,28 +248,28 @@ public final class BirdDroppingPrankHandler {
     }
 
     private static void playWetHit(ServerLevel level, Vec3 position, float volume) {
-        level.playSound(null, position.x, position.y, position.z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, volume, 0.8F + level.random.nextFloat() * 0.35F);
+        level.playSound(null, position.x, position.y, position.z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, volume, 0.8F + level.getRandom().nextFloat() * 0.35F);
     }
 
     private static void applyTemporaryVillagerTradePenalty(ServerLevel level, Villager villager, int hitCount) {
-        CompoundTag data = villager.getPersistentData();
         clearAppliedTradePenalty(villager);
 
         int penalty = Math.min(VILLAGER_TRADE_PENALTY_MAX, VILLAGER_TRADE_PENALTY_BASE + Math.max(0, hitCount - 1) * 2);
         if (adjustVillagerTradePrices(villager, penalty)) {
-            data.putInt(VILLAGER_TRADE_PENALTY, penalty);
-            data.putInt(VILLAGER_APPLIED_PENALTY, penalty);
-            data.putLong(VILLAGER_TRADE_PENALTY_UNTIL, level.getGameTime() + VILLAGER_TRADE_PENALTY_TICKS);
+            villager.setAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY, penalty);
+            villager.setAttached(PrankEntityAttachments.VILLAGER_APPLIED_PENALTY, penalty);
+            villager.setAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY_UNTIL,
+                    level.getGameTime() + VILLAGER_TRADE_PENALTY_TICKS);
             trackVillager(villager);
         } else {
-            data.remove(VILLAGER_TRADE_PENALTY);
-            data.remove(VILLAGER_TRADE_PENALTY_UNTIL);
+            villager.removeAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY);
+            villager.removeAttached(PrankEntityAttachments.VILLAGER_TRADE_PENALTY_UNTIL);
         }
     }
 
     public static void onTradePricesReset(Villager villager) {
         // Vanilla clears every offer's special price when a trading screen closes.
-        villager.getPersistentData().putInt(VILLAGER_APPLIED_PENALTY, 0);
+        villager.setAttached(PrankEntityAttachments.VILLAGER_APPLIED_PENALTY, 0);
     }
 
     public static void onTradePricesUpdated(Villager villager) {
@@ -278,20 +277,20 @@ public final class BirdDroppingPrankHandler {
             return;
         }
         tickVillagerTradePenalty(villager);
-        CompoundTag data = villager.getPersistentData();
-        int penalty = Math.max(0, Math.min(VILLAGER_TRADE_PENALTY_MAX, data.getInt(VILLAGER_TRADE_PENALTY)));
-        if (penalty > 0 && data.getInt(VILLAGER_APPLIED_PENALTY) == 0) {
+        int penalty = Math.max(0, Math.min(VILLAGER_TRADE_PENALTY_MAX,
+                villager.getAttachedOrElse(PrankEntityAttachments.VILLAGER_TRADE_PENALTY, 0)));
+        if (penalty > 0 && villager.getAttachedOrElse(PrankEntityAttachments.VILLAGER_APPLIED_PENALTY, 0) == 0) {
             if (adjustVillagerTradePrices(villager, penalty)) {
-                data.putInt(VILLAGER_APPLIED_PENALTY, penalty);
+                villager.setAttached(PrankEntityAttachments.VILLAGER_APPLIED_PENALTY, penalty);
             }
         }
     }
 
     private static void clearAppliedTradePenalty(Villager villager) {
-        CompoundTag data = villager.getPersistentData();
-        boolean tracked = data.contains(VILLAGER_APPLIED_PENALTY);
+        boolean tracked = villager.getAttached(PrankEntityAttachments.VILLAGER_APPLIED_PENALTY) != null;
         int applied = Math.max(0, Math.min(VILLAGER_TRADE_PENALTY_MAX,
-                data.getInt(tracked ? VILLAGER_APPLIED_PENALTY : VILLAGER_TRADE_PENALTY)));
+                tracked ? villager.getAttachedOrElse(PrankEntityAttachments.VILLAGER_APPLIED_PENALTY, 0)
+                        : villager.getAttachedOrElse(PrankEntityAttachments.VILLAGER_TRADE_PENALTY, 0)));
         if (applied > 0) {
             for (MerchantOffer offer : villager.getOffers()) {
                 // Old saves did not track resets; never create a new discount while recovering them.
@@ -299,7 +298,7 @@ public final class BirdDroppingPrankHandler {
                 offer.addToSpecialPriceDiff(-removable);
             }
         }
-        data.putInt(VILLAGER_APPLIED_PENALTY, 0);
+        villager.setAttached(PrankEntityAttachments.VILLAGER_APPLIED_PENALTY, 0);
     }
 
     private static boolean adjustVillagerTradePrices(Villager villager, int diff) {

@@ -2,8 +2,10 @@ package EdDYON.guaniao.content.bath;
 
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -12,10 +14,10 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.UUID;
 
@@ -285,7 +287,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
         boolean changed = this.tickOccupation();
         long gameTime = level.getGameTime();
         if (Math.floorMod((int)(gameTime + this.environmentalTickOffset), ENVIRONMENT_TICK_INTERVAL) == 0) {
-            changed |= this.runEnvironmentTick(level, pos, state, level.random, ENVIRONMENT_TICK_INTERVAL);
+            changed |= this.runEnvironmentTick(level, pos, state, level.getRandom(), ENVIRONMENT_TICK_INTERVAL);
         }
         if (changed) {
             this.sync();
@@ -298,7 +300,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
         boolean rainingHere = openToSky && level.isRainingAt(pos.above());
         if (rainingHere) {
             changed |= this.tickRainRefill(level, pos, random);
-        } else if (this.contentType.isLiquid() && openToSky && level.isDay() && random.nextInt(EVAPORATION_CHANCE) == 0) {
+        } else if (this.contentType.isLiquid() && openToSky && level.isBrightOutside() && random.nextInt(EVAPORATION_CHANCE) == 0) {
             changed |= this.reduceWaterByEvaporation(level, pos);
         }
         if (openToSky) {
@@ -318,27 +320,35 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt(CONTENT_TYPE_TAG, this.contentType.ordinal());
-        tag.putInt(CONTENT_LEVEL_TAG, this.contentLevel);
-        tag.putInt(CLEANLINESS_TAG, this.cleanliness.ordinal());
-        tag.putInt(SPOILED_CONTENT_TYPE_TAG, this.spoiledContentType.ordinal());
-        tag.putInt(SPOIL_TICKS_TAG, this.spoilTicks);
-        tag.putBoolean(FROZEN_SUGAR_WATER_TAG, this.frozenSugarWater);
-        tag.putInt(ENVIRONMENTAL_TICK_OFFSET_TAG, this.environmentalTickOffset);
-        tag.putInt(OCCUPIED_TICKS_TAG, this.occupiedTicks);
-        tag.putInt(RECENT_BIRD_USE_TICKS_TAG, this.recentBirdUseTicks);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.putInt(CONTENT_TYPE_TAG, this.contentType.ordinal());
+        output.putInt(CONTENT_LEVEL_TAG, this.contentLevel);
+        output.putInt(CLEANLINESS_TAG, this.cleanliness.ordinal());
+        output.putInt(SPOILED_CONTENT_TYPE_TAG, this.spoiledContentType.ordinal());
+        output.putInt(SPOIL_TICKS_TAG, this.spoilTicks);
+        output.putBoolean(FROZEN_SUGAR_WATER_TAG, this.frozenSugarWater);
+        output.putInt(ENVIRONMENTAL_TICK_OFFSET_TAG, this.environmentalTickOffset);
+        output.putInt(OCCUPIED_TICKS_TAG, this.occupiedTicks);
+        output.putInt(RECENT_BIRD_USE_TICKS_TAG, this.recentBirdUseTicks);
         if (this.currentUser != null) {
-            tag.putUUID(CURRENT_USER_TAG, this.currentUser);
+            // Vanilla CompoundTag.putUUID stored four integers at this key.
+            // Keep exactly that representation for existing bird bath saves.
+            long most = this.currentUser.getMostSignificantBits();
+            long least = this.currentUser.getLeastSignificantBits();
+            output.putIntArray(CURRENT_USER_TAG, new int[]{
+                    (int)(most >> 32), (int)most, (int)(least >> 32), (int)least});
         }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        BirdBathContentType loadedType = tag.contains(CONTENT_TYPE_TAG) ? BirdBathContentType.fromOrdinal(tag.getInt(CONTENT_TYPE_TAG)) : BirdBathContentType.EMPTY;
-        int loadedLevel = tag.contains(CONTENT_LEVEL_TAG) ? Mth.clamp(tag.getInt(CONTENT_LEVEL_TAG), 0, 3) : 0;
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        BirdBathContentType loadedType = input.getInt(CONTENT_TYPE_TAG).isPresent()
+                ? BirdBathContentType.fromOrdinal(input.getIntOr(CONTENT_TYPE_TAG, 0))
+                : BirdBathContentType.EMPTY;
+        int loadedLevel = input.getInt(CONTENT_LEVEL_TAG).isPresent()
+                ? Mth.clamp(input.getIntOr(CONTENT_LEVEL_TAG, 0), 0, 3) : 0;
         if (loadedType.isEmpty() || loadedLevel <= 0) {
             this.contentType = BirdBathContentType.EMPTY;
             this.contentLevel = 0;
@@ -346,44 +356,40 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
             this.contentType = loadedType;
             this.contentLevel = loadedLevel;
         }
-        this.cleanliness = tag.contains(CLEANLINESS_TAG) ? BirdBathCleanliness.fromOrdinal(tag.getInt(CLEANLINESS_TAG)) : BirdBathCleanliness.CLEAN;
-        this.spoiledContentType = tag.contains(SPOILED_CONTENT_TYPE_TAG) ? BirdBathContentType.fromOrdinal(tag.getInt(SPOILED_CONTENT_TYPE_TAG)) : BirdBathContentType.EMPTY;
+        this.cleanliness = input.getInt(CLEANLINESS_TAG).isPresent()
+                ? BirdBathCleanliness.fromOrdinal(input.getIntOr(CLEANLINESS_TAG, 0))
+                : BirdBathCleanliness.CLEAN;
+        this.spoiledContentType = input.getInt(SPOILED_CONTENT_TYPE_TAG).isPresent()
+                ? BirdBathContentType.fromOrdinal(input.getIntOr(SPOILED_CONTENT_TYPE_TAG, 0))
+                : BirdBathContentType.EMPTY;
         if (this.contentType != BirdBathContentType.SPOILED || !this.spoiledContentType.isPerishable()) {
             this.spoiledContentType = BirdBathContentType.EMPTY;
         }
-        this.spoilTicks = tag.contains(SPOIL_TICKS_TAG) ? Math.max(0, tag.getInt(SPOIL_TICKS_TAG)) : 0;
+        this.spoilTicks = Math.max(0, input.getIntOr(SPOIL_TICKS_TAG, 0));
         // Absent in old worlds: their FROZEN_WATER still melts into ordinary WATER.
-        this.frozenSugarWater = this.isFrozen() && tag.getBoolean(FROZEN_SUGAR_WATER_TAG);
-        this.environmentalTickOffset = tag.contains(ENVIRONMENTAL_TICK_OFFSET_TAG) ? tag.getInt(ENVIRONMENTAL_TICK_OFFSET_TAG) : this.environmentalTickOffset;
-        this.occupiedTicks = tag.contains(OCCUPIED_TICKS_TAG) ? Math.max(0, tag.getInt(OCCUPIED_TICKS_TAG)) : 0;
-        this.recentBirdUseTicks = tag.contains(RECENT_BIRD_USE_TICKS_TAG) ? Math.max(0, tag.getInt(RECENT_BIRD_USE_TICKS_TAG)) : 0;
-        this.currentUser = tag.hasUUID(CURRENT_USER_TAG) ? tag.getUUID(CURRENT_USER_TAG) : null;
+        this.frozenSugarWater = this.isFrozen() && input.getBooleanOr(FROZEN_SUGAR_WATER_TAG, false);
+        this.environmentalTickOffset = input.getIntOr(ENVIRONMENTAL_TICK_OFFSET_TAG, this.environmentalTickOffset);
+        this.occupiedTicks = Math.max(0, input.getIntOr(OCCUPIED_TICKS_TAG, 0));
+        this.recentBirdUseTicks = Math.max(0, input.getIntOr(RECENT_BIRD_USE_TICKS_TAG, 0));
+        this.currentUser = input.getIntArray(CURRENT_USER_TAG)
+                .filter(parts -> parts.length == 4)
+                .map(parts -> new UUID(
+                        ((long)parts[0] << 32) | (parts[1] & 0xffffffffL),
+                        ((long)parts[2] << 32) | (parts[3] & 0xffffffffL)))
+                .orElse(null);
         if (this.occupiedTicks <= 0) {
             this.currentUser = null;
         }
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return this.saveWithoutMetadata();
-    }
-
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        this.load(tag);
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return this.saveWithoutMetadata(registries);
     }
 
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
-        CompoundTag tag = packet.getTag();
-        if (tag != null) {
-            this.load(tag);
-        }
     }
 
     @Override
@@ -397,7 +403,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     private void sync() {
         this.setChanged();
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             BlockState state = this.getBlockState();
             this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
         }
@@ -459,7 +465,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     private boolean tickFreezeAndMelt(ServerLevel level, BlockPos pos, RandomSource random) {
-        boolean coldEnough = level.getBiome(pos).value().coldEnoughToSnow(pos);
+        boolean coldEnough = level.getBiome(pos).value().coldEnoughToSnow(pos, level.getSeaLevel());
         if (this.contentType.isLiquid() && coldEnough && random.nextInt(3) == 0) {
             this.frozenSugarWater = this.contentType == BirdBathContentType.SUGAR_WATER;
             this.contentType = BirdBathContentType.FROZEN_WATER;
@@ -467,7 +473,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
             BirdBathEffects.froze(level, pos);
             return true;
         }
-        if (this.contentType == BirdBathContentType.FROZEN_WATER && !coldEnough && level.isDay() && random.nextInt(4) == 0) {
+        if (this.contentType == BirdBathContentType.FROZEN_WATER && !coldEnough && level.isBrightOutside() && random.nextInt(4) == 0) {
             this.contentType = this.frozenSugarWater ? BirdBathContentType.SUGAR_WATER : BirdBathContentType.WATER;
             this.frozenSugarWater = false;
             BirdBathEffects.melted(level, pos);
@@ -481,7 +487,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
             return false;
         }
         int increment = Math.max(1, elapsedTicks);
-        if (level.isDay() && level.canSeeSky(pos.above()) && !level.isRaining()) {
+        if (level.isBrightOutside() && level.canSeeSky(pos.above()) && !level.isRaining()) {
             increment += Math.max(1, elapsedTicks / SUNLIGHT_SPOIL_BONUS_DIVISOR);
         }
         this.spoilTicks = (int)Math.min(Integer.MAX_VALUE, (long)this.spoilTicks + increment);

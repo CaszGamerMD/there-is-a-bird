@@ -1,5 +1,7 @@
 package EdDYON.guaniao.network;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+
 import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.content.camera.PhotoImageCodec;
@@ -60,8 +62,8 @@ public final class PhotoUploadManager {
     }
 
     public static void begin(ServerPlayer player, UUID uploadId, InteractionHand hand, int totalBytes, int width, int height, String contentHash) {
-        long now = gameTime(player.server);
-        cleanupExpired(player.server, now);
+        long now = gameTime(player.level().getServer());
+        cleanupExpired(player.level().getServer(), now);
         if (acknowledgeCompleted(player, uploadId)) {
             return;
         }
@@ -77,7 +79,7 @@ public final class PhotoUploadManager {
                 || totalBytes > PhotoTransferLimits.MAX_COMPRESSED_BYTES
                 || !PhotoTransferLimits.isCaptureDimensions(width, height)
                 || !PhotoImageCodec.isSha256(contentHash)
-                || !quotaAllows(player.server, player.getUUID(), totalBytes)) {
+                || !quotaAllows(player.level().getServer(), player.getUUID(), totalBytes)) {
             fail(player, uploadId);
             return;
         }
@@ -118,12 +120,12 @@ public final class PhotoUploadManager {
         }
         ACTIVE_UPLOADS.remove(playerId);
         if (!session.complete()
-                || !quotaAllows(player.server, playerId, session.totalBytes)) {
+                || !quotaAllows(player.level().getServer(), playerId, session.totalBytes)) {
             fail(player, session.uploadId);
             return;
         }
 
-        MinecraftServer server = player.server;
+        MinecraftServer server = player.level().getServer();
         String ownerName = player.getScoreboardName();
         long gameTime = player.level().getGameTime();
         String filmName = captureDate();
@@ -163,7 +165,7 @@ public final class PhotoUploadManager {
             sendMissing(player, photoId);
             return;
         }
-        PhotoRecord indexed = PhotoIndexSavedData.get(player.server).get(photoId);
+        PhotoRecord indexed = PhotoIndexSavedData.get(player.level().getServer()).get(photoId);
         // Only an indexed photo may be served. A disk file with no index record is an orphan —
         // never revive it as ACTIVE (its dimensions/hash would be fabricated). Maintenance tools
         // are the sole path that rebuilds the index, and they go through TRASH handling.
@@ -184,7 +186,7 @@ public final class PhotoUploadManager {
             return;
         }
 
-        MinecraftServer server = player.server;
+        MinecraftServer server = player.level().getServer();
         Object request = new Object();
         PENDING_DOWNLOADS.put(playerId, request);
         boolean accepted = PhotoIoService.submit(
@@ -212,11 +214,11 @@ public final class PhotoUploadManager {
                             loaded.width, loaded.height,
                             loaded.contentHash, now
                     );
-                    GuaniaoNetwork.sendToPlayer(new PhotoDownloadStartPacket(
+                    ServerPlayNetworking.send(online, new PhotoDownloadStartPacket(
                             photoId, true, loaded.data.length,
                             loaded.width, loaded.height,
                             loaded.contentHash
-                    ), online);
+                    ));
                     DOWNLOADS.put(playerId, new DownloadSession(photoId, loaded.data, loaded.contentHash, gameTime(server)));
                     DOWNLOAD_ORDER.addLast(playerId);
                 },
@@ -238,7 +240,7 @@ public final class PhotoUploadManager {
     }
 
     public static boolean allowDownload(ServerPlayer player) {
-        long now = gameTime(player.server);
+        long now = gameTime(player.level().getServer());
         RequestWindow window = DOWNLOAD_RATE.computeIfAbsent(player.getUUID(), ignored -> new RequestWindow(now));
         if (now - window.startedAt >= 20L) {
             window.startedAt = now;
@@ -273,7 +275,7 @@ public final class PhotoUploadManager {
                 DOWNLOAD_ORDER.addFirst(playerId);
                 break;
             }
-            GuaniaoNetwork.sendToPlayer(session.nextPacket(), player);
+            ServerPlayNetworking.send(player, session.nextPacket());
             budget -= chunkBytes;
             // A session that keeps making progress must not be dropped while it waits in a
             // legitimate high-concurrency queue; measure timeout from the last successful chunk.
@@ -379,7 +381,7 @@ public final class PhotoUploadManager {
             }
             rememberCompleted(playerId, uploadId, gameTime(server));
             player.level().playSound(null, player.blockPosition(), SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.PLAYERS, 0.8F, 1.25F);
-            GuaniaoNetwork.sendToPlayer(new PhotoCaptureResultPacket(uploadId, true), player);
+            ServerPlayNetworking.send(player, new PhotoCaptureResultPacket(uploadId, true));
         } catch (RuntimeException exception) {
             GuaniaoMod.LOGGER.warn("Failed to deliver stored photograph {}", result.photoId, exception);
             if (!COMPLETED_UPLOADS.containsKey(new UploadKey(playerId, uploadId))) {
@@ -452,7 +454,7 @@ public final class PhotoUploadManager {
                 && (!BirdConfigManager.photoUploadsOperatorOnly() || player.hasPermissions(2))
                 && (!BirdConfigManager.photoUploadsWhitelistedOnly()
                 || player.hasPermissions(2)
-                || player.server.getPlayerList().getWhiteList().isWhiteListed(player.getGameProfile()));
+                || player.level().getServer().getPlayerList().getWhiteList().isWhiteListed(player.getGameProfile()));
     }
 
     private static boolean quotaAllows(MinecraftServer server, UUID playerId, int bytes) {
@@ -511,14 +513,14 @@ public final class PhotoUploadManager {
     }
 
     private static void fail(ServerPlayer player, UUID uploadId) {
-        GuaniaoNetwork.sendToPlayer(new PhotoCaptureResultPacket(uploadId, false), player);
+        ServerPlayNetworking.send(player, new PhotoCaptureResultPacket(uploadId, false));
     }
 
     private static boolean acknowledgeCompleted(ServerPlayer player, UUID uploadId) {
         if (!COMPLETED_UPLOADS.containsKey(new UploadKey(player.getUUID(), uploadId))) {
             return false;
         }
-        GuaniaoNetwork.sendToPlayer(new PhotoCaptureResultPacket(uploadId, true), player);
+        ServerPlayNetworking.send(player, new PhotoCaptureResultPacket(uploadId, true));
         return true;
     }
 
@@ -532,7 +534,7 @@ public final class PhotoUploadManager {
     }
 
     private static void sendMissing(ServerPlayer player, String photoId) {
-        GuaniaoNetwork.sendToPlayer(PhotoDownloadStartPacket.missing(photoId), player);
+        ServerPlayNetworking.send(player, PhotoDownloadStartPacket.missing(photoId));
     }
 
     private static long gameTime(MinecraftServer server) {

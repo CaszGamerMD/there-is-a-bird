@@ -1,56 +1,42 @@
 package EdDYON.guaniao.client.entity.woodcock;
 
+import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.woodcock.WoodcockDefinition;
 import EdDYON.guaniao.content.bird.woodcock.WoodcockEntity;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.core.animation.AnimationState;
+import com.geckolib.constant.dataticket.DataTicket;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
+import net.minecraft.resources.Identifier;
 
+/** Snapshot individual woodcock scale and the active walking/flying wing rig. */
 public class WoodcockModel extends GeoModel<WoodcockEntity> {
+    public static final DataTicket<Boolean> FLYING =
+            DataTicket.create("guaniao_woodcock_flying", Boolean.class);
+
     @Override
-    public ResourceLocation getModelResource(WoodcockEntity animatable) {
-        return WoodcockDefinition.MODEL;
+    public Identifier getModelResource(GeoRenderState renderState) {
+        return GuaniaoGeckoAssets.model(WoodcockDefinition.MODEL);
     }
 
     @Override
-    public ResourceLocation getTextureResource(WoodcockEntity animatable) {
-        return BirdMutationTextureFactory.textureFor(WoodcockDefinition.TEXTURE, animatable);
+    public Identifier getTextureResource(GeoRenderState renderState) {
+        return BirdMutationRenderData.texture(renderState, WoodcockDefinition.TEXTURE);
     }
 
     @Override
-    public ResourceLocation getAnimationResource(WoodcockEntity animatable) {
-        return WoodcockDefinition.ANIMATION;
+    public Identifier getAnimationResource(WoodcockEntity animatable) {
+        return GuaniaoGeckoAssets.animation(WoodcockDefinition.ANIMATION);
     }
 
     @Override
-    public void setCustomAnimations(WoodcockEntity animatable, long instanceId,
-                                    AnimationState<WoodcockEntity> animationState) {
-        super.setCustomAnimations(animatable, instanceId, animationState);
-
-        // The source model stores its permanent 0.45 scale in every animation
-        // instead of in the geo bone. During controller transitions GeckoLib can
-        // briefly restore the bone's authored default of 1.0, making one bird
-        // appear more than twice its normal size. Keep this model transform
-        // constant after animation blending has finished for the current frame.
-        this.getBone("root_shape").ifPresent(bone -> {
-            bone.setScaleX(WoodcockDefinition.MODEL_ROOT_SCALE);
-            bone.setScaleY(WoodcockDefinition.MODEL_ROOT_SCALE);
-            bone.setScaleZ(WoodcockDefinition.MODEL_ROOT_SCALE);
-        });
-
-        boolean flying = animatable.isFlying();
-        this.getBone("wing_left").ifPresent(bone -> {
-            bone.setHidden(flying);
-            bone.setChildrenHidden(flying);
-        });
-        this.getBone("wing_right").ifPresent(bone -> {
-            bone.setHidden(flying);
-            bone.setChildrenHidden(flying);
-        });
-        this.getBone("fly").ifPresent(bone -> {
-            bone.setHidden(!flying);
-            bone.setChildrenHidden(!flying);
-        });
+    public void addAdditionalStateData(WoodcockEntity animatable, Object relatedObject,
+                                       GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
+        BirdMutationRenderData.capture(renderState,
+                BirdMutationTextureFactory.textureFor(WoodcockDefinition.TEXTURE, animatable));
+        renderState.addGeckolibData(FLYING, animatable.isFlying());
     }
 }

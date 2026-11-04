@@ -1,42 +1,59 @@
 package EdDYON.guaniao.client.entity.hummingbird;
 
 import EdDYON.guaniao.content.bird.hummingbird.HummingbirdEntity;
+import com.geckolib.cache.model.GeoBone;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.GeoRenderer;
+import com.geckolib.renderer.layer.builtin.BlockAndItemGeoLayer;
+import com.geckolib.util.RenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.renderer.GeoRenderer;
-import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import java.util.List;
 
-/** Draw the server-synchronised stack only; no reward or inventory changes during rendering. */
-public final class HummingbirdHeldItemLayer extends GeoRenderLayer<HummingbirdEntity> {
-    public HummingbirdHeldItemLayer(GeoRenderer<HummingbirdEntity> renderer) { super(renderer); }
+/** The synchronized garden item remains at the original head-local bill tip. */
+public final class HummingbirdHeldItemLayer<R extends LivingEntityRenderState & GeoRenderState>
+        extends BlockAndItemGeoLayer<HummingbirdEntity, Void, R> {
+    public HummingbirdHeldItemLayer(EntityRendererProvider.Context context,
+                                   GeoRenderer<HummingbirdEntity, Void, R> renderer) {
+        super(context, renderer);
+    }
 
     @Override
-    public void renderForBone(PoseStack pose, HummingbirdEntity bird, GeoBone bone, RenderType renderType,
-                              MultiBufferSource buffers, VertexConsumer buffer, float partialTick,
-                              int packedLight, int packedOverlay) {
-        if (!"head".equals(bone.getName())) return;
+    protected List<RenderData> getRelevantBones(HummingbirdEntity bird, Void relatedObject,
+                                                 R renderState, float partialTick) {
         ItemStack held = bird.getHeldGardenItem();
-        if (held.isEmpty()) return;
+        if (held.isEmpty()) return List.of();
+        return List.of(RenderData.item("head", ItemDisplayContext.NONE,
+                RenderUtil.createRenderStateForItem(held, this.itemModelResolver,
+                        ItemDisplayContext.NONE, bird)));
+    }
+
+    @Override
+    public void addRenderData(HummingbirdEntity bird, Void relatedObject, R renderState,
+                              float partialTick) {
+        List<RenderData> bones = getRelevantBones(bird, relatedObject, renderState, partialTick);
+        if (!bones.isEmpty()) renderState.addGeckolibData(CONTENTS, bones);
+    }
+
+    @Override
+    protected void submitItemStackRender(PoseStack pose, GeoBone bone,
+                                         ItemStackRenderState stackState, ItemDisplayContext displayContext,
+                                         R renderState, SubmitNodeCollector renderTasks, int packedLight) {
         pose.pushPose();
         try {
-            // renderForBone has applied the bone transform and moved back from its pivot.
-            // The author's exported rig has no added locator bones. This head-local
-            // anchor keeps the seed at the same bill tip without changing the rig.
             pose.translate(0, 4.25 / 16.0, -3.45 / 16.0);
             pose.mulPose(Axis.ZP.rotationDegrees(-20));
             pose.scale(0.12F, 0.12F, 0.12F);
-            Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer().renderItem(
-                    bird, held, ItemDisplayContext.NONE, false, pose, buffers, packedLight);
+            super.submitItemStackRender(pose, bone, stackState, displayContext,
+                    renderState, renderTasks, packedLight);
         } finally {
             pose.popPose();
-            buffers.getBuffer(renderType);
         }
     }
 }

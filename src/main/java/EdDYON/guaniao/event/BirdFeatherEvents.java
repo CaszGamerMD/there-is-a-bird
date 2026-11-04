@@ -1,6 +1,5 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.BirdAmbientDropControl;
 import EdDYON.guaniao.content.bird.BirdTags;
@@ -9,20 +8,14 @@ import EdDYON.guaniao.content.bird.mutation.BirdMutationHolder;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import java.util.List;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.living.LivingDropsEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Shared feather selection plus the no-loot rule for dead birds.
  */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdFeatherEvents {
     private BirdFeatherEvents() {
     }
@@ -47,7 +40,7 @@ public final class BirdFeatherEvents {
         if (feathers.isEmpty()) {
             return null;
         }
-        return feathers.get(bird.level().random.nextInt(feathers.size()));
+        return feathers.get(bird.level().getRandom().nextInt(feathers.size()));
     }
 
     /** Shearing accepts every mutation, mapping its appearance to the closest feather color. */
@@ -71,8 +64,8 @@ public final class BirdFeatherEvents {
         ItemEntity item = new ItemEntity(bird.level(), bird.getX(),
                 bird.getY() + Math.max(0.1D, bird.getBbHeight() * 0.5D), bird.getZ(),
                 new ItemStack(feather, count));
-        item.setDeltaMovement(bird.level().random.nextDouble() * 0.08D - 0.04D, 0.1D,
-                bird.level().random.nextDouble() * 0.08D - 0.04D);
+        item.setDeltaMovement(bird.level().getRandom().nextDouble() * 0.08D - 0.04D, 0.1D,
+                bird.level().getRandom().nextDouble() * 0.08D - 0.04D);
         item.setPickUpDelay(20);
         BirdAmbientDropControl.applyRandomLifetime(item);
         bird.level().addFreshEntity(item);
@@ -89,17 +82,11 @@ public final class BirdFeatherEvents {
         ).size() < BirdAmbientDropControl.MAX_NATURAL_FEATHERS_NEARBY;
     }
 
-    /** Birds never drop items on death. */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onLivingDrops(LivingDropsEvent event) {
-        Entity entity = event.getEntity();
-        if (entity.level().isClientSide() || !(entity instanceof LivingEntity bird)
-                || BirdSpecies.from(bird) == null) {
-            return;
-        }
-
-        // LOWEST runs after this mod's mutation rewards and normal loot generation.
-        event.getDrops().clear();
-        event.setCanceled(true);
+    /**
+     * Suppress all ordinary item/equipment drops on death for registered birds.
+     * BirdDeathDropsMixin still preserves vanilla XP and rare mutation gold.
+     */
+    public static boolean suppressDeathDrops(LivingEntity bird) {
+        return BirdSpecies.from(bird) != null;
     }
 }

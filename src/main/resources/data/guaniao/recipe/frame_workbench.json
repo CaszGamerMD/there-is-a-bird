@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PGP",
+    "PCP",
+    "PPP"
+  ],
+  "key": {
+    "P": "#minecraft:planks",
+    "C": "minecraft:crafting_table",
+    "G": "minecraft:glass"
+  },
+  "result": {
+    "id": "guaniao:frame_workbench"
+  }
+}

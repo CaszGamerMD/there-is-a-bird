@@ -1,37 +1,26 @@
 package EdDYON.guaniao.client.fan;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.fan.FeatherFanItem;
 import EdDYON.guaniao.network.FeatherFanPiercePacket;
-import EdDYON.guaniao.network.GuaniaoNetwork;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import org.lwjgl.glfw.GLFW;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID, value = Dist.CLIENT)
+/** The Fabric client attack callback replaces the Forge mouse-button hook. */
 public final class FeatherFanClientEvents {
-    private FeatherFanClientEvents() {
-    }
+    private FeatherFanClientEvents() { }
 
-    @SubscribeEvent
-    public static void onMouseButton(InputEvent.MouseButton.Pre event) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT
-                || event.getAction() != GLFW.GLFW_PRESS
-                || minecraft.screen != null) {
-            return;
-        }
-
-        LocalPlayer player = minecraft.player;
-        if (player == null || !FeatherFanItem.isFullyCharged(player)) {
-            return;
-        }
-
-        event.setCanceled(true);
-        GuaniaoNetwork.sendToServer(new FeatherFanPiercePacket());
+    public static void registerCallbacks() {
+        ClientPreAttackCallback.EVENT.register((client, player, clickCount) -> {
+            // The Fabric callback also fires while the attack key is held.
+            // Trigger only on a fresh click, matching the original GLFW press.
+            if (clickCount == 0 || client.screen != null || !FeatherFanItem.isFullyCharged(player)) {
+                return false;
+            }
+            if (ClientPlayNetworking.canSend(FeatherFanPiercePacket.TYPE)) {
+                ClientPlayNetworking.send(new FeatherFanPiercePacket());
+            }
+            // A charged fan attack cannot accidentally mine or hit an entity.
+            return true;
+        });
     }
 }

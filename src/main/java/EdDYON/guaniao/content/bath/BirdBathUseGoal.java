@@ -56,7 +56,7 @@ public class BirdBathUseGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (this.bird.level().isClientSide || !this.canStart.getAsBoolean()) {
+        if (this.bird.level().isClientSide() || !this.canStart.getAsBoolean()) {
             return false;
         }
         if (this.bird.getRandom().nextInt(this.scanChance) != 0) {
@@ -195,7 +195,7 @@ public class BirdBathUseGoal extends Goal {
         this.bird.getNavigation().stop();
         this.bird.setDeltaMovement(horizontal.x, 0.66D, horizontal.z);
         this.bird.fallDistance = 0.0F;
-        this.bird.hasImpulse = true;
+        this.bird.hurtMarked = true;
         this.mountHopCooldown = 20;
         return true;
     }
@@ -216,7 +216,7 @@ public class BirdBathUseGoal extends Goal {
         this.bird.setPos(standPosition.x, standPosition.y, standPosition.z);
         this.bird.setDeltaMovement(Vec3.ZERO);
         this.bird.fallDistance = 0.0F;
-        this.bird.hasImpulse = true;
+        this.bird.hurtMarked = true;
         this.mountHopCooldown = 8;
         return true;
     }

@@ -4,12 +4,14 @@ import EdDYON.guaniao.config.FrameWorkbenchConfig;
 import EdDYON.guaniao.content.camera.LegacyPhotoMigration;
 import EdDYON.guaniao.content.camera.PhotographData;
 import EdDYON.guaniao.network.FrameWorkSnapshotPacket;
-import EdDYON.guaniao.network.GuaniaoNetwork;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import EdDYON.guaniao.registry.GuaniaoBlocks;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import EdDYON.guaniao.registry.GuaniaoMenuTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -19,6 +21,7 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import org.jetbrains.annotations.Nullable;
 
 public final class FrameWorkbenchMenu extends AbstractContainerMenu {
@@ -54,7 +57,12 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
     private boolean closed;
 
     public FrameWorkbenchMenu(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
-        this(containerId, inventory, buffer.readBlockPos(), null);
+        this(containerId, inventory, buffer.readBlockPos());
+    }
+
+    /** Fabric extended-menu opening datum, with the same original block position. */
+    public FrameWorkbenchMenu(int containerId, Inventory inventory, BlockPos pos) {
+        this(containerId, inventory, pos, null);
     }
 
     public FrameWorkbenchMenu(int containerId, Inventory inventory, ContainerLevelAccess access) {
@@ -79,8 +87,8 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
         super(GuaniaoMenuTypes.FRAME_WORKBENCH.get(), containerId);
         this.owner = inventory.player;
         this.workbenchPos = pos.immutable();
-        this.access = owner.level().isClientSide ? ContainerLevelAccess.NULL : ContainerLevelAccess.create(owner.level(), pos);
-        this.bench = owner.level().isClientSide ? null : bench;
+        this.access = owner.level().isClientSide() ? ContainerLevelAccess.NULL : ContainerLevelAccess.create(owner.level(), pos);
+        this.bench = owner.level().isClientSide() ? null : bench;
         this.work = this.bench == null ? null : this.bench.open(owner.getUUID(), this);
         this.inputs = work == null ? new SimpleContainer(INPUT_COUNT) : work.input;
         this.result = work == null ? new SimpleContainer(1) : work.result;
@@ -140,12 +148,12 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
     @Nullable public FrameDesign getWorkDesign() { return FrameDesign.read(getWorkPreview()); }
 
     private boolean isUsable() {
-        return !closed && (owner.level().isClientSide
+        return !closed && (owner.level().isClientSide()
                 || (bench != null && bench.owns(owner.getUUID(), work, this)));
     }
 
     public void acceptWorkSnapshot(BlockPos pos, ItemStack preview, long seed, int remaining, int revision) {
-        if (!owner.level().isClientSide || closed || !workbenchPos.equals(pos)) return;
+        if (!owner.level().isClientSide() || closed || !workbenchPos.equals(pos)) return;
         workPreview = preview.copy();
         workSeed = seed;
         craftTicksRemaining.set(Math.max(0, Math.min(CRAFT_DURATION_TICKS, remaining)));
@@ -153,7 +161,7 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
     }
 
     private void updateSizeLimits() {
-        if (!owner.level().isClientSide) {
+        if (!owner.level().isClientSide()) {
             minSizePixels.set(FrameWorkbenchConfig.minSizePixels());
             maxSizePixels.set(FrameWorkbenchConfig.maxSizePixels());
         }
@@ -169,7 +177,7 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
     }
 
     private void updateWorkState() {
-        if (work == null || owner.level().isClientSide) return;
+        if (work == null || owner.level().isClientSide()) return;
         craftTicksRemaining.set(work.remaining);
         craftRevision.set(work.revision);
     }
@@ -178,8 +186,8 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
         if (!closed && work != null && owner instanceof ServerPlayer player
                 && player.containerMenu == this && sentSnapshotVersion != work.snapshotVersion) {
             sentSnapshotVersion = work.snapshotVersion;
-            GuaniaoNetwork.sendToPlayer(new FrameWorkSnapshotPacket(containerId, workbenchPos,
-                    work.preview().copy(), work.seed, work.remaining, work.revision), player);
+            ServerPlayNetworking.send(player, new FrameWorkSnapshotPacket(containerId, workbenchPos,
+                    work.preview().copy(), work.seed, work.remaining, work.revision));
         }
     }
 
@@ -193,20 +201,22 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
         if (!isUsable() || isCrafting() || design == null || !result.isEmpty() || !design.hasArea() || !design.hasAvailableMaterials()) return false;
         // The server reads current settings, even when a config reload happened
         // after the last menu data synchronization.
-        if (!owner.level().isClientSide) {
+        if (!owner.level().isClientSide()) {
             if (!FrameWorkbenchConfig.allows(design)) return false;
         } else if (design.widthPixels() < getMinSizePixels() || design.heightPixels() < getMinSizePixels()
                 || design.widthPixels() > getMaxSizePixels() || design.heightPixels() > getMaxSizePixels()) return false;
         ItemStack source = getPhotograph();
+        CustomData sourceData = source.get(DataComponents.CUSTOM_DATA);
+        CompoundTag sourceTag = sourceData == null ? null : sourceData.copyTag();
         if (!source.isEmpty() && (!isSource(source)
-                || (source.hasTag() && source.getTag().contains(PhotographData.TAG_PIXELS))
-                || (source.hasTag() && source.getTag().sizeInBytes() > MAX_SOURCE_NBT_BYTES))) return false;
+                || (sourceTag != null && sourceTag.contains(PhotographData.TAG_PIXELS))
+                || (sourceTag != null && sourceTag.sizeInBytes() > MAX_SOURCE_NBT_BYTES))) return false;
         return true;
     }
 
     /** One accepted request reserves one output in the block entity, never in a hidden slot. */
     public boolean craft(Player player, int expectedRevision, FrameDesign design) {
-        if (owner != player || player.level().isClientSide || closed || player.containerMenu != this
+        if (owner != player || player.level().isClientSide() || closed || player.containerMenu != this
                 || expectedRevision != getCraftRevision()) return false;
         try {
             if (!stillValid(player) || design == null) return false;
@@ -223,7 +233,8 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
                 output.setCount(1);
             } else {
                 output = new ItemStack(GuaniaoItems.PHOTOGRAPH.get());
-                if (source.hasTag()) output.setTag(source.getTag().copy());
+                CustomData photoData = source.get(DataComponents.CUSTOM_DATA);
+                if (photoData != null) output.set(DataComponents.CUSTOM_DATA, photoData);
             }
             FrameDesign.write(output, design);
             // Framing is free. In survival the source moves into the result; its
@@ -287,7 +298,7 @@ public final class FrameWorkbenchMenu extends AbstractContainerMenu {
         if (closed) return;
         closed = true;
         super.removed(player);
-        if (!player.level().isClientSide && bench != null && bench.owns(player.getUUID(), work, this)) {
+        if (!player.level().isClientSide() && bench != null && bench.owns(player.getUUID(), work, this)) {
             // Work and ready results belong to the block, not the screen. An idle
             // visit gives its unused source back using vanilla overflow handling.
             if (!work.busy() && result.isEmpty()) clearContainer(player, inputs);

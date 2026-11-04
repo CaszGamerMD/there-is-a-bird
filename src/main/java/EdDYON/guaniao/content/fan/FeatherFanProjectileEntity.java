@@ -11,14 +11,17 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -31,10 +34,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -42,7 +44,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -166,17 +167,18 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     public FeatherFanProjectileEntity(Level level, LivingEntity owner) {
-        super(GuaniaoEntityTypes.FEATHER_FAN_PROJECTILE.get(), owner, level);
+        super(GuaniaoEntityTypes.FEATHER_FAN_PROJECTILE.get(), owner, level,
+                new ItemStack(GuaniaoItems.WIND_FEATHER_FAN.get()));
         this.ownerUuid = owner.getUUID();
         this.throwOrigin = this.position();
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(DATA_STATE, FanState.OUTBOUND_SPIN.ordinal());
-        this.entityData.define(DATA_CHARGE, 0.0F);
-        this.entityData.define(DATA_RIVEN_TICKS, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_STATE, FanState.OUTBOUND_SPIN.ordinal());
+        builder.define(DATA_CHARGE, 0.0F);
+        builder.define(DATA_RIVEN_TICKS, 0);
     }
 
     public void configureThrow(ItemStack fanStack, InteractionHand hand, float charge) {
@@ -229,8 +231,8 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     @Override
-    protected float getGravity() {
-        return 0.0F;
+    protected double getDefaultGravity() {
+        return 0.0D;
     }
 
     @Override
@@ -240,18 +242,16 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         super.remove(reason);
     }
 
-    @Override
-    public void onRemovedFromWorld() {
-        // Chunk unloading calls setRemoved directly rather than remove.
+    /** Fabric server entity-unload callback; chunk unloads do not call remove(). */
+    public void cleanupOnUnload() {
         this.releaseBurialTargets();
         this.removeStuckSlowdown();
-        super.onRemovedFromWorld();
     }
 
     @Override
     public void tick() {
         this.noPhysics = this.isNonCollidingState();
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             if (++this.lifeTicks > MAX_TOTAL_LIFE_TICKS) {
                 this.dropFanAndDiscard();
                 return;
@@ -303,11 +303,11 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         this.noPhysics = this.isNonCollidingState();
         super.tick();
 
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             this.tickClientStuckAttachment();
         }
 
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             ServerPlayer owner = this.findServerOwner();
             if (this.isFlyingOutbound()
                     && this.position().distanceToSqr(this.throwOrigin) >= this.maxDistance * this.maxDistance) {
@@ -325,7 +325,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         if (state == FanState.STUCK_ENTITY || state == FanState.STUCK_BLOCK
                 || state == FanState.BURIAL_VORTEX || state == FanState.RIVEN_SEQUENCE
                 || !(target instanceof LivingEntity) || target == this.getOwner()
-                || target.getType().is(BirdTags.BIRDS) || !super.canHitEntity(target)) {
+                || target.getType().builtInRegistryHolder().is(BirdTags.BIRDS) || !super.canHitEntity(target)) {
             return false;
         }
         if (state == FanState.HUNTING) {
@@ -346,7 +346,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void hitLivingEntity(LivingEntity living, Vec3 hitLocation) {
-        if (living.getType().is(BirdTags.BIRDS)) {
+        if (living.getType().builtInRegistryHolder().is(BirdTags.BIRDS)) {
             return;
         }
         if (this.getFanState() == FanState.HUNTING) {
@@ -359,7 +359,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         }
 
         Set<UUID> hits = this.isReturning() ? this.returnHits : this.outboundHits;
-        if (!hits.add(living.getUUID()) || this.level().isClientSide) {
+        if (!hits.add(living.getUUID()) || this.level().isClientSide()) {
             return;
         }
 
@@ -368,7 +368,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         if (this.isReturning()) {
             living.invulnerableTime = 0;
         }
-        boolean damaged = living.hurt(this.damageSources().thrown(this, this.getOwner()), damage);
+        boolean damaged = this.damageTarget(living, damage);
         if (this.isReturning()) {
             living.invulnerableTime = Math.max(living.invulnerableTime, previousInvulnerableTime);
         }
@@ -377,7 +377,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         }
 
         Vec3 movement = this.getDeltaMovement();
-        living.knockback(0.25D, -movement.x, -movement.z);
+        living.knockback(0.25D, -movement.x, -movement.z, this.damageSources().thrown(this, this.getOwner()), 0.0F, false);
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.7F, this.isReturning() ? 0.85F : 1.1F);
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.TRIDENT_HIT, SoundSource.PLAYERS, 0.28F, 1.45F);
         if (this.level() instanceof ServerLevel serverLevel) {
@@ -395,7 +395,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         }
 
         Vec3 surfaceHit = this.findTargetSurface(living, hitLocation);
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             // Predict the same local-space attachment as the server so target knockback cannot
             // visually separate the fan while the authoritative state packet is in flight.
             this.clientStuckEntityId = living.getId();
@@ -404,10 +404,10 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             return;
         }
 
-        boolean damaged = living.hurt(this.damageSources().thrown(this, this.getOwner()), this.attackDamage);
+        boolean damaged = this.damageTarget(living, this.attackDamage);
         Vec3 movement = this.getDeltaMovement();
         if (movement.lengthSqr() > 1.0E-6D) {
-            living.knockback(0.18D, -movement.x, -movement.z);
+            living.knockback(0.18D, -movement.x, -movement.z, this.damageSources().thrown(this, this.getOwner()), 0.0F, false);
         }
         if (this.level() instanceof ServerLevel serverLevel) {
             this.spawnPiercingHitEffects(serverLevel, living, damaged);
@@ -483,7 +483,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         this.captureStuckDirection();
         this.stuckBlockPos = result.getBlockPos();
         this.stuckFace = result.getDirection();
-        Vec3 surfaceOffset = Vec3.atLowerCornerOf(this.stuckFace.getNormal()).scale(0.035D);
+        Vec3 surfaceOffset = new Vec3(this.stuckFace.getStepX(), this.stuckFace.getStepY(), this.stuckFace.getStepZ()).scale(0.035D);
         this.stuckPosition = result.getLocation().add(surfaceOffset);
         this.setPos(this.stuckPosition.x, this.stuckPosition.y, this.stuckPosition.z);
         this.setDeltaMovement(Vec3.ZERO);
@@ -502,7 +502,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         }
 
         LivingEntity target = this.findStuckEntity();
-        if (target == null || !target.isAlive() || target.getType().is(BirdTags.BIRDS)) {
+        if (target == null || !target.isAlive() || target.getType().builtInRegistryHolder().is(BirdTags.BIRDS)) {
             this.beginPullout();
             return;
         }
@@ -516,7 +516,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             Vec3 movementBeforeDamage = target.getDeltaMovement();
             int previousInvulnerableTime = target.invulnerableTime;
             target.invulnerableTime = 0;
-            boolean damaged = target.hurt(this.damageSources().thrown(this, this.getOwner()), STUCK_DAMAGE);
+            boolean damaged = this.damageTarget(target, STUCK_DAMAGE);
             target.invulnerableTime = Math.max(target.invulnerableTime, previousInvulnerableTime);
             target.setDeltaMovement(movementBeforeDamage);
             if (damaged && this.level() instanceof ServerLevel serverLevel) {
@@ -654,11 +654,11 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             newVelocity = desiredVelocity;
         }
         this.setDeltaMovement(newVelocity);
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void hitHuntingTarget(LivingEntity target) {
-        if (this.level().isClientSide || this.getFanState() != FanState.HUNTING
+        if (this.level().isClientSide() || this.getFanState() != FanState.HUNTING
                 || this.huntingTargetUuid == null
                 || !this.huntingTargetUuid.equals(target.getUUID())) {
             return;
@@ -672,13 +672,12 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         }
 
         float damage = Math.max(3.5F, 6.0F * (1.0F - this.huntingHop * 0.10F));
-        boolean damaged = target.hurt(
-                this.damageSources().thrown(this, this.getOwner()),
+        boolean damaged = this.damageTarget(target,
                 damage
         );
         if (damaged) {
             Vec3 movement = this.getDeltaMovement();
-            target.knockback(0.18D, -movement.x, -movement.z);
+            target.knockback(0.18D, -movement.x, -movement.z, this.damageSources().thrown(this, this.getOwner()), 0.0F, false);
         }
         if (this.level() instanceof ServerLevel serverLevel) {
             this.spawnHuntingHitEffects(serverLevel, target, this.huntingHop);
@@ -719,7 +718,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
                     || !candidate.isAlive()
                     || candidate.isSpectator()
                     || candidate == owner
-                    || candidate.getType().is(BirdTags.BIRDS)
+                    || candidate.getType().builtInRegistryHolder().is(BirdTags.BIRDS)
                     || !owner.canAttack(candidate)) {
                 continue;
             }
@@ -746,7 +745,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             this.setDeltaMovement(redirected.lengthSqr() > 1.0E-3D
                     ? redirected.normalize().scale(HUNT_SPEED)
                     : desired);
-            this.hasImpulse = true;
+            this.needsSync = true;
         }
         if (this.level() instanceof ServerLevel serverLevel) {
             this.spawnHuntingTurnEffects(serverLevel, target);
@@ -758,7 +757,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             return null;
         }
         Entity entity = serverLevel.getEntity(this.huntingTargetUuid);
-        return entity instanceof LivingEntity living && !living.getType().is(BirdTags.BIRDS) ? living : null;
+        return entity instanceof LivingEntity living && !living.getType().builtInRegistryHolder().is(BirdTags.BIRDS) ? living : null;
     }
 
     private boolean hasClearHuntingPath(Vec3 start, LivingEntity target) {
@@ -825,7 +824,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
                         && !target.isVehicle()
                         && target != owner
                         && target != anchor
-                        && !target.getType().is(BirdTags.BIRDS)
+                        && !target.getType().builtInRegistryHolder().is(BirdTags.BIRDS)
         );
 
         for (LivingEntity target : targets) {
@@ -887,13 +886,13 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void damageBurialTarget(LivingEntity target) {
-        if (target.getType().is(BirdTags.BIRDS)) {
+        if (target.getType().builtInRegistryHolder().is(BirdTags.BIRDS)) {
             return;
         }
         Vec3 movementBeforeDamage = target.getDeltaMovement();
         int previousInvulnerableTime = target.invulnerableTime;
         target.invulnerableTime = 0;
-        target.hurt(this.damageSources().thrown(this, this.getOwner()), BURIAL_DAMAGE);
+        this.damageTarget(target, BURIAL_DAMAGE);
         target.invulnerableTime = Math.max(target.invulnerableTime, previousInvulnerableTime);
         target.setDeltaMovement(movementBeforeDamage);
         target.hurtMarked = true;
@@ -933,7 +932,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
                 LivingEntity.class,
                 area,
                 target -> target.isAlive() && !target.isSpectator() && target != owner
-                        && !target.getType().is(BirdTags.BIRDS)
+                        && !target.getType().builtInRegistryHolder().is(BirdTags.BIRDS)
         );
 
         for (LivingEntity target : targets) {
@@ -947,8 +946,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             Vec3 movementBeforeDamage = target.getDeltaMovement();
             int previousInvulnerableTime = target.invulnerableTime;
             target.invulnerableTime = 0;
-            boolean damaged = target.hurt(
-                    this.damageSources().thrown(this, this.getOwner()),
+            boolean damaged = this.damageTarget(target,
                     BURIAL_SLASH_DAMAGE
             );
             target.invulnerableTime = Math.max(target.invulnerableTime, previousInvulnerableTime);
@@ -974,12 +972,10 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
 
     private PiercingArt getPiercingArt() {
         ItemStack fan = this.getItem();
-        if (EnchantmentHelper.getItemEnchantmentLevel(
-                GuaniaoEnchantments.RIVEN_PLUME.get(), fan) > 0) {
+        if (GuaniaoEnchantments.has(fan, GuaniaoEnchantments.RIVEN_PLUME)) {
             return PiercingArt.RIVEN;
         }
-        if (EnchantmentHelper.getItemEnchantmentLevel(
-                GuaniaoEnchantments.BURIAL_PLUME.get(), fan) > 0) {
+        if (GuaniaoEnchantments.has(fan, GuaniaoEnchantments.BURIAL_PLUME)) {
             return PiercingArt.BURIAL;
         }
         return PiercingArt.NORMAL;
@@ -993,7 +989,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
                 LivingEntity.class,
                 area,
                 target -> target.isAlive() && !target.isSpectator() && target != owner
-                        && !target.getType().is(BirdTags.BIRDS)
+                        && !target.getType().builtInRegistryHolder().is(BirdTags.BIRDS)
         );
 
         for (LivingEntity target : targets) {
@@ -1016,8 +1012,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             Vec3 movementBeforeDamage = target.getDeltaMovement();
             int previousInvulnerableTime = target.invulnerableTime;
             target.invulnerableTime = 0;
-            boolean damaged = target.hurt(
-                    this.damageSources().thrown(this, this.getOwner()),
+            boolean damaged = this.damageTarget(target,
                     damage
             );
             target.invulnerableTime = Math.max(target.invulnerableTime, previousInvulnerableTime);
@@ -1046,15 +1041,14 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void performRivenReformStrike(LivingEntity target) {
-        if (target == null || !target.isAlive() || target.getType().is(BirdTags.BIRDS)) {
+        if (target == null || !target.isAlive() || target.getType().builtInRegistryHolder().is(BirdTags.BIRDS)) {
             return;
         }
 
         Vec3 movementBeforeDamage = target.getDeltaMovement();
         int previousInvulnerableTime = target.invulnerableTime;
         target.invulnerableTime = 0;
-        boolean damaged = target.hurt(
-                this.damageSources().thrown(this, this.getOwner()),
+        boolean damaged = this.damageTarget(target,
                 RIVEN_REFORM_DAMAGE
         );
         target.invulnerableTime = Math.max(target.invulnerableTime, previousInvulnerableTime);
@@ -1139,13 +1133,22 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         return target instanceof LivingEntity living ? living : null;
     }
 
+    private boolean damageTarget(LivingEntity target, float amount) {
+        return this.level() instanceof ServerLevel serverLevel
+                && target.hurtServer(serverLevel, this.damageSources().thrown(this, this.getOwner()), amount);
+    }
+
+    private Identifier slowdownId() {
+        return Identifier.fromNamespaceAndPath("guaniao", "feather_fan_pin/" + this.getUUID());
+    }
+
     private void applyStuckSlowdown(LivingEntity target) {
         this.slowedTarget = new WeakReference<>(target);
         AttributeInstance movementSpeed = target.getAttribute(Attributes.MOVEMENT_SPEED);
-        if (movementSpeed != null && movementSpeed.getModifier(this.getUUID()) == null) {
+        if (movementSpeed != null && movementSpeed.getModifier(this.slowdownId()) == null) {
             movementSpeed.addTransientModifier(new AttributeModifier(
-                    this.getUUID(), "Feather fan pin slowdown", STUCK_SLOW_AMOUNT,
-                    AttributeModifier.Operation.MULTIPLY_TOTAL));
+                    this.slowdownId(), STUCK_SLOW_AMOUNT,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         }
     }
 
@@ -1160,13 +1163,13 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         }
         AttributeInstance movementSpeed = target.getAttribute(Attributes.MOVEMENT_SPEED);
         if (movementSpeed != null) {
-            movementSpeed.removeModifier(this.getUUID());
+            movementSpeed.removeModifier(this.slowdownId());
         }
     }
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
-        if (this.level().isClientSide || this.isNonCollidingState()) {
+        if (this.level().isClientSide() || this.isNonCollidingState()) {
             return;
         }
 
@@ -1220,7 +1223,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             turn = desired;
         }
         this.setDeltaMovement(turn.normalize().scale(this.returnSpeed));
-        this.hasImpulse = true;
+        this.needsSync = true;
         if (this.level() instanceof ServerLevel serverLevel) {
             if (previousState == FanState.OUTBOUND_SPIN) {
                 this.spawnTurnEffects(serverLevel);
@@ -1261,7 +1264,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
             double speed = Mth.clamp(distance * 0.38D, 0.35D, this.returnSpeed);
             this.setDeltaMovement(desiredDirection.scale(speed));
         }
-        this.hasImpulse = true;
+        this.needsSync = true;
 
         Vec3 next = this.position().add(this.getDeltaMovement());
         if (distance < 3.0D && next.distanceTo(target) > distance) {
@@ -1910,21 +1913,23 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         } else if (!owner.getInventory().add(fan)) {
             owner.drop(fan, false);
         }
-        owner.getCooldowns().addCooldown(GuaniaoItems.WIND_FEATHER_FAN.get(), RETURN_COOLDOWN_TICKS);
+        owner.getCooldowns().addCooldown(fan, RETURN_COOLDOWN_TICKS);
         this.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.7F, 1.35F);
         this.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), SoundEvents.PHANTOM_FLAP, SoundSource.PLAYERS, 0.22F, 1.7F);
         this.discard();
     }
 
     private void dropFanAndDiscard() {
-        if (this.isRemoved() || this.level().isClientSide) {
+        if (this.isRemoved() || this.level().isClientSide()) {
             return;
         }
         this.releaseBurialTargets();
         this.removeStuckSlowdown();
         ItemStack fan = this.getItem().copy();
         fan.setCount(1);
-        this.spawnAtLocation(fan, 0.1F);
+        if (this.level() instanceof ServerLevel serverLevel) {
+            this.spawnAtLocation(serverLevel, fan);
+        }
         this.discard();
     }
 
@@ -1987,7 +1992,7 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(ValueOutput tag) {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("Returning", this.isReturning());
         tag.putInt("FanState", this.getFanState().ordinal());
@@ -2017,50 +2022,50 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         putVec3(tag, "StuckForward", this.stuckForward);
         putVec3(tag, "StuckLocalForward", this.stuckLocalForward);
         putVec3(tag, "RivenAnchor", this.rivenAnchor);
-        tag.put("OutboundHits", saveHitSet(this.outboundHits));
-        tag.put("ReturnHits", saveHitSet(this.returnHits));
-        tag.put("HuntedTargets", saveHitSet(this.huntedTargets));
-        tag.put("HuntingLockedTargets", saveHitSet(this.huntingLockedTargets));
+        tag.store("OutboundHits", Codec.STRING.listOf(), saveHitSet(this.outboundHits));
+        tag.store("ReturnHits", Codec.STRING.listOf(), saveHitSet(this.returnHits));
+        tag.store("HuntedTargets", Codec.STRING.listOf(), saveHitSet(this.huntedTargets));
+        tag.store("HuntingLockedTargets", Codec.STRING.listOf(), saveHitSet(this.huntingLockedTargets));
         if (this.ownerUuid != null) {
-            tag.putUUID("FanOwner", this.ownerUuid);
+            tag.store("FanOwner", UUIDUtil.CODEC, this.ownerUuid);
         }
         if (this.stuckEntityUuid != null) {
-            tag.putUUID("StuckEntity", this.stuckEntityUuid);
+            tag.store("StuckEntity", UUIDUtil.CODEC, this.stuckEntityUuid);
         }
         if (this.huntingTargetUuid != null) {
-            tag.putUUID("HuntingTarget", this.huntingTargetUuid);
+            tag.store("HuntingTarget", UUIDUtil.CODEC, this.huntingTargetUuid);
         }
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(ValueInput tag) {
         super.readAdditionalSaveData(tag);
-        if (tag.contains("FanState", Tag.TAG_INT)) {
-            int savedState = tag.getInt("FanState");
+        if (tag.getInt("FanState").isPresent()) {
+            int savedState = tag.getIntOr("FanState", 0);
             boolean temporaryReturningState = savedState == FanState.STUCK_BLOCK.ordinal()
-                    && !tag.contains("StuckBlockX", Tag.TAG_INT);
+                    && !tag.getInt("StuckBlockX").isPresent();
             this.setFanState(temporaryReturningState ? FanState.RETURNING : FanState.fromId(savedState));
         } else {
-            this.setFanState(tag.getBoolean("Returning") ? FanState.RETURNING : FanState.OUTBOUND_SPIN);
+            this.setFanState(tag.getBooleanOr("Returning", false) ? FanState.RETURNING : FanState.OUTBOUND_SPIN);
         }
-        this.entityData.set(DATA_CHARGE, tag.getFloat("Charge"));
-        this.throwOrigin = new Vec3(tag.getDouble("ThrowOriginX"), tag.getDouble("ThrowOriginY"), tag.getDouble("ThrowOriginZ"));
-        this.maxDistance = tag.getFloat("MaxDistance");
-        this.attackDamage = tag.getFloat("AttackDamage");
-        this.returnSpeed = tag.getFloat("ReturnSpeed");
-        this.returnHand = tag.getBoolean("ReturnOffhand") ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-        this.ownerMissingTicks = tag.getInt("OwnerMissingTicks");
-        this.lifeTicks = tag.getInt("LifeTicks");
-        this.returningTicks = tag.getInt("ReturningTicks");
-        this.stuckTicks = tag.getInt("StuckTicks");
-        this.pulloutTicks = tag.getInt("PulloutTicks");
-        this.rivenTicks = tag.getInt("RivenTicks");
-        this.rivenDamageDone = tag.getBoolean("RivenDamageDone");
-        this.rivenReformDamageDone = tag.getBoolean("RivenReformDamageDone");
-        this.huntingHop = tag.getInt("HuntingHop");
+        this.entityData.set(DATA_CHARGE, tag.getFloatOr("Charge", 0.0F));
+        this.throwOrigin = new Vec3(tag.getDoubleOr("ThrowOriginX", 0.0D), tag.getDoubleOr("ThrowOriginY", 0.0D), tag.getDoubleOr("ThrowOriginZ", 0.0D));
+        this.maxDistance = tag.getFloatOr("MaxDistance", 0.0F);
+        this.attackDamage = tag.getFloatOr("AttackDamage", 0.0F);
+        this.returnSpeed = tag.getFloatOr("ReturnSpeed", 0.0F);
+        this.returnHand = tag.getBooleanOr("ReturnOffhand", false) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+        this.ownerMissingTicks = tag.getIntOr("OwnerMissingTicks", 0);
+        this.lifeTicks = tag.getIntOr("LifeTicks", 0);
+        this.returningTicks = tag.getIntOr("ReturningTicks", 0);
+        this.stuckTicks = tag.getIntOr("StuckTicks", 0);
+        this.pulloutTicks = tag.getIntOr("PulloutTicks", 0);
+        this.rivenTicks = tag.getIntOr("RivenTicks", 0);
+        this.rivenDamageDone = tag.getBooleanOr("RivenDamageDone", false);
+        this.rivenReformDamageDone = tag.getBooleanOr("RivenReformDamageDone", false);
+        this.huntingHop = tag.getIntOr("HuntingHop", 0);
         this.entityData.set(DATA_RIVEN_TICKS, this.rivenTicks);
-        this.stuckBlockPos = new BlockPos(tag.getInt("StuckBlockX"), tag.getInt("StuckBlockY"), tag.getInt("StuckBlockZ"));
-        this.stuckFace = Direction.from3DDataValue(tag.getInt("StuckFace"));
+        this.stuckBlockPos = new BlockPos(tag.getIntOr("StuckBlockX", 0), tag.getIntOr("StuckBlockY", 0), tag.getIntOr("StuckBlockZ", 0));
+        this.stuckFace = Direction.from3DDataValue(tag.getIntOr("StuckFace", 0));
         this.stuckPosition = getVec3(tag, "StuckPosition");
         this.stuckOffset = getVec3(tag, "StuckOffset");
         this.rivenAnchor = getVec3(tag, "RivenAnchor");
@@ -2072,43 +2077,32 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         this.stuckLocalForward = savedLocalForward.lengthSqr() > 1.0E-6D
                 ? savedLocalForward.normalize()
                 : this.stuckForward;
-        loadHitSet(tag.getList("OutboundHits", Tag.TAG_STRING), this.outboundHits);
-        loadHitSet(tag.getList("ReturnHits", Tag.TAG_STRING), this.returnHits);
-        loadHitSet(tag.getList("HuntedTargets", Tag.TAG_STRING), this.huntedTargets);
-        loadHitSet(tag.getList("HuntingLockedTargets", Tag.TAG_STRING), this.huntingLockedTargets);
-        if (tag.hasUUID("FanOwner")) {
-            this.ownerUuid = tag.getUUID("FanOwner");
-        }
-        if (tag.hasUUID("StuckEntity")) {
-            this.stuckEntityUuid = tag.getUUID("StuckEntity");
-        }
-        if (tag.hasUUID("HuntingTarget")) {
-            this.huntingTargetUuid = tag.getUUID("HuntingTarget");
-        }
+        loadHitSet(tag.read("OutboundHits", Codec.STRING.listOf()).orElse(List.of()), this.outboundHits);
+        loadHitSet(tag.read("ReturnHits", Codec.STRING.listOf()).orElse(List.of()), this.returnHits);
+        loadHitSet(tag.read("HuntedTargets", Codec.STRING.listOf()).orElse(List.of()), this.huntedTargets);
+        loadHitSet(tag.read("HuntingLockedTargets", Codec.STRING.listOf()).orElse(List.of()), this.huntingLockedTargets);
+        this.ownerUuid = tag.read("FanOwner", UUIDUtil.CODEC).orElse(null);
+        this.stuckEntityUuid = tag.read("StuckEntity", UUIDUtil.CODEC).orElse(null);
+        this.huntingTargetUuid = tag.read("HuntingTarget", UUIDUtil.CODEC).orElse(null);
         this.noPhysics = this.isNonCollidingState();
     }
 
     @Override
-    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+        return super.getAddEntityPacket(serverEntity);
     }
 
-    private static ListTag saveHitSet(Set<UUID> hits) {
-        ListTag tag = new ListTag();
-        for (UUID uuid : hits) {
-            tag.add(StringTag.valueOf(uuid.toString()));
-        }
-        return tag;
+    private static List<String> saveHitSet(Set<UUID> hits) {
+        return hits.stream().map(UUID::toString).toList();
     }
 
-    private static void loadHitSet(ListTag tag, Set<UUID> hits) {
+    private static void loadHitSet(List<String> saved, Set<UUID> hits) {
         hits.clear();
         int invalidEntries = 0;
-        for (int i = 0; i < tag.size(); i++) {
+        for (String value : saved) {
             try {
-                hits.add(UUID.fromString(tag.getString(i)));
+                hits.add(UUID.fromString(value));
             } catch (IllegalArgumentException invalidUuid) {
-                // Preserve the projectile and valid targets when one saved entry is damaged.
                 invalidEntries++;
             }
         }
@@ -2117,13 +2111,13 @@ public class FeatherFanProjectileEntity extends ThrowableItemProjectile {
         }
     }
 
-    private static void putVec3(CompoundTag tag, String key, Vec3 value) {
+    private static void putVec3(ValueOutput tag, String key, Vec3 value) {
         tag.putDouble(key + "X", value.x);
         tag.putDouble(key + "Y", value.y);
         tag.putDouble(key + "Z", value.z);
     }
 
-    private static Vec3 getVec3(CompoundTag tag, String key) {
-        return new Vec3(tag.getDouble(key + "X"), tag.getDouble(key + "Y"), tag.getDouble(key + "Z"));
+    private static Vec3 getVec3(ValueInput tag, String key) {
+        return new Vec3(tag.getDoubleOr(key + "X", 0.0D), tag.getDoubleOr(key + "Y", 0.0D), tag.getDoubleOr(key + "Z", 0.0D));
     }
 }

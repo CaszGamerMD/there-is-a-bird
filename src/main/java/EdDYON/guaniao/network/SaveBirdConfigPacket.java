@@ -7,14 +7,28 @@ import EdDYON.guaniao.config.BirdSpeciesConfig;
 import EdDYON.guaniao.event.BirdDroppingEvents;
 import EdDYON.guaniao.event.BirdPopulationTracker;
 import net.minecraft.network.FriendlyByteBuf;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.permissions.Permissions;
+import EdDYON.guaniao.GuaniaoMod;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Supplier;
 
-public final class SaveBirdConfigPacket {
+public final class SaveBirdConfigPacket implements CustomPacketPayload {
+    public static final Type<SaveBirdConfigPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "save_bird_config"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, SaveBirdConfigPacket> CODEC =
+            StreamCodec.of((RegistryFriendlyByteBuf buffer, SaveBirdConfigPacket packet) ->
+                    encode(packet, buffer), SaveBirdConfigPacket::decode);
+
+    @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+
     private final BirdConfigData data;
 
     public SaveBirdConfigPacket(BirdConfigData data) {
@@ -29,35 +43,36 @@ public final class SaveBirdConfigPacket {
         return new SaveBirdConfigPacket(BirdConfigPacketCodec.decode(buffer));
     }
 
-    public static void handle(SaveBirdConfigPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null || (!player.hasPermissions(2)
-                    && (player.server == null || !player.server.isSingleplayerOwner(player.getGameProfile())))) {
+    public void handle(ServerPlayer player) {
+            if (player == null) return;
+            MinecraftServer server = player.level().getServer();
+            if (!player.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)
+                    && (server == null || !server.isSingleplayerOwner(player.getGameProfile()))) {
                 return;
             }
             // Full-world scans (population re-tally, per-bird dropping cooldowns) are expensive;
             // only run them when the fields that drive them actually changed.
             BirdConfigData before = BirdConfigManager.snapshot();
-            if (BirdConfigManager.replaceAndSave(packet.data, player.server)) {
+            if (BirdConfigManager.replaceAndSave(data, server)) {
                 BirdConfigData after = BirdConfigManager.snapshot();
                 if (before.global.populationRegionChunks != after.global.populationRegionChunks) {
-                    BirdPopulationTracker.rebuild(player.server);
+                    BirdPopulationTracker.rebuild(server);
                 }
                 if (droppingsChanged(before, after)) {
-                    BirdDroppingEvents.refreshLoadedBirdCooldowns(player.server);
+                    BirdDroppingEvents.refreshLoadedBirdCooldowns(server);
                 }
-                GuaniaoNetwork.sendToPlayer(new OpenBirdConfigPacket(BirdConfigManager.snapshot()), player);
-                for (ServerPlayer online : player.server.getPlayerList().getPlayers()) {
-                    GuaniaoNetwork.sendToPlayer(new BirdRuntimeConfigPacket(
-                            BirdConfigManager.birdsPassThroughLeaves(),
-                            BirdConfigManager.aprilFoolsMode(),
-                            BirdConfigManager.skyBirdEcologyEnabled()), online);
+                if (ServerPlayNetworking.canSend(player, OpenBirdConfigPacket.TYPE)) {
+                    ServerPlayNetworking.send(player, new OpenBirdConfigPacket(BirdConfigManager.snapshot()));
+                }
+                for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+                    if (ServerPlayNetworking.canSend(online, BirdRuntimeConfigPacket.TYPE)) {
+                        ServerPlayNetworking.send(online, new BirdRuntimeConfigPacket(
+                                BirdConfigManager.birdsPassThroughLeaves(),
+                                BirdConfigManager.aprilFoolsMode(),
+                                BirdConfigManager.skyBirdEcologyEnabled()));
+                    }
                 }
             }
-        });
-        context.setPacketHandled(true);
     }
 
     private static boolean droppingsChanged(BirdConfigData before, BirdConfigData after) {

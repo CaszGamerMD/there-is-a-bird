@@ -1,41 +1,36 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.bird.command.BirdHeadPlacement;
 import EdDYON.guaniao.content.bird.hummingbird.HummingbirdEntity;
 import EdDYON.guaniao.content.bird.kestrel.KestrelEntity;
 import EdDYON.guaniao.content.bird.umbrellacockatoo.UmbrellaCockatooEntity;
 import net.minecraft.core.Direction;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdHeadPerchEvents {
     private BirdHeadPerchEvents() { }
 
-    @SubscribeEvent(priority = EventPriority.HIGH)
-    public static void onServerStopping(ServerStoppingEvent event) {
+    public static void onServerStopping(MinecraftServer server) {
         // Passenger birds are skipped by world saves; detach before players are saved.
-        for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             releaseHeadBirds(player);
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGH)
-    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            releaseHeadBirds(player);
-        }
+    public static void onPlayerLogout(ServerPlayer player) {
+        releaseHeadBirds(player);
     }
 
     private static void releaseHeadBirds(ServerPlayer player) {
@@ -51,15 +46,25 @@ public final class BirdHeadPerchEvents {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        var owner = event.getEntity();
-        if (event.getUseBlock() == Event.Result.DENY || event.getUseItem() == Event.Result.DENY
-                || event.getFace() != Direction.UP || !BirdHeadPlacement.isPlacementGesture(owner, event.getHand())) return;
-        boolean placed = event.getSide().isClient()
-                || BirdHeadPlacement.tryPlace(owner, event.getHand(), event.getHitVec());
-        // Vanilla still sends its UseItemOn packet after the client prediction returns.
-        event.setCanceled(true);
-        event.setCancellationResult(placed ? InteractionResult.sidedSuccess(owner.level().isClientSide) : InteractionResult.FAIL);
+    /**
+     * Fabric invokes this prior to vanilla block handling, and a returned SUCCESS
+     * suppresses vanilla use while allowing the normal client -> server packet.
+     * Earlier Fabric callbacks that consume/deny interactions stop invocation.
+     */
+    public static InteractionResult onRightClickBlock(Player owner, Level level, InteractionHand hand, BlockHitResult hit) {
+        if (owner.isSpectator() || hit.getDirection() != Direction.UP
+                || !BirdHeadPlacement.isPlacementGesture(owner, hand)) {
+            return InteractionResult.PASS;
+        }
+        boolean placed = level.isClientSide()
+                || BirdHeadPlacement.tryPlace(owner, hand, hit);
+        return placed ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+    }
+
+    public static void registerCallbacks() {
+        ServerLifecycleEvents.SERVER_STOPPING.register(BirdHeadPerchEvents::onServerStopping);
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                onPlayerLogout(handler.getPlayer()));
+        UseBlockCallback.EVENT.register(BirdHeadPerchEvents::onRightClickBlock);
     }
 }

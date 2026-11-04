@@ -1,9 +1,13 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.flight.BirdFlightLock;
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.Codec;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -11,63 +15,60 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShearsItem;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.level.Level;
 
 /**
  * Shearing: right-click a bird with shears to pluck one of its species' color feathers.
  * The feather needs time to regrow before the bird can be sheared again; mutations yield
  * the closest matching special color.
  */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdShearEvents {
-    private static final String TAG_LAST_SHEAR = "GuaniaoLastShearTime";
     private static final int REGROW_TICKS = 6000;
+    private static final AttachmentType<Long> LAST_SHEAR_TIME =
+            AttachmentRegistry.create(Identifier.fromNamespaceAndPath("guaniao", "last_shear_time"),
+                    builder -> builder.persistent(Codec.LONG));
 
     private BirdShearEvents() {
     }
 
-    @SubscribeEvent
-    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        Entity target = event.getTarget();
-        if (target.level().isClientSide() || !(target instanceof LivingEntity bird)) {
-            return;
+    public static InteractionResult onEntityInteract(Player player, Level level, InteractionHand hand, Entity target) {
+        if (!(target instanceof LivingEntity bird) || BirdSpecies.from(bird) == null || player.isSpectator()) {
+            return InteractionResult.PASS;
         }
-        if (BirdSpecies.from(bird) == null) {
-            return;
-        }
-        Player player = event.getEntity();
-        if (player.isSpectator()) {
-            return;
-        }
-        ItemStack stack = player.getItemInHand(event.getHand());
+        ItemStack stack = player.getItemInHand(hand);
         if (!(stack.getItem() instanceof ShearsItem)) {
-            return;
+            return InteractionResult.PASS;
+        }
+
+        // The Fabric callback must also consume the client interaction so it sends
+        // the vanilla use-entity packet; mutations and inventory effects remain server-only.
+        if (level.isClientSide()) {
+            return InteractionResult.SUCCESS;
         }
 
         Item feather = BirdFeatherEvents.randomShearFeatherFor(bird);
         if (feather == null) {
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.SUCCESS);
-            return;
+            return InteractionResult.SUCCESS_SERVER;
         }
 
-        CompoundTag data = bird.getPersistentData();
-        long last = data.getLong(TAG_LAST_SHEAR);
-        long now = bird.level().getGameTime();
-        long elapsed = now - last;
-        if (data.contains(TAG_LAST_SHEAR) && elapsed >= 0L && elapsed < REGROW_TICKS) {
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.SUCCESS);
-            return;
+        Long last = bird.getAttached(LAST_SHEAR_TIME);
+        long now = level.getGameTime();
+        if (last != null) {
+            long elapsed = now - last;
+            if (elapsed >= 0L && elapsed < REGROW_TICKS) {
+                return InteractionResult.SUCCESS_SERVER;
+            }
         }
 
-        data.putLong(TAG_LAST_SHEAR, now);
+        bird.setAttached(LAST_SHEAR_TIME, now);
         BirdFeatherEvents.spawnFeather(bird, feather, 1);
         BirdFlightLock.disableFlight(bird, REGROW_TICKS);
-        stack.hurtAndBreak(1, player, broken -> broken.broadcastBreakEvent(event.getHand()));
-        event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.SUCCESS);
+        stack.hurtAndBreak(1, player, hand);
+        return InteractionResult.SUCCESS_SERVER;
+    }
+
+    public static void registerCallbacks() {
+        UseEntityCallback.EVENT.register((player, level, hand, target, hitResult) ->
+                onEntityInteract(player, level, hand, target));
     }
 }

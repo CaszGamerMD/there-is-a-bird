@@ -1,186 +1,216 @@
-buildscript {
-    repositories {
-        maven { url = 'https://maven.minecraftforge.net' }
-        maven { url = 'https://maven.parchmentmc.org' }
-        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '[6.0,6.2)', changing: true
-        classpath group: 'org.parchmentmc', name: 'librarian', version: '1.+', changing: true
-        classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
-    }
-}
-
 plugins {
-    id 'eclipse'
-    id 'idea'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
 }
-
-apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'org.parchmentmc.librarian.forgegradle'
-apply plugin: 'org.spongepowered.mixin'
-
-version = mod_version
+version = "${mod_version}+fabric26.2.dev"
 group = mod_group_id
-
-base {
-    archivesName = mod_id
-}
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
-
-minecraft {
-    mappings channel: mapping_channel, version: mapping_version
-
-    copyIdeResources = true
-
-    runs {
-        configureEach {
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            property 'geckolib.disable_examples', 'true'
-
-            mods {
-                create(mod_id) {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        client {
-            workingDirectory project.file('run/client')
-        }
-
-        server {
-            workingDirectory project.file('run/server')
-        }
-
-        data {
-            workingDirectory project.file('run/data')
-            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-        }
-    }
-}
-
-sourceSets.main.resources { srcDir 'src/generated/resources' }
-
-mixin {
-    add sourceSets.main, 'guaniao.refmap.json'
-    config 'guaniao.mixins.json'
-}
+base { archivesName = "guaniao-fabric-26.2-UNFINISHED" }
 
 repositories {
     mavenCentral()
     maven {
+        name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
-        content {
-            includeGroupByRegex('software\\.bernie.*')
-            includeGroup('com.eliotlash.mclib')
+        content { includeGroupAndSubgroups 'com.geckolib' }
+    }
+}
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    implementation "com.geckolib:geckolib-fabric-${minecraft_version}:${geckolib_version}"
+}
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+    // GeckoLib 5 resolves model IDs below geckolib/models and animation IDs
+    // below geckolib/animations. Stage byte-identical private copies at build
+    // time, leaving the original authored JSON assets untouched in the repo.
+    doLast {
+        def assets = new File(destinationDir, 'assets/guaniao')
+        def originalModels = new File(assets, 'geo')
+        if (originalModels.isDirectory()) {
+            project.copy {
+                from originalModels
+                include '**/*.geo.json'
+                into new File(assets, 'geckolib/models')
+            }
+        }
+        def originalAnimations = new File(assets, 'animations')
+        if (originalAnimations.isDirectory()) {
+            project.copy {
+                from originalAnimations
+                include '**/*.animation.json'
+                into new File(assets, 'geckolib/animations')
+            }
+        }
+    }
+    // 26.2 now decodes advancement display icons as ItemStackTemplate (id, not item).
+    // Restrict this to the icon object so no item predicates or other authored data change.
+    doLast {
+        fileTree(destinationDir).matching {
+            include 'data/guaniao/advancement/husbandry/*.json'
+        }.each { file ->
+            def existing = file.getText('UTF-8')
+            def migrated = existing.replaceFirst(/("icon"\s*:\s*\{\s*)"item"(\s*:)/, '$1"id"$2')
+            if (migrated != existing) file.setText(migrated, 'UTF-8')
         }
     }
 }
-
-dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    implementation fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:${geckolib_version}")
-    implementation "com.eliotlash.mclib:mclib:20"
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+    options.compilerArgs.addAll(['-Xmaxerrs', '3000'])
 }
-
-jar {
-    // The handbook uses native JSON and textures; website sources are authoring inputs only.
-    exclude '**/*.html', '**/*.htm', '**/*.css', '**/*.js', '**/*.map'
-    manifest {
-        attributes([
-                'Specification-Title'     : mod_name,
-                'Specification-Vendor'    : mod_authors,
-                'Specification-Version'   : '1',
-                'Implementation-Title'    : project.name,
-                'Implementation-Version'  : project.jar.archiveVersion,
-                'Implementation-Vendor'   : mod_authors
-        ])
-    }
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    withSourcesJar()
+}
+tasks.register('migrationAudit', Exec) {
+    group = 'verification'
+    description = 'Report unported Forge, networking, GeckoLib and other 26.2 API code.'
+    commandLine 'python3', 'tools/port-audit.py', '--strict'
+}
+tasks.named('check') { dependsOn 'migrationAudit' }
+tasks.named('jar') {
+    // The port is not a release. Retain copyright data during local development.
+    from('LICENSE') { rename { 'LICENSE_guaniao' } }
+    from('LICENSE-MODELS.md')
+    from('DISTRIBUTION-POLICY.md')
     preserveFileTimestamps = false
     reproducibleFileOrder = true
 }
 
-jar.finalizedBy('reobfJar')
-
-// Keep the ForgeGradle remap input available even when Gradle has stale
-// incremental task state.  ForgeGradle creates reobfJar after this script
-// reaches this point, so configure it lazily when the task is registered.
-tasks.configureEach {
-    if (name == 'reobfJar') {
-        dependsOn(tasks.named('jar'))
-    }
-}
-
-task sourceJar(type: Jar) {
-    archiveClassifier.set('sources')
-    from sourceSets.main.allJava
-}
-
-artifacts {
-    archives sourceJar
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact jar
-            artifact sourceJar
-        }
-    }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-}
-
-tasks.register('verifyReleaseJar') {
+/**
+ * Compile migrated standalone Fabric infrastructure independently while unrelated legacy
+ * Forge sources remain unported. This is a genuine 26.2 API compilation gate.
+ */
+tasks.register('verifyRegistriesPort', JavaCompile) {
     group = 'verification'
-    description = 'Checks version metadata and Mixin registration in the reobfuscated release JAR.'
-    dependsOn 'reobfJar'
-    doLast {
-        def archive = tasks.named('jar', Jar).get().archiveFile.get().asFile
-        new java.util.jar.JarFile(archive).withCloseable { jarFile ->
-            def attributes = jarFile.manifest.mainAttributes
-            if (attributes.getValue('Implementation-Version') != project.version.toString()) {
-                throw new GradleException('Release JAR version does not match mod_version')
-            }
-            def configs = (attributes.getValue('MixinConfigs') ?: '').split(',')*.trim()
-            if (!configs.contains('guaniao.mixins.json')) {
-                throw new GradleException('Release JAR does not register guaniao.mixins.json')
-            }
-            def readJson = { String name ->
-                def entry = jarFile.getJarEntry(name)
-                if (entry == null) throw new GradleException("Release JAR is missing ${name}")
-                jarFile.getInputStream(entry).withCloseable { stream ->
-                    new groovy.json.JsonSlurper().parse(stream, 'UTF-8')
-                }
-            }
-            def config = readJson('guaniao.mixins.json')
-            def refmap = readJson(config.refmap)
-            config.mixins.each { mixinName ->
-                def classPath = "${config.package.replace('.', '/')}/${mixinName}"
-                if (jarFile.getJarEntry("${classPath}.class") == null || !refmap.mappings[classPath]) {
-                    throw new GradleException("Release JAR is missing the class or mappings for ${mixinName}")
-                }
-            }
-            logger.lifecycle("Verified release JAR: ${archive.name}")
-        }
+    description = 'Compile migrated Fabric registries, perch tag and registration queue against Minecraft 26.2.'
+    source = fileTree('src/main/java') {
+        include 'EdDYON/guaniao/registry/GuaniaoSoundEvents.java'
+        include 'EdDYON/guaniao/registry/GuaniaoParticleTypes.java'
+        // Three independent Frame Workbench GUI pieces can be compiled now
+        // without the still-unported workshop mesh and 3D bird pipeline.
+        include 'EdDYON/guaniao/client/camera/CameraPostChain26.java'
+        include 'EdDYON/guaniao/client/camera/CameraFramebufferSize.java'
+        include 'EdDYON/guaniao/client/camera/CameraOffscreenTarget26.java'
+        include 'EdDYON/guaniao/content/camera/CameraFilterCategory.java'
+        include 'EdDYON/guaniao/content/camera/CameraFilter.java'
+        include 'EdDYON/guaniao/content/camera/PhotographFrameStyle.java'
+        include 'EdDYON/guaniao/content/camera/PhotographData.java'
+        include 'EdDYON/guaniao/content/camera/PhotoTransferLimits.java'
+        include 'EdDYON/guaniao/content/camera/PhotoImageCodec.java'
+        include 'EdDYON/guaniao/content/camera/CameraSettingsData.java'
+        include 'EdDYON/guaniao/content/camera/CameraLens.java'
+        include 'EdDYON/guaniao/content/camera/CameraAperture.java'
+        include 'EdDYON/guaniao/content/camera/CameraFocusMode.java'
+        include 'EdDYON/guaniao/content/camera/CameraShootingMode.java'
+        include 'EdDYON/guaniao/content/camera/CameraState.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchBackdrop.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameOutlineEditor.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameNumberControl.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameMaterialPalette.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameCraftingMeadow.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameCraftingProgress2D.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchMeshGeometry.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchMeshSubmitter.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchPhotoGeometry.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchPhotoSubmitter.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchPreview3DState.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchPreview3DRenderer.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchMaterialResolver.java'
+        include 'EdDYON/guaniao/mixin/GuaniaoGuiRenderStateAccess.java'
+        include 'EdDYON/guaniao/client/camera/frame/FrameWorkbenchPipBridge.java'
+        // The real initializer depends on unported gameplay classes and is checked by full compileJava.
+        include 'EdDYON/guaniao/GuaniaoMod.java'
+        include 'EdDYON/guaniao/fabric/FabricRegistryQueue.java'
+        include 'EdDYON/guaniao/fabric/GuaniaoRegistryIds.java'
+        include 'EdDYON/guaniao/registry/GuaniaoBlockTags.java'
+        include 'EdDYON/guaniao/content/bird/BirdTags.java'
+        include 'EdDYON/guaniao/client/skybird/SkyBirdEcology.java'
+        include 'EdDYON/guaniao/client/guide/HandbookData.java'
+        include 'EdDYON/guaniao/client/skybird/SkyBirdSpecies.java'
+        include 'EdDYON/guaniao/config/BirdSpecies.java'
+        include 'EdDYON/guaniao/content/bath/BirdBathVariant.java'
+        include 'EdDYON/guaniao/content/cage/BirdCageVariant.java'
+        include 'EdDYON/guaniao/content/cage/BirdCageItem.java'
+        include 'EdDYON/guaniao/client/cage/BirdCageItemModel.java'
+        include 'EdDYON/guaniao/client/cage/BirdCageItemRenderer.java'
+        include 'EdDYON/guaniao/content/nest/CrowNestItem.java'
+        include 'EdDYON/guaniao/client/nest/CrowNestItemModel.java'
+        include 'EdDYON/guaniao/client/nest/CrowNestItemRenderer.java'
+        include 'EdDYON/guaniao/client/entity/mutation/GuaniaoGeckoAssets.java'
+        include 'EdDYON/guaniao/content/bird/columbid/ColumbidVariant.java'
+        include 'EdDYON/guaniao/content/bird/FullColorSpawnEggItem.java'
+        include 'EdDYON/guaniao/content/bird/flight/BirdFlightAnimation.java'
+        include 'EdDYON/guaniao/content/bird/flight/BirdFlightLock.java'
+        include 'EdDYON/guaniao/content/bird/BirdEntityAttachments.java'
+        include 'EdDYON/guaniao/content/bird/BirdGroundLocomotion.java'
+        include 'EdDYON/guaniao/content/dropping/PrankEntityAttachments.java'
+        include 'EdDYON/guaniao/mixin/ItemEntityAgeAccessor.java'
+        include 'EdDYON/guaniao/content/bird/BirdWalkStride.java'
+        include 'EdDYON/guaniao/content/bird/BirdWalkDistance.java'
+        include 'EdDYON/guaniao/content/guide/BirdGuideItem.java'
+        include 'EdDYON/guaniao/content/enchantment/GuaniaoEnchantments.java'
+        include 'EdDYON/guaniao/content/fan/FeatherFanEnchantments.java'
+        include 'EdDYON/guaniao/event/BurialPlumeAnvilEvents.java'
+        include 'EdDYON/guaniao/mixin/BurialPlumeAnvilMixin.java'
+        // The loud-sound wake handler and both ServerLevel broadcasts are fully Fabric-native.
+        include 'EdDYON/guaniao/content/bird/BirdLoudSoundListener.java'
+        include 'EdDYON/guaniao/content/bird/BirdSleepWakeable.java'
+        include 'EdDYON/guaniao/event/BirdSleepSoundEvents.java'
+        include 'EdDYON/guaniao/mixin/BirdSleepSoundMixin.java'
+        // Real hummingbird crop scheduler, bounded config and habitat hooks are compiled together.
+        include 'EdDYON/guaniao/config/HummingbirdConfig.java'
+        include 'EdDYON/guaniao/content/bird/hummingbird/HummingbirdPollinationEvent.java'
+        include 'EdDYON/guaniao/content/bird/hummingbird/HummingbirdPollinationService.java'
+        include 'EdDYON/guaniao/content/bird/hummingbird/FlowerHabitatIndex.java'
+        include 'EdDYON/guaniao/content/bird/hummingbird/HummingbirdEcologyEvents.java'
+        include 'EdDYON/guaniao/mixin/HummingbirdHabitatBlockUpdateMixin.java'
+        include 'EdDYON/guaniao/event/BirdTamePermissionEvents.java'
     }
-}
-
-tasks.named('check') {
-    dependsOn 'verifyReleaseJar'
+    source files('tools/port-probes/GuaniaoRegistrationProof.java', 'tools/port-probes/GuaniaoLifecycleProof.java', 'tools/port-probes/GuaniaoGeckoProof.java', 'tools/port-probes/GuaniaoRecipeCodecProof.java', 'tools/port-probes/GuaniaoClientTooltipProof.java', 'tools/port-probes/GuaniaoCameraKeyMappingProof.java', 'tools/port-probes/GuaniaoCameraHelpExtractionProof.java', 'tools/port-probes/GuaniaoPhotographViewerProof.java', 'tools/port-probes/GuaniaoCameraViewfinderHudProof.java', 'tools/port-probes/GuaniaoCameraKeyboardInputProof.java', 'tools/port-probes/GuaniaoCameraHudVisibilityProof.java', 'tools/port-probes/GuaniaoCameraScreenInputProof.java', 'tools/port-probes/GuaniaoCameraScreenExtractionProof.java', 'tools/port-probes/GuaniaoCameraHudRegistryProof.java', 'tools/port-probes/GuaniaoCameraLevelRenderProof.java', 'tools/port-probes/GuaniaoCameraPostProcessProof.java', 'tools/port-probes/GuaniaoJukeboxProof.java', 'tools/port-probes/GuaniaoDeathLootProof.java', 'tools/port-probes/GuaniaoSpawnRulesProof.java', 'tools/port-probes/GuaniaoShearAttachmentProof.java', 'tools/port-probes/GuaniaoGeckoAnimationProof.java', 'tools/port-probes/GuaniaoGeckoTimelineProof.java', 'tools/port-probes/BirdWalkDistanceRegression.java', 'tools/port-probes/GuaniaoHostileAiProof.java', 'tools/port-probes/GuaniaoPersistenceProof.java', 'tools/port-probes/GuaniaoSpawnPlacementProof.java', 'tools/port-probes/GuaniaoPressurePlateProof.java', 'tools/port-probes/GuaniaoDroppingEffectsProof.java', 'tools/port-probes/GuaniaoSavedDataProof.java', 'tools/port-probes/GuaniaoEnchantedBookTooltipProof.java', 'tools/port-probes/GuaniaoBirdEnumProof.java', 'tools/port-probes/GuaniaoBirdIdentifierProof.java', 'tools/port-probes/GuaniaoBirdFlightMarkerProof.java', 'tools/port-probes/GuaniaoBirdSyncedDataProof.java', 'tools/port-probes/GuaniaoWorldHeightProof.java', 'tools/port-probes/GuaniaoBirdMovementSyncProof.java', 'tools/port-probes/GuaniaoRelocatedTypesProof.java', 'tools/port-probes/GuaniaoCaptureEventProof.java', 'tools/port-probes/GuaniaoFeatherFanCombatProof.java', 'tools/port-probes/GuaniaoFlybySpawnProof.java', 'tools/port-probes/GuaniaoWeightedSpawnProof.java', 'tools/port-probes/GuaniaoNaturalSpawnHookProof.java', 'tools/port-probes/GuaniaoPrankFoodProof.java', 'tools/port-probes/GuaniaoNoteComponentsProof.java', 'tools/port-probes/GuaniaoFeatherFanPacketProof.java', 'tools/port-probes/GuaniaoRuntimeConfigPacketProof.java', 'tools/port-probes/GuaniaoBirdNoteLootProof.java', 'tools/port-probes/GuaniaoPhotoTransferPacketProof.java', 'tools/port-probes/GuaniaoFinalNetworkingProof.java', 'tools/port-probes/GuaniaoBirdRenderStateProof.java', 'tools/port-probes/GuaniaoCockatielCrestProof.java', 'tools/port-probes/GuaniaoProceduralBoneProof.java', 'tools/port-probes/GuaniaoHeldItemRenderProof.java', 'tools/port-probes/GuaniaoFinalBirdRendererProof.java', 'tools/port-probes/GuaniaoExtendedMenuProof.java', 'tools/port-probes/GuaniaoFramePictureInPictureProof.java', 'tools/port-probes/GuaniaoFrameDesignComponentProof.java')
+    source files('tools/port-probes/GuaniaoBiomeSpawnProof.java')
+    source files('tools/port-probes/GuaniaoHummingbirdEcologyProof.java')
+    source files('tools/port-probes/GuaniaoHummingbirdPersistenceProof.java')
+    source files('tools/port-probes/GuaniaoSparrowTideProof.java')
+    source files('tools/port-probes/GuaniaoBirdEntityAttachmentProof.java')
+    source files('tools/port-probes/GuaniaoPrankEntityAttachmentProof.java')
+    source files('tools/port-probes/GuaniaoEarthwormEntityProof.java')
+    source files('tools/port-probes/GuaniaoHummingbirdSoundEventsProof.java')
+    source files('tools/port-probes/GuaniaoCockatooSoundLifecycleProof.java')
+    source files('tools/port-probes/GuaniaoDroppingProjectileProof.java')
+    source files('tools/port-probes/GuaniaoDroppingSplatEntityProof.java')
+    source files('tools/port-probes/GuaniaoPhotographHangingProof.java')
+    source files('tools/port-probes/GuaniaoFrameWorkbenchBlockProof.java')
+    source files('tools/port-probes/GuaniaoFeatherFanSpawnProof.java')
+    source files('tools/port-probes/GuaniaoBaggedFriesBlockProof.java')
+    source files('tools/port-probes/GuaniaoBreadcrumbBlockProof.java')
+    source files('tools/port-probes/GuaniaoDroppingStainBlockProof.java')
+    source files('tools/port-probes/GuaniaoDroppingDispenserProof.java')
+    source files('tools/port-probes/GuaniaoBirdDroppingItemProof.java')
+    source files('tools/port-probes/GuaniaoBreadcrumbItemProof.java')
+    source files('tools/port-probes/GuaniaoDroppingPrankSoundProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathWaterBottleProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathBlockProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathEffectsProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathClimateProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathUseGoalProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathGeoItemProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathItemRenderProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathBoneSnapshotProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathBlockModelProof.java')
+    source files('tools/port-probes/GuaniaoBirdBathBlockRendererProof.java')
+    source files('tools/port-probes/GuaniaoPlacedBlockRendererRegistrationProof.java')
+    source files('tools/port-probes/GuaniaoNikonCameraItemProof.java')
+    source files('tools/port-probes/GuaniaoNikonCameraRendererProof.java')
+    source files('tools/port-probes/GuaniaoFilmItemProof.java')
+    source files('tools/port-probes/GuaniaoPhotographItemProof.java')
+    classpath = sourceSets.main.compileClasspath
+    destinationDirectory = layout.buildDirectory.dir('port-proof/sounds')
+    options.release = 25
+    options.encoding = 'UTF-8'
 }

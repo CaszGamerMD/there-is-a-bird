@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.sparrow;
 
-import EdDYON.guaniao.GuaniaoMod;
+import com.mojang.serialization.Codec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,20 +9,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.stream.LongStream;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 /**
  * Persistent per-chunk breadcrumb index. Sparrow queries scale with the number of
  * real breadcrumb piles instead of the volume of the surrounding block region.
  */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BreadcrumbSearchCache {
     private static final String DATA_NAME = "guaniao_breadcrumb_index";
     private static final String TAG_POSITIONS = "Positions";
@@ -105,11 +104,12 @@ public final class BreadcrumbSearchCache {
         return count;
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            TARGET_USERS.remove(level);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        TARGET_USERS.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static final class TargetClaims {
@@ -167,22 +167,28 @@ public final class BreadcrumbSearchCache {
     }
 
     private static final class BreadcrumbIndexData extends SavedData {
+        // Preserve the original SavedData filename and Positions long-array NBT layout.
+        private static final Codec<BreadcrumbIndexData> CODEC = Codec.LONG_STREAM
+                .fieldOf(TAG_POSITIONS)
+                .xmap(BreadcrumbIndexData::fromPositions, BreadcrumbIndexData::positionsStream)
+                .codec();
+        private static final SavedDataType<BreadcrumbIndexData> TYPE = new SavedDataType<>(
+                Identifier.withDefaultNamespace(DATA_NAME), BreadcrumbIndexData::new, CODEC, null);
         private final Map<Long, Set<Long>> positionsByChunk = new HashMap<>();
 
         private static BreadcrumbIndexData get(ServerLevel level) {
-            return level.getDataStorage().computeIfAbsent(
-                    BreadcrumbIndexData::load,
-                    BreadcrumbIndexData::new,
-                    DATA_NAME
-            );
+            return level.getDataStorage().computeIfAbsent(TYPE);
         }
 
-        private static BreadcrumbIndexData load(CompoundTag tag) {
+        private static BreadcrumbIndexData fromPositions(LongStream positions) {
             BreadcrumbIndexData data = new BreadcrumbIndexData();
-            for (long packedPos : tag.getLongArray(TAG_POSITIONS)) {
-                data.addPacked(packedPos, false);
-            }
+            positions.forEach(packedPos -> data.addPacked(packedPos, false));
             return data;
+        }
+
+        private LongStream positionsStream() {
+            return this.positionsByChunk.values().stream()
+                    .flatMap(Set::stream).mapToLong(Long::longValue);
         }
 
         private Set<Long> positionsInChunk(long chunkKey) {
@@ -215,18 +221,5 @@ public final class BreadcrumbSearchCache {
             this.setDirty();
         }
 
-        @Override
-        public CompoundTag save(CompoundTag tag) {
-            int size = this.positionsByChunk.values().stream().mapToInt(Set::size).sum();
-            long[] positions = new long[size];
-            int index = 0;
-            for (Set<Long> chunkPositions : this.positionsByChunk.values()) {
-                for (long packedPos : chunkPositions) {
-                    positions[index++] = packedPos;
-                }
-            }
-            tag.putLongArray(TAG_POSITIONS, positions);
-            return tag;
-        }
     }
 }

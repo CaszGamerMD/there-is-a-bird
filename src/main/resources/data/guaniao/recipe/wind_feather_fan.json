@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "FFF",
+    "FFF",
+    " S "
+  ],
+  "key": {
+    "F": "#guaniao:wind_feather_fan_feathers",
+    "S": "minecraft:stick"
+  },
+  "result": {
+    "id": "guaniao:wind_feather_fan"
+  }
+}

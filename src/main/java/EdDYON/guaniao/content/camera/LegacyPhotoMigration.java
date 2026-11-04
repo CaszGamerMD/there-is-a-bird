@@ -11,9 +11,11 @@ import java.util.IdentityHashMap;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
 /** Migrates legacy pixel NBT through the same bounded photograph I/O executor. */
@@ -77,7 +79,8 @@ public final class LegacyPhotoMigration {
                 result -> {
                     processing = false;
                     if (PhotographData.hasLegacyPixels(task.stack()) && photoId.equals(PhotographData.id(task.stack()))) {
-                        task.stack().getOrCreateTag().putString(PhotographData.TAG_PHOTO_ID, result.photoId());
+                        CustomData.update(DataComponents.CUSTOM_DATA, task.stack(),
+                                tag -> tag.putString(PhotographData.TAG_PHOTO_ID, result.photoId()));
                         PhotographData.finishLegacyMigration(task.stack(), result.contentHash());
                     }
                     registerIndex(server, task.stack(), result.photoId(), result);

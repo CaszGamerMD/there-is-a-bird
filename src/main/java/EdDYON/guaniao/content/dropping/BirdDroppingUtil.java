@@ -4,8 +4,7 @@ import EdDYON.guaniao.registry.GuaniaoItems;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ItemLike;
-import net.minecraft.world.level.block.ComposterBlock;
+import net.fabricmc.fabric.api.registry.CompostableRegistry;
 
 public final class BirdDroppingUtil {
     private BirdDroppingUtil() {
@@ -64,6 +63,6 @@ public final class BirdDroppingUtil {
     }
 
     private static void registerCompostable(Item item, float chance) {
-        ComposterBlock.COMPOSTABLES.put((ItemLike)item, chance);
+        CompostableRegistry.INSTANCE.add(item, chance);
     }
 }

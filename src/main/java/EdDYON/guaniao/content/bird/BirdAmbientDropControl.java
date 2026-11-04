@@ -1,6 +1,7 @@
 package EdDYON.guaniao.content.bird;
 
 import EdDYON.guaniao.config.BirdConfigManager;
+import EdDYON.guaniao.mixin.ItemEntityAgeAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -17,13 +18,17 @@ public final class BirdAmbientDropControl {
     public static final int HARD_MAX_DROPPINGS_NEARBY = 16;
     public static final int MAX_NATURAL_FEATHERS_NEARBY = 6;
 
+    private static final int VANILLA_DESPAWN_TICKS = 6000;
+
     private BirdAmbientDropControl() {
     }
 
     public static boolean hasNearbyPlayer(ServerLevel level, Entity source) {
-        return level.hasNearbyAlivePlayer(
-                source.getX(), source.getY(), source.getZ(), PLAYER_ACTIVITY_RADIUS
-        );
+        // Vanilla 26.2 removed hasNearbyAlivePlayer. Keep the original
+        // alive-player-only 64-block radius and avoid loading chunks.
+        return level.players().stream().anyMatch(player ->
+                player.isAlive() && player.distanceToSqr(source)
+                        <= PLAYER_ACTIVITY_RADIUS * PLAYER_ACTIVITY_RADIUS);
     }
 
     public static int randomLifetime(RandomSource random) {
@@ -33,11 +38,22 @@ public final class BirdAmbientDropControl {
 
     /** Natural feathers keep their existing lifetime independently of dropping settings. */
     public static void applyRandomLifetime(ItemEntity itemEntity) {
-        itemEntity.lifespan = MIN_FEATHER_LIFETIME_TICKS
-                + itemEntity.level().random.nextInt(MAX_FEATHER_LIFETIME_TICKS - MIN_FEATHER_LIFETIME_TICKS + 1);
+        int lifetime = MIN_FEATHER_LIFETIME_TICKS
+                + itemEntity.level().getRandom().nextInt(MAX_FEATHER_LIFETIME_TICKS - MIN_FEATHER_LIFETIME_TICKS + 1);
+        applyLifetime(itemEntity, lifetime);
     }
 
     public static void applyDroppingLifetime(ItemEntity itemEntity) {
-        itemEntity.lifespan = randomLifetime(itemEntity.level().random);
+        applyLifetime(itemEntity, randomLifetime(itemEntity.level().getRandom()));
+    }
+
+    private static void applyLifetime(ItemEntity itemEntity, int lifetimeTicks) {
+        // ItemEntity discards at age 6000. Setting the initial age to
+        // 6000-lifetime preserves every authored duration, including the
+        // configurable 1–30 minute dropping window, and saves with vanilla Age.
+        if (!(itemEntity instanceof ItemEntityAgeAccessor accessor)) {
+            throw new IllegalStateException("Bird Watching item lifetime mixin is not applied");
+        }
+        accessor.guaniao$setAge(VANILLA_DESPAWN_TICKS - lifetimeTicks);
     }
 }

@@ -1,51 +1,78 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.bird.cassowary.CassowaryEntity;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.WeakHashMap;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
-import net.minecraft.world.entity.monster.AbstractSkeleton;
-import net.minecraft.world.entity.monster.Spider;
-import net.minecraft.world.entity.monster.Zombie;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
+import net.minecraft.world.entity.monster.spider.Spider;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 
-/** Gives common hostile mobs a real pathfinding goal to keep away from cassowaries. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
+/**
+ * Keep zombies, skeletons and spiders afraid of cassowaries.
+ * The original Forge living-tick listener was gated to every twentieth tick.
+ * Fabric uses a tracked set, so ordinary world ticks never need to scan every
+ * loaded mob to find the ones that need the target reset.
+ */
 public final class CassowaryThreatEvents {
-    private CassowaryThreatEvents() {
-    }
+    private static final Map<ServerLevel, Map<UUID, PathfinderMob>> HOSTILES = new WeakHashMap<>();
 
-    @SubscribeEvent
-    public static void onEntityJoin(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide()
-                || !(event.getEntity() instanceof PathfinderMob mob)
-                || !isAffectedHostile(mob)) {
+    private CassowaryThreatEvents() { }
+
+    public static void onEntityJoin(Entity entity, ServerLevel level) {
+        if (!(entity instanceof PathfinderMob mob) || !isAffectedHostile(mob)) {
             return;
         }
-        boolean alreadyInstalled = mob.goalSelector.getAvailableGoals().stream()
+        boolean alreadyInstalled = mob.getGoalSelector().getAvailableGoals().stream()
                 .anyMatch(wrapped -> wrapped.getGoal() instanceof CassowaryAvoidGoal);
         if (!alreadyInstalled) {
-            mob.goalSelector.addGoal(1, new CassowaryAvoidGoal(mob));
+            mob.getGoalSelector().addGoal(1, new CassowaryAvoidGoal(mob));
+        }
+        HOSTILES.computeIfAbsent(level, ignored -> new HashMap<>()).put(mob.getUUID(), mob);
+    }
+
+    public static void onEntityLeave(Entity entity, ServerLevel level) {
+        Map<UUID, PathfinderMob> hostiles = HOSTILES.get(level);
+        if (hostiles != null) {
+            hostiles.remove(entity.getUUID());
         }
     }
 
-    @SubscribeEvent
-    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
-        if (!(event.getEntity() instanceof PathfinderMob mob)
-                || !isAffectedHostile(mob)
-                || Math.floorMod(mob.tickCount + mob.getId(), 20) != 0) {
+    public static void onLevelTick(ServerLevel level) {
+        Map<UUID, PathfinderMob> hostiles = HOSTILES.get(level);
+        if (hostiles == null) {
             return;
         }
-        if (mob.getTarget() instanceof CassowaryEntity) {
-            mob.setTarget(null);
+        hostiles.values().removeIf(mob -> mob.isRemoved() || mob.level() != level);
+        for (PathfinderMob mob : hostiles.values()) {
+            if (Math.floorMod(mob.tickCount + mob.getId(), 20) == 0
+                    && mob.getTarget() instanceof CassowaryEntity) {
+                mob.setTarget(null);
+            }
         }
+    }
+
+    public static void onLevelUnload(ServerLevel level) {
+        HOSTILES.remove(level);
     }
 
     private static boolean isAffectedHostile(PathfinderMob mob) {
         return mob instanceof Zombie || mob instanceof AbstractSkeleton || mob instanceof Spider;
+    }
+
+    public static void registerCallbacks() {
+        ServerEntityEvents.ENTITY_LOAD.register(CassowaryThreatEvents::onEntityJoin);
+        ServerEntityEvents.ENTITY_UNLOAD.register(CassowaryThreatEvents::onEntityLeave);
+        ServerTickEvents.END_LEVEL_TICK.register(CassowaryThreatEvents::onLevelTick);
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static final class CassowaryAvoidGoal extends AvoidEntityGoal<CassowaryEntity> {

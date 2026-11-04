@@ -54,7 +54,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -72,7 +72,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.AgeableMob;
@@ -83,7 +83,6 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -97,19 +96,19 @@ import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
-public class BudgerigarEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdSleepWakeable, BirdMutationHolder {
+public class BudgerigarEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdSleepWakeable, BirdMutationHolder {
     private static final EntityDataAccessor<Boolean> NAVIGATION_FLIGHT_ACTIVE = SynchedEntityData.defineId(BudgerigarEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(BudgerigarEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SKIN_VARIANT = SynchedEntityData.defineId(BudgerigarEntity.class, EntityDataSerializers.INT);
@@ -119,7 +118,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     public static final String MUTATION_NBT_KEY = "BirdMutation";
     private static final byte TAMING_FAILED_EVENT = 6;
     private static final byte TAMING_SUCCEEDED_EVENT = 7;
-    private static final ResourceLocation CHIRPY_PARTNER_ADVANCEMENT = new ResourceLocation("guaniao", "husbandry/chirpy_partner");
+    private static final Identifier CHIRPY_PARTNER_ADVANCEMENT = Identifier.fromNamespaceAndPath("guaniao", "husbandry/chirpy_partner");
     private static final int MUSIC_SCAN_RADIUS = 8;
     private static final int MUSIC_GROUP_RADIUS = 10;
     private static final int AMBIENT_AIR_CRUISE_MIN_TICKS = 110;
@@ -198,10 +197,10 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     public BudgerigarEntity(EntityType<? extends BudgerigarEntity> entityType, Level level) {
         super(entityType, level);
         this.moveControl = new BirdNavigationMoveControl(this, 10, true);
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0F);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0F);
-        this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.LEAVES, 0.0F);
+        this.setPathfindingMalus(PathType.WATER, -1.0F);
+        this.setPathfindingMalus(PathType.DANGER_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.DAMAGE_FIRE, 16.0F);
         this.musicScanCooldown = 10 + this.getRandom().nextInt(20);
     }
 
@@ -213,7 +212,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
                 .add(Attributes.FOLLOW_RANGE, BudgerigarDefinition.FOLLOW_RANGE);
     }
 
-    public static boolean canSpawn(EntityType<BudgerigarEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canSpawn(EntityType<BudgerigarEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)
@@ -278,14 +277,14 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(NAVIGATION_FLIGHT_ACTIVE, false);
-        this.entityData.define(BEHAVIOR_STATE, BudgerigarBehaviorState.IDLE.ordinal());
-        this.entityData.define(SKIN_VARIANT, 0);
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(NAVIGATION_FLIGHT_ACTIVE, false);
+        builder.define(BEHAVIOR_STATE, BudgerigarBehaviorState.IDLE.ordinal());
+        builder.define(SKIN_VARIANT, 0);
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
     }
 
     @Override
@@ -307,7 +306,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, net.minecraft.world.DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, net.minecraft.world.DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, compoundTag);
         this.setSkinVariant(this.getRandom().nextInt(BudgerigarDefinition.TEXTURE_VARIANTS.length));
         if (compoundTag == null || !compoundTag.contains(BirdModelScale.NBT_KEY, 5)) {
@@ -322,12 +321,12 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     @Override
     public void aiStep() {
         super.aiStep();
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.entityData.set(NAVIGATION_FLIGHT_ACTIVE, BirdNavigationMoveControl.flightActiveAfterTravel(this));
         }
         if (this.isPassenger()) {
             this.getNavigation().stop();
-            if (this.level().isClientSide) {
+            if (this.level().isClientSide()) {
                 this.tickClientAnimationCounters();
             } else {
                 this.tickCounters();
@@ -335,7 +334,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
             }
             return;
         }
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             this.tickClientAnimationCounters();
             return;
         }
@@ -360,14 +359,14 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         }
         ItemStack stack = player.getItemInHand(hand);
         if (BudgerigarEntity.isCocoa(stack)) {
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 this.setBehaviorStateFor(BudgerigarBehaviorState.CURIOUS, 30);
                 this.playInteractionSound();
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
         if (this.isEdibleFoodForThisBird(stack)) {
-            if (this.level().isClientSide) {
+            if (this.level().isClientSide()) {
                 return InteractionResult.sidedSuccess(true);
             }
             if (this.isEating()) {
@@ -416,7 +415,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 200);
             this.clearEating();
             Entity attacker = source.getEntity();
@@ -529,7 +528,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         if (selected != BirdCommandMode.FREE && selected != BirdCommandMode.FOLLOW) {
             this.ownerReturnFlight = false;
         }
-        if (!this.level().isClientSide && previous != selected
+        if (!this.level().isClientSide() && previous != selected
                 && (selected == BirdCommandMode.STAY && (!this.landingFlight || wasReturning)
                 || selected == BirdCommandMode.ROOST && wasReturning)
                 && this.isTame() && !this.isPassenger() && this.flightTicks > 0
@@ -568,7 +567,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         this.behaviorStateLockTicks = Math.max(this.behaviorStateLockTicks, ticks);
     }
 
-    public ResourceLocation getTextureResource() {
+    public Identifier getTextureResource() {
         return BudgerigarDefinition.textureForVariant(this.getSkinVariant());
     }
 
@@ -652,6 +651,10 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         return this.shouldPlayFlyAnimation();
     }
@@ -672,7 +675,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide || !this.isSleepingOrRoosting()) {
+        if (this.level().isClientSide() || !this.isSleepingOrRoosting()) {
             return;
         }
         this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 240);
@@ -716,7 +719,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     /** Return flights keep their owner waypoint instead of becoming random flybys. */
@@ -751,13 +754,13 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
             this.faceFlightDirection(this.getDeltaMovement());
         }
         this.resetFallDistance();
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
     private boolean canReturnToOwner(LivingEntity owner) {
         BirdCommandMode mode = this.getBirdCommandMode();
-        return !this.level().isClientSide && this.isTame() && !this.isNoAi()
+        return !this.level().isClientSide() && this.isTame() && !this.isNoAi()
                 && owner != null && owner == this.getOwner() && owner.isAlive() && !owner.isSpectator()
                 && owner.level() == this.level()
                 && (mode == BirdCommandMode.FREE || mode == BirdCommandMode.FOLLOW)
@@ -849,7 +852,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1299,7 +1302,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void tickPendingFright() {
@@ -1443,7 +1446,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         }
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void finishFlight() {
@@ -1473,7 +1476,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
 
     /** An owner perch or validated placement ends the previous flight instead of pausing it. */
     public void stopFlightForOwnerPerch() {
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.finishFlight();
@@ -1645,7 +1648,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     }
 
     private Vec3 clampFlightTarget(Vec3 target) {
-        double y = Mth.clamp(target.y, this.level().getMinBuildHeight() + 1.5D, this.level().getMaxBuildHeight() - 2.0D);
+        double y = Mth.clamp(target.y, this.level().getMinY() + 1.5D, this.level().getMaxY() - 2.0D);
         return new Vec3(target.x, y, target.z);
     }
 
@@ -1655,7 +1658,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
 
     private void updateTrustedOwner(Player player) {
         if (!this.isTame() && this.trustTicks >= 900
-                && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+                && EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
             this.tame(player);
             this.setBirdCommandMode(BirdCommandMode.FOLLOW);
         } else if (this.isTame() && this.getOwnerUUID() == null) {
@@ -1667,7 +1670,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return;
         }
-        var advancement = serverPlayer.server.getAdvancements().getAdvancement(CHIRPY_PARTNER_ADVANCEMENT);
+        var advancement = serverPlayer.getServer().getAdvancements().get(CHIRPY_PARTNER_ADVANCEMENT);
         if (advancement != null) {
             serverPlayer.getAdvancements().award(advancement, "tame_budgerigar");
         }
@@ -1851,17 +1854,17 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         return this.currentIdleAnimation;
     }
 
-    private <T extends BudgerigarEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(4);
+    private <T extends BudgerigarEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(4);
         RawAnimation guidePreviewRawAnimation = this.guidePreviewAnimation.animation();
         if (guidePreviewRawAnimation != null) {
             return animationState.setAndContinue(guidePreviewRawAnimation);
         }
         BudgerigarBehaviorState state = this.getBehaviorState();
         if (this.shouldPlayFlyAnimation()) {
-            animationState.getController().transitionLength(0);
-            animationState.getController().setAnimationSpeed(this.flightAnimationSpeed());
+            animationState.controller().setTransitionTicks(0);
+            animationState.controller().setAnimationSpeed(this.flightAnimationSpeed());
             return BirdFlightAnimation.play(animationState, FLY_ANIMATION);
         }
         if (state == BudgerigarBehaviorState.EATING || this.eatingTicks > 0) {

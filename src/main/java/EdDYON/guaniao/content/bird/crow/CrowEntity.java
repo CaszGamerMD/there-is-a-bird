@@ -56,7 +56,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -70,7 +70,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.TamableAnimal;
@@ -82,7 +82,6 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -94,19 +93,19 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
-public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdSleepWakeable, BirdMutationHolder {
+public class CrowEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdSleepWakeable, BirdMutationHolder {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(CrowEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MODEL_SCALE = SynchedEntityData.defineId(CrowEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> FLYING_ANIMATION_ACTIVE = SynchedEntityData.defineId(CrowEntity.class, EntityDataSerializers.BOOLEAN);
@@ -214,10 +213,10 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
     public CrowEntity(EntityType<? extends CrowEntity> entityType, Level level) {
         super(entityType, level);
         this.moveControl = new BirdNavigationMoveControl(this, 12, true);
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0F);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0F);
-        this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.LEAVES, 0.0F);
+        this.setPathfindingMalus(PathType.WATER, -1.0F);
+        this.setPathfindingMalus(PathType.DANGER_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.DAMAGE_FIRE, 16.0F);
         this.nestBuildCooldown = this.nextNestBuildInterval();
     }
 
@@ -229,7 +228,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
                 .add(Attributes.FOLLOW_RANGE, CrowDefinition.FOLLOW_RANGE);
     }
 
-    public static boolean canSpawn(EntityType<CrowEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canSpawn(EntityType<CrowEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)
@@ -295,17 +294,17 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEHAVIOR_STATE, CrowBehaviorState.IDLE.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(FLYING_ANIMATION_ACTIVE, false);
-        this.entityData.define(NAVIGATION_FLIGHT_ACTIVE, false);
-        this.entityData.define(FLIGHT_ANIMATION_SEQUENCE, 0);
-        this.entityData.define(HELD_FOOD, ItemStack.EMPTY);
-        this.entityData.define(HELD_FOOD_POSE_SEED, 0);
-        this.entityData.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEHAVIOR_STATE, CrowBehaviorState.IDLE.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(FLYING_ANIMATION_ACTIVE, false);
+        builder.define(NAVIGATION_FLIGHT_ACTIVE, false);
+        builder.define(FLIGHT_ANIMATION_SEQUENCE, 0);
+        builder.define(HELD_FOOD, ItemStack.EMPTY);
+        builder.define(HELD_FOOD_POSE_SEED, 0);
+        builder.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
     }
 
     @Override
@@ -330,7 +329,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, compoundTag);
         if (compoundTag == null || !compoundTag.contains(BirdModelScale.NBT_KEY, 5)) {
             this.randomizeModelScale();
@@ -407,7 +406,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.entityData.set(NAVIGATION_FLIGHT_ACTIVE, BirdNavigationMoveControl.flightActiveAfterTravel(this));
@@ -429,7 +428,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
         }
         ItemStack stack = player.getItemInHand(hand);
         if (!stack.isEmpty() && isCrowFood(stack)) {
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 boolean wasTame = this.isTame();
                 boolean feedingRememberedAggressor = this.isRememberingPlayer(player);
                 ItemStack eaten = stack.copy();
@@ -460,7 +459,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
                 }
                 this.heal(1.0F);
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
         return super.mobInteract(player, hand);
     }
@@ -493,7 +492,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             if (!this.dropHeldItem()) {
                 this.clearEating();
             }
@@ -514,6 +513,10 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         return this.isBirdFlightActive() || (!this.onGround() && this.getDeltaMovement().y > -0.65D);
     }
@@ -565,7 +568,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
         this.setBehaviorStateFor(CrowBehaviorState.FLYING, 34);
         this.faceFlightDirection(this.getDeltaMovement());
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -600,7 +603,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
         }
     }
 
-    public ResourceLocation getTextureResource() {
+    public Identifier getTextureResource() {
         return CrowDefinition.TEXTURE;
     }
 
@@ -675,7 +678,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide || !this.isBirdSleeping()) {
+        if (this.level().isClientSide() || !this.isBirdSleeping()) {
             return;
         }
         this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 240);
@@ -1099,7 +1102,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
             return;
         }
         if (!this.isTame() && this.affinity >= TAME_AFFINITY_THRESHOLD && !this.isRememberingPlayer(player)
-                && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+                && EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
             this.tame(player);
             this.setBirdCommandMode(BirdCommandMode.FOLLOW);
         } else if (this.isTame() && this.getOwnerUUID() == null) {
@@ -1422,7 +1425,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
         Vec3 movement = this.waterEscapeDirection.scale(wet ? .08 : .18).add(0, vertical, 0);
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1536,7 +1539,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
         }
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private void tickBehaviorFallback() {
@@ -1633,7 +1636,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1811,8 +1814,8 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         Vec3 best = null;
         int bestScore = 24;
-        int minY = Math.max(this.level().getMinBuildHeight() + 1, center.getY() - 4);
-        int maxY = Math.min(this.level().getMaxBuildHeight() - 2, center.getY() + verticalRange);
+        int minY = Math.max(this.level().getMinY() + 1, center.getY() - 4);
+        int maxY = Math.min(this.level().getMaxY() - 2, center.getY() + verticalRange);
         for (int xOffset = -horizontalRange; xOffset <= horizontalRange; ++xOffset) {
             for (int zOffset = -horizontalRange; zOffset <= horizontalRange; ++zOffset) {
                 if (xOffset * xOffset + zOffset * zOffset > horizontalRange * horizontalRange) {
@@ -1892,7 +1895,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
     }
 
     private Vec3 clampFlightTarget(Vec3 target) {
-        double y = Mth.clamp(target.y, this.level().getMinBuildHeight() + 1.5D, this.level().getMaxBuildHeight() - 2.0D);
+        double y = Mth.clamp(target.y, this.level().getMinY() + 1.5D, this.level().getMaxY() - 2.0D);
         return new Vec3(target.x, y, target.z);
     }
 
@@ -1972,8 +1975,8 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
         return ((this.getId() + sleepCycle) & 1L) == 0L ? SLEEP_ANIMATION : SLEEP_2_ANIMATION;
     }
 
-    private <T extends CrowEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
+    private <T extends CrowEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
         CrowBehaviorState state = this.getBehaviorState();
         // A real flight must cancel guide/action poses instead of blending with them during take-off.
         if (this.shouldPlayFlyAnimation()) {
@@ -2205,7 +2208,7 @@ public class CrowEntity extends TamableAnimal implements GeoEntity, FlyingAnimal
 
         private boolean canCarryToNest() {
             ItemStack carried = this.crow.getHeldFoodForRendering();
-            return !this.crow.level().isClientSide
+            return !this.crow.level().isClientSide()
                     && (!this.crow.isTame() || this.crow.isBirdCommandMode(BirdCommandMode.FREE))
                     && BirdConfigManager.crowsStoreTreasures()
                     && this.crow.isCarryingHeldItem()

@@ -1,24 +1,27 @@
 package EdDYON.guaniao.client.entity.nightheron;
 
-import EdDYON.guaniao.client.entity.nightheron.NightHeronModel;
+import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronEntity;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.geckolib.renderer.GeoEntityRenderer;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.RenderPassInfo;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 
-public class NightHeronRenderer
-extends GeoEntityRenderer<NightHeronEntity> {
-    public NightHeronRenderer(EntityRendererProvider.Context renderManager) {
-        super(renderManager, (GeoModel)new NightHeronModel());
-        this.addRenderLayer(new NightHeronHeldFishLayer(this));
+/** Preserve the night heron's mutation scaling and beak-carried fish layer. */
+public class NightHeronRenderer<R extends LivingEntityRenderState & GeoRenderState>
+        extends GeoEntityRenderer<NightHeronEntity, R> {
+    public NightHeronRenderer(EntityRendererProvider.Context context) {
+        super(context, new NightHeronModel());
+        this.addRenderLayer(new NightHeronHeldFishLayer<>(context, this));
         this.shadowRadius = 0.21F;
     }
 
     @Override
-    public void preRender(PoseStack poseStack, NightHeronEntity animatable, software.bernie.geckolib.cache.object.BakedGeoModel model, net.minecraft.client.renderer.MultiBufferSource bufferSource, com.mojang.blaze3d.vertex.VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        float scale = animatable.getModelRenderScale();
-        this.withScale(scale);
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+    public void scaleModelForRender(RenderPassInfo<R> renderPassInfo,
+                                    float widthScale, float heightScale) {
+        float scale = renderPassInfo.renderState().getOrDefaultGeckolibData(
+                BirdMutationRenderData.MODEL_SCALE, 1.0F);
+        super.scaleModelForRender(renderPassInfo, widthScale * scale, heightScale * scale);
     }
 }

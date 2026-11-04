@@ -14,7 +14,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -35,19 +34,19 @@ public class BreadcrumbItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         Vec3 aimedPoint = this.resolveAirAimPoint(level, player);
         if (aimedPoint == null) {
-            return InteractionResultHolder.pass(stack);
+            return InteractionResult.PASS;
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (!this.tossBreadcrumbs((ServerLevel)level, player, hand, stack, aimedPoint)) {
-                return InteractionResultHolder.pass(stack);
+                return InteractionResult.PASS;
             }
         }
         player.swing(hand, true);
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override
@@ -61,13 +60,13 @@ public class BreadcrumbItem extends Item {
         if (aimedPoint == null) {
             return InteractionResult.PASS;
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (!this.tossBreadcrumbs((ServerLevel)level, player, context.getHand(), context.getItemInHand(), aimedPoint)) {
                 return InteractionResult.PASS;
             }
         }
         player.swing(context.getHand(), true);
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     private Vec3 resolveAirAimPoint(Level level, Player player) {
@@ -148,7 +147,7 @@ public class BreadcrumbItem extends Item {
     }
 
     private boolean scatterBreadcrumbs(ServerLevel level, Player player, InteractionHand hand, BlockPos originPos, ItemStack stack, Vec3 aimedPoint) {
-        RandomSource random = level.random;
+        RandomSource random = level.getRandom();
         if (!this.addServing(level, originPos)) {
             return false;
         }
@@ -162,7 +161,7 @@ public class BreadcrumbItem extends Item {
         this.spawnThrowTrail(level, handPos, aimedPoint, random);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, 0.28f, Mth.nextFloat(random, 1.15f, 1.35f));
         level.playSound(null, center.x, center.y, center.z, SoundEvents.SAND_BREAK, SoundSource.BLOCKS, 0.18f, Mth.nextFloat(random, 1.25f, 1.5f));
-        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(GuaniaoItems.BREADCRUMBS.get()));
+        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, GuaniaoItems.BREADCRUMBS.get());
         level.sendParticles(particle, center.x, center.y + 0.08, center.z, 12 + random.nextInt(7), 0.34, 0.08, 0.34, 0.02);
         SparrowEntity.alertNearbyBreadcrumbs(level, originPos, player);
         return true;
@@ -198,7 +197,7 @@ public class BreadcrumbItem extends Item {
     private void spawnThrowTrail(ServerLevel level, Vec3 start, Vec3 aimedPoint, RandomSource random) {
         Vec3 end = aimedPoint.add(0.0, 0.1, 0.0);
         Vec3 delta = end.subtract(start);
-        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(GuaniaoItems.BREADCRUMBS.get()));
+        ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, GuaniaoItems.BREADCRUMBS.get());
         int steps = 7;
         for (int i = 0; i <= steps; ++i) {
             double progress = (double)i / (double)steps;

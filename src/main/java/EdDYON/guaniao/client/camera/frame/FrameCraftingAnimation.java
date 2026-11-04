@@ -1,84 +1,11 @@
 package EdDYON.guaniao.client.camera.frame;
 
-import EdDYON.guaniao.content.camera.frame.FrameDesign;
-import com.mojang.blaze3d.platform.Lighting;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.math.Axis;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
 
-/** Fifteen seconds of assembly, driven only by synchronized craft time and a stable job seed. */
+/** Deterministic workshop visitor flight and curiosity timing, independent of GUI rendering. */
 final class FrameCraftingAnimation {
-    private static final float CENTRE_X=155,CENTRE_Y=92,SPAN=76;
-
     private FrameCraftingAnimation() { }
 
-    /** The screen supplies the screen-space scissor for its scaled 79,41..231,191 preview. */
-    static void renderPreview(GuiGraphics graphics,ItemStack photo,FrameDesign design,float progressTicks,long seed) {
-        float ticks=sanitizeTicks(progressTicks);
-        float lining=phase(ticks,0,40),frame=phase(ticks,40,120),picture=phase(ticks,120,180);
-        float trim=phase(ticks,180,218),points=phase(ticks,202,240);
-        float inspect=phase(ticks,240,280);
-        if(ticks<120)item(graphics,FrameMaterialPalette.stack(design.frameMaterial()),85,108,12,0);
-        if(ticks<40)item(graphics,FrameMaterialPalette.stack(design.liningMaterial()),209,108,12,0);
-        if(ticks>=180 && ticks<240 && !design.decorations().isEmpty()) {
-            int next=Math.min(design.decorations().size()-1,(int)(points*design.decorations().size()));
-            item(graphics,FrameMaterialPalette.stack(design.decorations().get(next).itemId()),209,108,12,-8);
-        }
-        if(ticks<280) {
-            graphics.flush();graphics.pose().pushPose();
-            try {
-                float sway=ticks>=240 ? Mth.sin(inspect*(float)Math.PI*4)*(1-inspect)*1.8F : 0;
-                graphics.pose().translate(CENTRE_X,CENTRE_Y,120);
-                float scale=scale(design,SPAN);
-                FrameDesignRenderer.scaleForGui(graphics.pose(),scale);
-                graphics.pose().mulPose(Axis.XP.rotationDegrees(-8));
-                graphics.pose().mulPose(Axis.YP.rotationDegrees(-12));
-                graphics.pose().mulPose(Axis.ZP.rotationDegrees(sway));
-                Lighting.setupForFlatItems();RenderSystem.enableDepthTest();
-                FrameDesignRenderer.renderWorkshop(photo,design,graphics.pose(),graphics.bufferSource(),LightTexture.FULL_BRIGHT,
-                        new FrameDesignRenderer.WorkshopState(lining,frame,picture,trim,points,0));
-                graphics.flush();
-            } finally {graphics.pose().popPose();Lighting.setupFor3DItems();}
-        }
-    }
-
-    /** Draw after the screen widgets, without the preview scissor, so the frame can reach the real slot. */
-    static void renderDelivery(GuiGraphics graphics,ItemStack photo,FrameDesign design,float progressTicks,long seed) {
-        float ticks=sanitizeTicks(progressTicks);
-        if(ticks<280 || ticks>=300 || design.widthPixels()<=0 || design.heightPixels()<=0)return;
-        float t=ease(phase(ticks,280,300)),inverse=1-t;
-        float x=inverse*inverse*CENTRE_X+2*inverse*t*279+t*t*346;
-        float y=inverse*inverse*CENTRE_Y+2*inverse*t*58+t*t*245;
-        graphics.flush();graphics.pose().pushPose();
-        try {
-            graphics.pose().translate(x,y,410);
-            float scale=scale(design,Mth.lerp(t,SPAN,14));
-            FrameDesignRenderer.scaleForGui(graphics.pose(),scale);
-            graphics.pose().mulPose(Axis.XP.rotationDegrees(-8*inverse));
-            graphics.pose().mulPose(Axis.YP.rotationDegrees(-12*inverse));
-            graphics.pose().mulPose(Axis.ZP.rotationDegrees(Mth.sin(t*(float)Math.PI)*14));
-            Lighting.setupForFlatItems();RenderSystem.enableDepthTest();
-            FrameDesignRenderer.render(photo,design,0,graphics.pose(),graphics.bufferSource(),LightTexture.FULL_BRIGHT);
-            graphics.flush();
-        } finally {graphics.pose().popPose();Lighting.setupFor3DItems();}
-    }
-
-    /** Separate from the assembly scissor: the visitor can leave the whole screen after completion. */
-    static void renderObserver(GuiGraphics graphics,FrameDesign design,float progressTicks,long seed,float exitTicks,
-                               float viewportLeft,float viewportTop,float viewportRight,float viewportBottom) {
-        ObserverPose observer=observerPose(progressTicks,seed,exitTicks,viewportLeft,viewportTop,viewportRight,viewportBottom);
-        if(progressTicks>=300 && exitTicks>=24)return;
-        float ticks=sanitizeTicks(progressTicks);
-        FrameWorkshopBird.Action action=observer.flying ? FrameWorkshopBird.Action.FLY
-                : FrameWorkshopBird.Action.LOOK_AROUND;
-        FrameWorkshopBird.render(graphics,observer.x,observer.y,50,observer.yaw,observer.lean,
-                ticks+Math.max(0,exitTicks),seed,action,observer.lookYaw,observer.lookPitch,observer.lookRoll);
-    }
-
-    /** The visitor has its own flights and curious pauses, separate from the assembly motion. */
     static ObserverPose observerPose(float progressTicks,long seed,float exitTicks,
                                      float viewportLeft,float viewportTop,float viewportRight,float viewportBottom) {
         float ticks=sanitizeTicks(progressTicks);
@@ -131,13 +58,6 @@ final class FrameCraftingAnimation {
     record ObserverPose(float x,float y,float yaw,float lean,boolean flying,
                         float lookYaw,float lookPitch,float lookRoll) { }
 
-    private static void item(GuiGraphics graphics,ItemStack stack,float x,float y,float size,float angle) {
-        if(stack.isEmpty())return;
-        graphics.pose().pushPose();
-        try {graphics.pose().translate(x+size/2,y+size/2,270);graphics.pose().mulPose(Axis.ZP.rotationDegrees(angle));graphics.pose().scale(size/16,size/16,1);graphics.renderItem(stack,-8,-8);}
-        finally {graphics.pose().popPose();}
-    }
-    private static float scale(FrameDesign design,float span) {return span/Math.max(.0625F,Math.max(design.widthPixels(),design.heightPixels())/16F);}
     private static float sanitizeTicks(float ticks) {return Float.isFinite(ticks) ? Mth.clamp(ticks,0,300) : 0;}
     private static float phase(float ticks,float start,float end) {return Mth.clamp((ticks-start)/(end-start),0,1);}
     private static float ease(float t) {return t*t*(3-2*t);}

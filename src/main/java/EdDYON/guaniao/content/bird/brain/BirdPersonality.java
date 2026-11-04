@@ -29,24 +29,17 @@ public class BirdPersonality {
     }
 
     public static BirdPersonality load(CompoundTag tag, RandomSource random, BirdSpeciesProfile profile) {
-        if (!tag.contains("Boldness", 99)
-                || !tag.contains("Wariness", 99)
-                || !tag.contains("Activity", 99)
-                || !tag.contains("Sociability", 99)
-                || !tag.contains("Flightiness", 99)
-                || !Float.isFinite(tag.getFloat("Boldness"))
-                || !Float.isFinite(tag.getFloat("Wariness"))
-                || !Float.isFinite(tag.getFloat("Activity"))
-                || !Float.isFinite(tag.getFloat("Sociability"))
-                || !Float.isFinite(tag.getFloat("Flightiness"))) {
+        float boldness = tag.getFloat("Boldness").orElse(Float.NaN);
+        float wariness = tag.getFloat("Wariness").orElse(Float.NaN);
+        float activity = tag.getFloat("Activity").orElse(Float.NaN);
+        float sociability = tag.getFloat("Sociability").orElse(Float.NaN);
+        float flightiness = tag.getFloat("Flightiness").orElse(Float.NaN);
+        if (!Float.isFinite(boldness) || !Float.isFinite(wariness)
+                || !Float.isFinite(activity) || !Float.isFinite(sociability)
+                || !Float.isFinite(flightiness)) {
             return BirdPersonality.create(random, profile);
         }
-        return new BirdPersonality(
-                tag.getFloat("Boldness"),
-                tag.getFloat("Wariness"),
-                tag.getFloat("Activity"),
-                tag.getFloat("Sociability"),
-                tag.getFloat("Flightiness"));
+        return new BirdPersonality(boldness, wariness, activity, sociability, flightiness);
     }
 
     public void save(CompoundTag tag) {

@@ -11,23 +11,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.ForgeEventFactory;
 
 /** One crop scheduler per level: UUID sources are merged before any crop gets a single round roll. */
 public final class HummingbirdPollinationService {
@@ -35,7 +33,7 @@ public final class HummingbirdPollinationService {
     private static final Set<Block> CROPS = Set.of(Blocks.WHEAT, Blocks.CARROTS, Blocks.POTATOES, Blocks.BEETROOTS);
     private static final Map<Block, CropAdapter> ADAPTERS = new HashMap<>();
     private static final int MAX_SOURCES_PER_CROP = 4;
-    private static final ResourceLocation HUMMINGBIRD = new ResourceLocation("guaniao", "hummingbird");
+    private static final Identifier HUMMINGBIRD = Identifier.fromNamespaceAndPath("guaniao", "hummingbird");
 
     private HummingbirdPollinationService() { }
 
@@ -111,7 +109,7 @@ public final class HummingbirdPollinationService {
         }
         state.sourceChunks.clear();
         for (Active active : state.sources.values()) {
-            state.sourceChunks.computeIfAbsent(ChunkPos.asLong(active.bird.blockPosition()), ignored -> new ArrayList<>()).add(active);
+            state.sourceChunks.computeIfAbsent(ChunkPos.pack(active.bird.blockPosition()), ignored -> new ArrayList<>()).add(active);
         }
         if (state.clock % 20 == 0) for (Active active : state.sources.values()) {
             FlowerHabitatIndex.request(level, active.bird.blockPosition(), (int) Math.ceil(HummingbirdConfig.pollinationRadius()));
@@ -130,7 +128,7 @@ public final class HummingbirdPollinationService {
             for (BlockPos pos : FlowerHabitatIndex.cropsNear(level, active.bird.position(),
                     (int) Math.ceil(HummingbirdConfig.pollinationRadius()))) {
                 if (state.queued.add(pos)) {
-                    long chunk = ChunkPos.asLong(pos);
+                    long chunk = ChunkPos.pack(pos);
                     ArrayDeque<BlockPos> crops = state.chunks.get(chunk);
                     if (crops == null) {
                         crops = new ArrayDeque<>(); state.chunks.put(chunk, crops); state.chunkOrder.addLast(chunk);
@@ -168,17 +166,17 @@ public final class HummingbirdPollinationService {
     private static void pollinate(ServerLevel level, State state, BlockPos pos) {
         BlockState before = FlowerHabitatIndex.readyState(level, pos);
         if (before == null || !isSupportedCrop(before.getBlock())
-                || !level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) return;
+                || !level.getGameRules().get(GameRules.MOB_GRIEFING)) return;
         CropAdapter adapter = ADAPTERS.get(before.getBlock());
         CropBlock crop = before.getBlock() instanceof CropBlock c ? c : null;
         if (adapter != null ? !adapter.canGrow(level, pos, before)
-                : crop == null || !crop.isValidBonemealTarget(level, pos, before, false)) return;
+                : crop == null || !crop.isValidBonemealTarget(level, pos, before)) return;
         double radius = HummingbirdConfig.pollinationRadius();
         List<Active> candidates = new ArrayList<>();
         int range = (int) Math.ceil(radius);
         for (int x = (pos.getX() - range) >> 4; x <= (pos.getX() + range) >> 4; x++)
             for (int z = (pos.getZ() - range) >> 4; z <= (pos.getZ() + range) >> 4; z++) {
-                List<Active> nearby = state.sourceChunks.get(ChunkPos.asLong(x, z));
+                List<Active> nearby = state.sourceChunks.get(ChunkPos.pack(x, z));
                 if (nearby != null) candidates.addAll(nearby);
             }
         candidates.sort(Comparator.comparing(active -> active.bird.getUUID()));
@@ -186,30 +184,32 @@ public final class HummingbirdPollinationService {
         Vec3 center = Vec3.atCenterOf(pos);
         for (Active active : candidates) {
             if (valid(level, active) && active.bird.position().distanceToSqr(center) <= radius * radius
-                    && ForgeEventFactory.getMobGriefingEvent(level, active.bird)) {
-                UUID owner = active.bird instanceof TamableAnimal tame ? tame.getOwnerUUID() : null;
+                    && HummingbirdPollinationEvent.MOB_GRIEFING.invoker().allow(level, active.bird)) {
+                UUID owner = ownerId(active.bird);
                 sources.add(new Source(active.bird.getUUID(), owner, active.bird, active.bird.position()));
                 if (sources.size() == MAX_SOURCES_PER_CROP) break;
             }
         }
-        if (sources.isEmpty() || level.random.nextFloat() >= chanceFor(sources.size())) return;
-        if (MinecraftForge.EVENT_BUS.post(new HummingbirdPollinationEvent(level, pos, before, state.round, sources))) return;
+        if (sources.isEmpty() || level.getRandom().nextFloat() >= chanceFor(sources.size())) return;
+        if (!HummingbirdPollinationEvent.BEFORE_GROW.invoker().allow(
+                new HummingbirdPollinationEvent(level, pos, before, state.round, sources))) return;
         // Cancellation listeners can change the world or revoke a source: re-check before committing.
         for (Source source : sources) {
-            if (!ForgeEventFactory.getMobGriefingEvent(level, source.entity())) return;
+            if (!HummingbirdPollinationEvent.MOB_GRIEFING.invoker().allow(level, source.entity())) return;
         }
         if (!HummingbirdConfig.pollinationEnabled() || !before.equals(FlowerHabitatIndex.readyState(level, pos))
-                || !level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) return;
+                || !level.getGameRules().get(GameRules.MOB_GRIEFING)) return;
         for (Source source : sources) {
             Active active = state.sources.get(source.id());
-            UUID currentOwner = active != null && active.bird instanceof TamableAnimal tame ? tame.getOwnerUUID() : null;
+            UUID currentOwner = active == null ? null : ownerId(active.bird);
             if (active == null || !valid(level, active) || active.bird.position().distanceToSqr(center) > radius * radius
                     || !java.util.Objects.equals(source.owner(), currentOwner)) return;
         }
         // This is automated bone-meal behavior, not a natural random tick or a fabricated player action.
-        // Permissions are EntityMobGriefingEvent plus the cancellable, owner-aware event above.
+        // Permissions are the per-mob Fabric veto plus the owner-aware BEFORE_GROW event above.
         if (adapter != null) adapter.grow(level, pos, before);
-        else if (crop.isBonemealSuccess(level, level.random, pos, before)) crop.performBonemeal(level, level.random, pos, before);
+        else if (crop.isBonemealSuccess(level, level.getRandom(), pos, before))
+            crop.performBonemeal(level, level.getRandom(), pos, before);
         BlockState after = FlowerHabitatIndex.readyState(level, pos);
         if (after != null && !before.equals(after)) {
             level.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.getX() + 0.5, pos.getY() + 0.6,
@@ -218,6 +218,10 @@ public final class HummingbirdPollinationService {
     }
 
     public static double chanceFor(int distinctSources) { return 0.25 * Math.min(4, Math.max(0, distinctSources)); }
+    @Nullable private static UUID ownerId(Mob bird) {
+        return bird instanceof TamableAnimal tame && tame.getOwnerReference() != null
+                ? tame.getOwnerReference().getUUID() : null;
+    }
     public static void forgetLevel(ServerLevel level) { LEVELS.remove(level); }
 
     private record Active(Mob bird, Vec3 lastNectarPosition, long expiresAt) { }

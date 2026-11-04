@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -71,7 +71,7 @@ public final class FlowerHabitatIndex {
 
     @Nullable
     public static BlockState readyState(ServerLevel level, BlockPos pos) {
-        if (pos.getY() < level.getMinBuildHeight() || pos.getY() >= level.getMaxBuildHeight()) return null;
+        if (pos.getY() < level.getMinY() || pos.getY() >= level.getMaxY()) return null;
         LevelChunk chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
         return chunk == null ? null : chunk.getBlockState(pos);
     }
@@ -94,8 +94,8 @@ public final class FlowerHabitatIndex {
         SourceType type = SourceType.FLOWER;
         BlockPos anchor = pos, flowerPos = pos;
         double height = 0.60;
-        if (state.getBlock() instanceof FlowerPotBlock pot && SMALL_FLOWERS.contains(pot.getContent())) {
-            flower = pot.getContent();
+        if (state.getBlock() instanceof FlowerPotBlock pot && SMALL_FLOWERS.contains(pot.getPotted())) {
+            flower = pot.getPotted();
             type = SourceType.POTTED_FLOWER;
             height = 0.74;
         } else if (TALL_FLOWERS.contains(flower)) {
@@ -109,7 +109,7 @@ public final class FlowerHabitatIndex {
             type = SourceType.TALL_FLOWER;
             height = 0.68;
         } else if (!SMALL_FLOWERS.contains(flower)) return null;
-        Vec3 offset = state.getOffset(level, flowerPos);
+        Vec3 offset = state.getOffset(flowerPos);
         Vec3 contact = new Vec3(flowerPos.getX() + 0.5, flowerPos.getY() + height, flowerPos.getZ() + 0.5).add(offset);
         return new NectarTarget(anchor, flowerPos, contact, contact.add(0, -0.2703, 0.23), type, flower);
     }
@@ -124,8 +124,8 @@ public final class FlowerHabitatIndex {
         int bounded = Math.max(0, Math.min(32, radius));
         Index index = LEVELS.computeIfAbsent(level, ignored -> new Index());
         long now = level.getGameTime();
-        int minY = Math.max(level.getMinBuildHeight(), center.getY() - bounded) >> 4;
-        int maxY = Math.min(level.getMaxBuildHeight() - 1, center.getY() + bounded) >> 4;
+        int minY = Math.max(level.getMinY(), center.getY() - bounded) >> 4;
+        int maxY = Math.min(level.getMaxY() - 1, center.getY() + bounded) >> 4;
         for (int x = (center.getX() - bounded) >> 4; x <= (center.getX() + bounded) >> 4; x++) {
             for (int z = (center.getZ() - bounded) >> 4; z <= (center.getZ() + bounded) >> 4; z++) {
                 if (level.getChunkSource().getChunkNow(x, z) == null) continue;

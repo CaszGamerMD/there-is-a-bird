@@ -76,7 +76,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -88,7 +88,6 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.util.LandRandomPos;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -106,19 +105,19 @@ import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
-public abstract class AbstractColumbidEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdMutationHolder {
+public abstract class AbstractColumbidEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable, CommandableBird, FlockCompatibleBird, BirdMutationHolder {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MODEL_SCALE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> COMMAND_MODE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.INT);
@@ -207,10 +206,10 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     protected AbstractColumbidEntity(EntityType<? extends AbstractColumbidEntity> entityType, Level level, BirdSpeciesProfile profile) {
         super(entityType, level);
         this.birdBrain = new BirdBrain(this, profile);
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0F);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0F);
-        this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.LEAVES, 0.0F);
+        this.setPathfindingMalus(PathType.WATER, -1.0F);
+        this.setPathfindingMalus(PathType.DANGER_FIRE, 16.0F);
+        this.setPathfindingMalus(PathType.DAMAGE_FIRE, 16.0F);
     }
 
     public static AttributeSupplier.Builder createColumbidAttributes(double maxHealth, double walkSpeed, double flyingSpeed, double followRange) {
@@ -325,13 +324,13 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEHAVIOR_STATE, ColumbidBehaviorState.IDLE.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
-        this.entityData.define(DANCING, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEHAVIOR_STATE, ColumbidBehaviorState.IDLE.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
+        builder.define(DANCING, false);
     }
 
     @Override
@@ -353,7 +352,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, compoundTag);
         if (compoundTag == null || !compoundTag.contains(BirdModelScale.NBT_KEY, 5)) {
             this.randomizeModelScale();
@@ -367,7 +366,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         this.tickDancing();
@@ -446,7 +445,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         if (!this.isSeedFoodForThisBird(stack)) {
             return super.mobInteract(player, hand);
         }
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return InteractionResult.sidedSuccess(true);
         }
         ItemStack offeredStack = stack.copy();
@@ -466,7 +465,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             return InteractionResult.SUCCESS;
         }
         if (this.getRandom().nextFloat() < chance
-                && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+                && EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
             this.tame(player);
             this.setBirdCommandMode(BirdCommandMode.FOLLOW);
             this.setPersistenceRequired();
@@ -490,7 +489,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     @Override
     public boolean hurt(DamageSource damageSource, float amount) {
         boolean hurt = super.hurt(damageSource, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.restInterruptionTicks = Math.max(this.restInterruptionTicks, 200);
             Entity source = damageSource.getEntity();
             if (BirdConfigManager.aprilFoolsMode() && source instanceof Player) {
@@ -541,6 +540,10 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         return this.shouldPlayFlyAnimation();
     }
@@ -679,7 +682,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         return ColumbidVariant.SPOTTED_DOVE;
     }
 
-    public net.minecraft.resources.ResourceLocation getTextureResource() {
+    public net.minecraft.resources.Identifier getTextureResource() {
         return this.getColumbidVariant().texture();
     }
 
@@ -749,7 +752,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -855,7 +858,8 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     }
 
     private boolean isOwnedBy(Player player) {
-        return this.isTame() && this.getOwnerUUID() != null && this.getOwnerUUID().equals(player.getUUID());
+        var ownerReference = this.getOwnerReference();
+        return this.isTame() && ownerReference != null && ownerReference.getUUID().equals(player.getUUID());
     }
 
     private void spawnTrustParticles(boolean success) {
@@ -1019,7 +1023,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1164,7 +1168,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             if (nextWaypoint != null) {
                 this.flightWaypoint = nextWaypoint;
                 this.flightWaypointTicks = 44 + this.getRandom().nextInt(48);
-                this.flightCruiseY = Mth.clamp(nextWaypoint.y, this.level().getMinBuildHeight() + 8.0D, this.level().getMaxBuildHeight() - 8.0D);
+                this.flightCruiseY = Mth.clamp(nextWaypoint.y, this.level().getMinY() + 8.0D, this.level().getMaxY() - 8.0D);
             }
             movement = horizontal.scale(Math.max(speed, this.flightSpeed * 0.72D)).add(0.0D, this.highCruiseFlight ? 0.16D : 0.10D, 0.0D);
         }
@@ -1179,7 +1183,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         this.setDeltaMovement(movement);
         this.faceFlightDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private boolean isControlledFlightActive() {
@@ -1301,7 +1305,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         }
         this.faceFlightDirection(this.getDeltaMovement());
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -1327,7 +1331,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         if (nextWaypoint != null) {
             this.flightWaypoint = nextWaypoint;
             this.flightWaypointTicks = 54 + this.getRandom().nextInt(86);
-            this.flightCruiseY = Mth.clamp(nextWaypoint.y, this.level().getMinBuildHeight() + 8.0D, this.level().getMaxBuildHeight() - 8.0D);
+            this.flightCruiseY = Mth.clamp(nextWaypoint.y, this.level().getMinY() + 8.0D, this.level().getMaxY() - 8.0D);
         } else {
             this.flightWaypointTicks = 24;
         }
@@ -1622,9 +1626,9 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         return nearest;
     }
 
-    private <T extends AbstractColumbidEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(4);
+    private <T extends AbstractColumbidEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(4);
         RawAnimation preview = this.guidePreviewAnimation.animation();
         if (preview != null) {
             return animationState.setAndContinue(preview);

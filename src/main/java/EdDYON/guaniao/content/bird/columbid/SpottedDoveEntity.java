@@ -14,7 +14,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
@@ -40,14 +40,14 @@ public class SpottedDoveEntity extends AbstractColumbidEntity {
                 SpottedDoveDefinition.FOLLOW_RANGE);
     }
 
-    public static boolean canSpawn(EntityType<SpottedDoveEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canSpawn(EntityType<SpottedDoveEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         return canColumbidSpawn(level, pos, random, false);
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(WEATHER_SENSE_STATE, WeatherSenseState.NORMAL.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(WEATHER_SENSE_STATE, WeatherSenseState.NORMAL.ordinal());
     }
 
     @Override
@@ -61,7 +61,7 @@ public class SpottedDoveEntity extends AbstractColumbidEntity {
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (this.weatherWarningCooldown > 0) {

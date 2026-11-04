@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.food;
 
-import EdDYON.guaniao.client.particle.PlaceableBlockBreakEffects;
+import com.mojang.serialization.MapCodec;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import net.minecraft.core.BlockPos;
@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -20,7 +21,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
@@ -33,21 +35,20 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
-import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 
-import java.util.function.Consumer;
 
 public final class BaggedFriesBlock extends BaseEntityBlock {
+    public static final MapCodec<BaggedFriesBlock> CODEC = simpleCodec(BaggedFriesBlock::new);
     public static final int TOTAL_FRIES = 13;
     public static final IntegerProperty FRIES = IntegerProperty.create("fries", 0, TOTAL_FRIES);
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     private static final VoxelShape SHAPE = Block.box(5.0D, 0.0D, 5.0D, 11.0D, 11.0D, 11.0D);
 
     public BaggedFriesBlock(BlockBehaviour.Properties properties) {
@@ -58,13 +59,15 @@ public final class BaggedFriesBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
-        consumer.accept(PlaceableBlockBreakEffects.baggedFries());
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        // 26.2 removed ENTITYBLOCK_ANIMATED; the authored GeckoLib block entity
+        // renderer supplies the model, so skip the vanilla baked block mesh.
+        return RenderShape.INVISIBLE;
     }
 
     @Override
@@ -85,17 +88,29 @@ public final class BaggedFriesBlock extends BaseEntityBlock {
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
-                                  LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks,
+                                     BlockPos pos, Direction direction, BlockPos neighborPos,
+                                     BlockState neighborState, RandomSource random) {
         if (direction == Direction.DOWN && !state.canSurvive(level, pos)) {
             return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
         }
-        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
-                                 InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos,
+                                           Player player, InteractionHand hand, BlockHitResult hit) {
+        return useFries(state, level, pos, player, hand);
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                                Player player, BlockHitResult hit) {
+        return useFries(state, level, pos, player, InteractionHand.MAIN_HAND);
+    }
+
+    private InteractionResult useFries(BlockState state, Level level, BlockPos pos, Player player,
+                                       InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }
@@ -103,7 +118,7 @@ public final class BaggedFriesBlock extends BaseEntityBlock {
         if (player.getItemInHand(hand).is(GuaniaoItems.LAXATIVE.get())
                 && level.getBlockEntity(pos) instanceof BaggedFriesBlockEntity fries
                 && fries.hasRemainingFries()) {
-            if (!level.isClientSide && !fries.isLaxative()) {
+            if (!level.isClientSide() && !fries.isLaxative()) {
                 fries.setLaxative(true);
                 if (!player.getAbilities().instabuild) {
                     player.getItemInHand(hand).shrink(1);
@@ -115,38 +130,38 @@ public final class BaggedFriesBlock extends BaseEntityBlock {
                     BaggedFriesBlockEntity.spawnPollutionBurst(serverLevel, pos);
                 }
             }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
         }
 
         int remaining = state.getValue(FRIES);
         if (remaining <= 0) {
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 level.removeBlock(pos, false);
                 level.playSound(null, pos, SoundEvents.WOOL_BREAK, SoundSource.BLOCKS, 0.55F, 1.25F);
                 level.gameEvent(player, GameEvent.BLOCK_DESTROY, pos);
             }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
         }
 
         if (!player.canEat(false)) {
             return InteractionResult.PASS;
         }
 
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof BaggedFriesBlockEntity fries) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof BaggedFriesBlockEntity fries) {
             boolean laxative = fries.isLaxative();
-            int removed = fries.removeRandomFries(level.random);
+            int removed = fries.removeRandomFries(level.getRandom());
             if (removed > 0) {
                 int nowRemaining = fries.getRemainingFries();
                 level.setBlock(pos, state.setValue(FRIES, nowRemaining), Block.UPDATE_CLIENTS);
                 fries.syncToClient();
                 player.getFoodData().eat(removed, 0.12F);
                 if (laxative) {
-                    player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 20 * 12, 0));
-                    player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 6, 0));
+                    player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 20 * 12, 0));
+                    player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 20 * 6, 0));
                 }
                 player.awardStat(Stats.ITEM_USED.get(GuaniaoItems.BAGGED_FRIES.get()));
                 level.playSound(null, pos, SoundEvents.GENERIC_EAT, SoundSource.PLAYERS,
-                        0.75F, 0.9F + level.random.nextFloat() * 0.2F);
+                        0.75F, 0.9F + level.getRandom().nextFloat() * 0.2F);
                 level.gameEvent(player, GameEvent.EAT, pos);
 
                 if (level instanceof ServerLevel serverLevel) {
@@ -157,7 +172,7 @@ public final class BaggedFriesBlock extends BaseEntityBlock {
                 }
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override

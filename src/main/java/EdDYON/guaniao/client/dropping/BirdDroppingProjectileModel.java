@@ -1,26 +1,28 @@
 package EdDYON.guaniao.client.dropping;
 
 import EdDYON.guaniao.content.dropping.BirdDroppingProjectileEntity;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
+import net.minecraft.resources.Identifier;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 
 public class BirdDroppingProjectileModel extends GeoModel<BirdDroppingProjectileEntity> {
-    private static final ResourceLocation MODEL = new ResourceLocation("guaniao", "geo/bird_dropping_projectile.geo.json");
-    private static final ResourceLocation TEXTURE = new ResourceLocation("guaniao", "textures/entity/bird_dropping_projectile.png");
-    private static final ResourceLocation ANIMATION = new ResourceLocation("guaniao", "animations/bird_dropping.animation.json");
+    private static final Identifier MODEL = Identifier.fromNamespaceAndPath("guaniao", "geo/bird_dropping_projectile.geo.json");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("guaniao", "textures/entity/bird_dropping_projectile.png");
+    private static final Identifier ANIMATION = Identifier.fromNamespaceAndPath("guaniao", "animations/bird_dropping.animation.json");
 
     @Override
-    public ResourceLocation getModelResource(BirdDroppingProjectileEntity animatable) {
-        return MODEL;
+    public Identifier getModelResource(GeoRenderState renderState) {
+        return GuaniaoGeckoAssets.model(MODEL);
     }
 
     @Override
-    public ResourceLocation getTextureResource(BirdDroppingProjectileEntity animatable) {
+    public Identifier getTextureResource(GeoRenderState renderState) {
         return TEXTURE;
     }
 
     @Override
-    public ResourceLocation getAnimationResource(BirdDroppingProjectileEntity animatable) {
-        return ANIMATION;
+    public Identifier getAnimationResource(BirdDroppingProjectileEntity animatable) {
+        return GuaniaoGeckoAssets.animation(ANIMATION);
     }
 }

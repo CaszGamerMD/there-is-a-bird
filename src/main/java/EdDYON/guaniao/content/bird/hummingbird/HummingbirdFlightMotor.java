@@ -25,7 +25,8 @@ final class HummingbirdFlightMotor {
     void travel(Vec3 target, double speed) { aim(target, null, speed); }
     void clear() { target = facing = null; bird.setDeltaMovement(Vec3.ZERO); bird.setBankAngle(0); }
     boolean escapeWater(ServerLevel level) {
-        boolean wet = bird.isInWaterOrBubble();
+        boolean wet = bird.isInWater() || bird.level().getBlockState(bird.blockPosition())
+                .is(net.minecraft.world.level.block.Blocks.BUBBLE_COLUMN);
         if (bird.isPassenger() || (!wet && waterClearanceTicks <= 0)) return false;
         if (wet) {
             if (waterClearanceTicks == 0) waterDirection = BirdFlightTargeting.normalizeHorizontal(bird.getDeltaMovement(), bird.getLookAngle());

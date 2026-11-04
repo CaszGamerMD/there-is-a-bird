@@ -1,7 +1,7 @@
 package EdDYON.guaniao.content.cage;
 
 import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.level.block.Block;
 
@@ -13,17 +13,17 @@ public enum BirdCageVariant {
     LARGE("large_bird_cage", "geo/large_bird_cage.geo.json", "textures/block/large_bird_cage.png",
             Block.box(0.0, 0.0, 0.0, 16.0, 48.0, 16.0));
 
-    public static final ResourceLocation ANIMATION = new ResourceLocation(GuaniaoMod.MOD_ID, "animations/bird_cage.animation.json");
+    public static final Identifier ANIMATION = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "animations/bird_cage.animation.json");
 
     private final String id;
-    private final ResourceLocation model;
-    private final ResourceLocation texture;
+    private final Identifier model;
+    private final Identifier texture;
     private final VoxelShape shape;
 
     BirdCageVariant(String id, String modelPath, String texturePath, VoxelShape shape) {
         this.id = id;
-        this.model = new ResourceLocation(GuaniaoMod.MOD_ID, modelPath);
-        this.texture = new ResourceLocation(GuaniaoMod.MOD_ID, texturePath);
+        this.model = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, modelPath);
+        this.texture = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, texturePath);
         this.shape = shape;
     }
 
@@ -31,11 +31,11 @@ public enum BirdCageVariant {
         return this.id;
     }
 
-    public ResourceLocation model() {
+    public Identifier model() {
         return this.model;
     }
 
-    public ResourceLocation texture() {
+    public Identifier texture() {
         return this.texture;
     }
 

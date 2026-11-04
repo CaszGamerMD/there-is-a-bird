@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.macaw;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class MacawDefinition {
     public static final String ENTITY_ID = "macaw";
@@ -13,9 +13,9 @@ public final class MacawDefinition {
     public static final double WALK_SPEED = 0.22D;
     public static final double FLYING_SPEED = 0.38D;
     public static final double FOLLOW_RANGE = 28.0D;
-    public static final ResourceLocation MODEL = resource("geo/macaw.geo.json");
-    public static final ResourceLocation ANIMATION = resource("animations/macaw.animation.json");
-    public static final ResourceLocation[] TEXTURE_VARIANTS = new ResourceLocation[]{
+    public static final Identifier MODEL = resource("geo/macaw.geo.json");
+    public static final Identifier ANIMATION = resource("animations/macaw.animation.json");
+    public static final Identifier[] TEXTURE_VARIANTS = new Identifier[]{
             resource("textures/entity/macaw/variant_1.png"),
             resource("textures/entity/macaw/variant_2.png"),
             resource("textures/entity/macaw/variant_3.png"),
@@ -26,11 +26,11 @@ public final class MacawDefinition {
     private MacawDefinition() {
     }
 
-    public static ResourceLocation textureForVariant(int variant) {
+    public static Identifier textureForVariant(int variant) {
         return TEXTURE_VARIANTS[Math.floorMod(variant, TEXTURE_VARIANTS.length)];
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation("guaniao", path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath("guaniao", path);
     }
 }

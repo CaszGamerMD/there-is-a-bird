@@ -1,52 +1,65 @@
 package EdDYON.guaniao.client.entity.umbrellacockatoo;
 
-import com.eliotlash.mclib.math.Constant;
-import com.eliotlash.mclib.math.IValue;
-import software.bernie.geckolib.core.animation.Animation;
-import software.bernie.geckolib.core.keyframe.BoneAnimation;
-import software.bernie.geckolib.core.keyframe.Keyframe;
-import software.bernie.geckolib.core.keyframe.KeyframeStack;
+import com.geckolib.animation.state.ControllerState;
+import com.geckolib.cache.animation.Animation;
+import com.geckolib.cache.animation.BoneAnimation;
+import com.geckolib.cache.animation.Keyframe;
+import com.geckolib.cache.animation.KeyframeStack;
+import com.geckolib.loading.math.MathValue;
+import com.geckolib.loading.math.value.Constant;
+import com.geckolib.loading.math.value.Variable;
+import java.util.Arrays;
+import java.util.Set;
 
-import java.util.List;
-
-/** A derived animation, never a mutation of the author's idle_diff_2 or GeckoLib's shared cache. */
+/**
+ * Keep the original display's reference subtraction without touching GeckoLib's
+ * shared baked animation. Works on the new immutable GeckoLib 5 keyframe types.
+ */
 final class CockatooDisplayResidual {
     static final String NAME = "animation.idle_diff_2_residual";
 
     static Animation create(Animation source, CockatooExpressionSampler.Pose reference) {
-        BoneAnimation[] result = new BoneAnimation[source.boneAnimations().length];
+        BoneAnimation[] originals = source.boneAnimations();
+        BoneAnimation[] result = new BoneAnimation[originals.length];
         for (int i = 0; i < result.length; i++) {
-            BoneAnimation bone = source.boneAnimations()[i];
+            BoneAnimation bone = originals[i];
             var delta = reference.bone(bone.boneName());
             result[i] = new BoneAnimation(bone.boneName(),
                     subtract(bone.rotationKeyFrames(), delta.rotation(), true),
-                    subtract(bone.positionKeyFrames(), delta.position(), false), bone.scaleKeyFrames());
+                    subtract(bone.positionKeyFrames(), delta.position(), false),
+                    bone.scaleKeyFrames());
         }
-        return new Animation(NAME, source.length(), source.loopType(), result, source.keyFrames());
+        return Animation.create(NAME, source.length(), source.loopType(), result, source.keyframeMarkers());
     }
 
-    private static KeyframeStack<Keyframe<IValue>> subtract(KeyframeStack<Keyframe<IValue>> frames,
-                                                            CockatooExpressionSampler.Vector reference,
-                                                            boolean rotation) {
-        return new KeyframeStack<>(subtract(frames.xKeyframes(), reference.x(), rotation, -1),
-                subtract(frames.yKeyframes(), reference.y(), rotation, -1),
-                subtract(frames.zKeyframes(), reference.z(), rotation, 1));
+    private static KeyframeStack subtract(KeyframeStack frames,
+                                           CockatooExpressionSampler.Vector ref, boolean rotation) {
+        return new KeyframeStack(subtract(frames.xKeyframes(), ref.x(), rotation, -1),
+                subtract(frames.yKeyframes(), ref.y(), rotation, -1),
+                subtract(frames.zKeyframes(), ref.z(), rotation, 1));
     }
 
-    private static List<Keyframe<IValue>> subtract(List<Keyframe<IValue>> frames, double reference,
-                                                  boolean rotation, int sign) {
-        if (reference == 0) return frames;
-        return frames.stream().map(frame -> new Keyframe<>(frame.length(),
-                subtract(frame.startValue(), reference, rotation, sign),
-                subtract(frame.endValue(), reference, rotation, sign), frame.easingType(), frame.easingArgs())).toList();
+    private static Keyframe[] subtract(Keyframe[] frames, double ref, boolean rotation, int sign) {
+        if (ref == 0) return frames;
+        return Arrays.stream(frames).map(frame -> new Keyframe(
+                frame.startTime(), frame.length(),
+                subtract(frame.startValue(), ref, rotation, sign),
+                subtract(frame.endValue(), ref, rotation, sign),
+                frame.easingType(), frame.easingArgs())).toArray(Keyframe[]::new);
     }
 
-    private static IValue subtract(IValue value, double reference, boolean rotation, int sign) {
-        // 4.4.9 bakes Constant rotation values into signed radians. Molang expressions
-        // remain in author degrees until AnimationController evaluates them each frame.
-        if (value instanceof Constant) {
-            return new Constant(value.get() - (rotation ? Math.toRadians(reference) * sign : reference));
-        }
-        return () -> value.get() - reference;
+    private static MathValue subtract(MathValue value, double ref, boolean rotation, int sign) {
+        // Authored constants are baked as signed radians. Molang expressions
+        // use authored degree values, exactly as in the previous implementation.
+        if (!value.isMutable())
+            return new Constant(value.get(null) - (rotation ? Math.toRadians(ref) * sign : ref));
+        return new MathValue() {
+            @Override public double get(ControllerState state) {
+                return value.get(state) - ref;
+            }
+            @Override public Set<Variable> getUsedVariables() {
+                return value.getUsedVariables();
+            }
+        };
     }
 }

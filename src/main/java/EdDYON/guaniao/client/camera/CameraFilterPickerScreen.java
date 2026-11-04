@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -78,11 +80,11 @@ public final class CameraFilterPickerScreen extends Screen {
         if (!CameraClientCapture.isViewfinderOpen() || CameraClientCapture.isCleanCapturePending()) {
             return;
         }
-        if (minecraft.screen instanceof CameraFilterPickerScreen picker) {
+        if (minecraft.gui.screen() instanceof CameraFilterPickerScreen picker) {
             picker.confirmAndClose();
             return;
         }
-        minecraft.setScreen(new CameraFilterPickerScreen(CameraClientCapture.currentFilter()));
+        minecraft.gui.setScreen(new CameraFilterPickerScreen(CameraClientCapture.currentFilter()));
     }
 
     @Override
@@ -105,7 +107,7 @@ public final class CameraFilterPickerScreen extends Screen {
         super.tick();
         if (!CameraClientCapture.isViewfinderOpen() || CameraClientCapture.isCleanCapturePending()) {
             this.finished = true;
-            Minecraft.getInstance().setScreen(null);
+            Minecraft.getInstance().gui.setScreen(null);
         }
     }
 
@@ -233,17 +235,17 @@ public final class CameraFilterPickerScreen extends Screen {
     private void confirmAndClose() {
         this.finished = true;
         CameraClientCapture.commitFilter(this.highlighted);
-        Minecraft.getInstance().setScreen(null);
+        Minecraft.getInstance().gui.setScreen(null);
     }
 
     private void cancelAndClose() {
         this.finished = true;
         CameraClientCapture.restorePreviewFilter(this.original);
-        Minecraft.getInstance().setScreen(null);
+        Minecraft.getInstance().gui.setScreen(null);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, this.width, this.height, SCREEN_SHADE);
         drawPanel(graphics, this.panelLeft, this.panelTop, this.panelRight, this.panelBottom, PANEL_BACKGROUND);
         renderLeftPreview(graphics);
@@ -251,15 +253,19 @@ public final class CameraFilterPickerScreen extends Screen {
         renderFooter(graphics);
     }
 
-    private void renderLeftPreview(GuiGraphics graphics) {
+    private void renderLeftPreview(GuiGraphicsExtractor graphics) {
         drawPanel(graphics, this.leftLeft, this.previewTop, this.leftRight, this.previewBottom, 0xFF090B0D);
-        CameraPreviewPostEffect.drawPreview(
-                graphics,
-                this.leftLeft + 3,
-                this.previewTop + 3,
-                this.leftRight - 3,
-                this.previewBottom - 3
-        );
+        // The original filter preview must be submitted by a real 26.2 GPU
+        // extractor. Never display the unfiltered world as the selected filter.
+        if (!CameraPreviewGuiBridge.drawPreview(
+                graphics, this.leftLeft + 3, this.previewTop + 3,
+                this.leftRight - 3, this.previewBottom - 3, this.highlighted)) {
+            graphics.centeredText(this.font,
+                    Component.translatable("gui.guaniao.camera_preview.unavailable"),
+                    (this.leftLeft + this.leftRight) / 2,
+                    (this.previewTop + this.previewBottom) / 2 - this.font.lineHeight / 2,
+                    TEXT_SECONDARY);
+        }
         drawFocusMarks(
                 graphics,
                 this.leftLeft + 3,
@@ -271,8 +277,8 @@ public final class CameraFilterPickerScreen extends Screen {
         drawPanel(graphics, this.leftLeft, this.infoTop, this.leftRight, this.listBottom, SECTION_BACKGROUND);
         String filterName = Component.translatable(this.highlighted.translationKey()).getString();
         String selected = String.format(Locale.ROOT, "#%02d  %s", categoryDisplayNumber(this.highlighted), filterName);
-        graphics.drawString(this.font, selected, this.leftLeft + 10, this.infoTop + 11, ACCENT, false);
-        graphics.drawString(
+        graphics.text(this.font, selected, this.leftLeft + 10, this.infoTop + 11, ACCENT, false);
+        graphics.text(
                 this.font,
                 Component.translatable(this.category.translationKey()),
                 this.leftLeft + 10,
@@ -282,10 +288,10 @@ public final class CameraFilterPickerScreen extends Screen {
         );
 
         int dividerX = Math.min(this.leftRight - 120, this.leftLeft + (this.leftRight - this.leftLeft) * 2 / 5);
-        graphics.vLine(dividerX, this.infoTop + 7, this.listBottom - 7, BORDER_LIGHT);
+        graphics.verticalLine(dividerX, this.infoTop + 7, this.listBottom - 7, BORDER_LIGHT);
         int noteX = dividerX + 9;
         int noteWidth = Math.max(32, this.leftRight - noteX - 9);
-        graphics.drawString(
+        graphics.text(
                 this.font,
                 Component.translatable("gui.guaniao.camera_filter_picker.lens_note"),
                 noteX,
@@ -299,17 +305,17 @@ public final class CameraFilterPickerScreen extends Screen {
         );
         int noteY = this.infoTop + 24;
         for (int i = 0; i < Math.min(2, noteLines.size()); i++) {
-            graphics.drawString(this.font, noteLines.get(i), noteX, noteY + i * 11, TEXT_SECONDARY, false);
+            graphics.text(this.font, noteLines.get(i), noteX, noteY + i * 11, TEXT_SECONDARY, false);
         }
     }
 
-    private void renderRightLibrary(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderRightLibrary(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int contentTop = this.panelTop + OUTER_GAP;
         drawPanel(graphics, this.rightLeft, contentTop, this.rightRight, this.listBottom, SECTION_BACKGROUND);
 
-        graphics.drawString(this.font, this.title, this.rightLeft + 8, contentTop + 9, ACCENT, false);
+        graphics.text(this.font, this.title, this.rightLeft + 8, contentTop + 9, ACCENT, false);
         String count = "50 / 50";
-        graphics.drawString(
+        graphics.text(
                 this.font,
                 count,
                 this.rightRight - 8 - this.font.width(count),
@@ -324,7 +330,7 @@ public final class CameraFilterPickerScreen extends Screen {
         renderScrollBar(graphics);
     }
 
-    private void renderTabs(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderTabs(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         CameraFilterCategory[] categories = CameraFilterCategory.values();
         int tabWidth = Math.max(1, (this.rightRight - this.rightLeft - 4) / categories.length);
         for (int i = 0; i < categories.length; i++) {
@@ -348,7 +354,7 @@ public final class CameraFilterPickerScreen extends Screen {
         }
     }
 
-    private void renderOriginalButton(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderOriginalButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int x0 = this.rightLeft + 3;
         int x1 = this.rightRight - 3;
         boolean selected = this.highlighted == CameraFilter.NONE;
@@ -365,7 +371,7 @@ public final class CameraFilterPickerScreen extends Screen {
         }
         drawBorder(graphics, x0, this.originalTop, x1, this.originalTop + ORIGINAL_HEIGHT, selected ? ACCENT_DARK : BORDER_LIGHT);
         String label = "#00  " + Component.translatable(CameraFilter.NONE.translationKey()).getString();
-        graphics.drawString(
+        graphics.text(
                 this.font,
                 (selected ? "> " : "  ") + label,
                 x0 + 7,
@@ -375,7 +381,7 @@ public final class CameraFilterPickerScreen extends Screen {
         );
     }
 
-    private void renderFilterList(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderFilterList(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         List<CameraFilter> filters = currentFilters();
         int contentRight = this.rightRight - 12;
         graphics.enableScissor(this.rightLeft + 2, this.listTop, this.rightRight - 2, this.listBottom);
@@ -412,7 +418,7 @@ public final class CameraFilterPickerScreen extends Screen {
             int thumbnailWidth = Math.min(72, Math.max(24, Math.round(thumbnailHeight * 1.6F)));
             int thumbnailX = this.rightLeft + 10;
             int thumbnailY = y0 + (y1 - y0 - thumbnailHeight) / 2;
-            boolean thumbnailDrawn = CameraPreviewPostEffect.drawFilterThumbnail(
+            boolean thumbnailDrawn = CameraPreviewGuiBridge.drawFilterThumbnail(
                     graphics,
                     filter,
                     thumbnailX,
@@ -443,7 +449,7 @@ public final class CameraFilterPickerScreen extends Screen {
             if (this.font.width(name) > textWidth) {
                 name = this.font.plainSubstrByWidth(name, Math.max(6, textWidth - 6)) + "…";
             }
-            graphics.drawString(
+            graphics.text(
                     this.font,
                     name,
                     textX,
@@ -464,7 +470,7 @@ public final class CameraFilterPickerScreen extends Screen {
     }
 
     private void renderPaletteThumbnail(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             CameraFilter filter,
             int x,
             int y,
@@ -527,7 +533,7 @@ public final class CameraFilterPickerScreen extends Screen {
         drawBorder(graphics, x, y, x + width, y + height, BORDER_DARK);
     }
 
-    private void renderScrollBar(GuiGraphics graphics) {
+    private void renderScrollBar(GuiGraphicsExtractor graphics) {
         List<CameraFilter> filters = currentFilters();
         int x0 = this.rightRight - 8;
         int x1 = this.rightRight - 4;
@@ -545,9 +551,9 @@ public final class CameraFilterPickerScreen extends Screen {
         graphics.fill(x0 + 1, thumbTop + 1, x1 - 1, thumbTop + thumbHeight - 1, ACCENT);
     }
 
-    private void renderFooter(GuiGraphics graphics) {
+    private void renderFooter(GuiGraphicsExtractor graphics) {
         graphics.fill(this.panelLeft, this.footerTop, this.panelRight, this.panelBottom, 0xF3121518);
-        graphics.hLine(this.panelLeft, this.panelRight, this.footerTop, BORDER_LIGHT);
+        graphics.horizontalLine(this.panelLeft, this.panelRight, this.footerTop, BORDER_LIGHT);
         Component help = CameraKeyMappings.FOCUS.matches(GLFW.GLFW_KEY_TAB, 0)
                 ? Component.translatable("gui.guaniao.camera_filter_picker.help_without_random",
                         CameraKeyMappings.OPEN_FILTER_LIBRARY.getTranslatedKeyMessage())
@@ -565,7 +571,7 @@ public final class CameraFilterPickerScreen extends Screen {
         );
     }
 
-    private void drawFocusMarks(GuiGraphics graphics, int left, int top, int right, int bottom) {
+    private void drawFocusMarks(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom) {
         int length = Mth.clamp(Math.min(right - left, bottom - top) / 9, 9, 22);
         int inset = 12;
         int x0 = left + inset;
@@ -591,7 +597,7 @@ public final class CameraFilterPickerScreen extends Screen {
         graphics.fill(centerX, centerY + 3, centerX + 1, centerY + 9, color);
     }
 
-    private void drawPanel(GuiGraphics graphics, int left, int top, int right, int bottom, int fill) {
+    private void drawPanel(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int fill) {
         graphics.fill(left, top, right, bottom, fill);
         drawBorder(graphics, left, top, right, bottom, BORDER_DARK);
         if (right - left > 4 && bottom - top > 4) {
@@ -599,15 +605,15 @@ public final class CameraFilterPickerScreen extends Screen {
         }
     }
 
-    private static void drawBorder(GuiGraphics graphics, int left, int top, int right, int bottom, int color) {
-        graphics.hLine(left, right, top, color);
-        graphics.hLine(left, right, bottom, color);
-        graphics.vLine(left, top, bottom, color);
-        graphics.vLine(right, top, bottom, color);
+    private static void drawBorder(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int color) {
+        graphics.horizontalLine(left, right, top, color);
+        graphics.horizontalLine(left, right, bottom, color);
+        graphics.verticalLine(left, top, bottom, color);
+        graphics.verticalLine(right, top, bottom, color);
     }
 
     private void drawCenteredFittingString(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             Component text,
             int x,
             int y,
@@ -622,11 +628,11 @@ public final class CameraFilterPickerScreen extends Screen {
         float scale = Math.min(1.0F, Math.max(0.42F, (width - 6) / (float)textWidth));
         int scaledWidth = Math.round(textWidth * scale);
         int scaledHeight = Math.round(8.0F * scale);
-        graphics.pose().pushPose();
-        graphics.pose().translate(x + (width - scaledWidth) / 2.0F, y + (height - scaledHeight) / 2.0F, 0.0F);
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(this.font, text, 0, 0, color, false);
-        graphics.pose().popPose();
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x + (width - scaledWidth) / 2.0F, y + (height - scaledHeight) / 2.0F);
+        graphics.pose().scale(scale, scale);
+        graphics.text(this.font, text, 0, 0, color, false);
+        graphics.pose().popMatrix();
     }
 
     private static boolean contains(double x, double y, int left, int top, int right, int bottom) {
@@ -634,9 +640,12 @@ public final class CameraFilterPickerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         CameraFilterCategory[] categories = CameraFilterCategory.values();
@@ -699,7 +708,7 @@ public final class CameraFilterPickerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
         if (delta == 0.0D) {
             return true;
         }
@@ -708,9 +717,11 @@ public final class CameraFilterPickerScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
         if (keyCode == GLFW.GLFW_KEY_TAB) {
-            return super.keyPressed(keyCode, scanCode, modifiers);
+            return super.keyPressed(event);
         }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             cancelAndClose();
@@ -760,6 +771,6 @@ public final class CameraFilterPickerScreen extends Screen {
             moveSelection(1);
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 }

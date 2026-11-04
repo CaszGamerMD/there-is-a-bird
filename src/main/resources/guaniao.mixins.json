@@ -9,9 +9,23 @@
     "PressurePlateBlockMixin",
     "ServerEntityTrackingMixin",
     "VillagerTradePriceMixin",
-    "WeightedPressurePlateBlockMixin"
+    "WeightedPressurePlateBlockMixin",
+    "BirdDeathDropsMixin",
+    "BirdSleepSoundMixin",
+    "HummingbirdHabitatBlockUpdateMixin",
+    "BurialPlumeAnvilMixin",
+    "ItemEntityAgeAccessor",
+    "BirdPotentialSpawnsMixin",
+    "PrankFoodFinishMixin"
   ],
-  "client": [],
+  "client": [
+    "ClientBlockBreakParticlesMixin",
+    "GuaniaoGuiRenderStateAccess",
+    "GuaniaoCameraMouseInputMixin",
+    "GuaniaoCameraKeyboardInputMixin",
+    "GuaniaoCameraFieldOfViewMixin",
+    "FeatherFanHandPoseMixin"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 0

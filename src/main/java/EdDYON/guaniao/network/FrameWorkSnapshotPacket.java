@@ -1,44 +1,36 @@
 package EdDYON.guaniao.network;
 
-import EdDYON.guaniao.content.camera.frame.FrameWorkbenchMenu;
-import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import EdDYON.guaniao.GuaniaoMod;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 /** An owner-only display snapshot; the preview is never an inventory slot. */
 public record FrameWorkSnapshotPacket(int containerId, BlockPos pos, ItemStack preview,
-                                      long seed, int remaining, int revision) {
-    public static void encode(FrameWorkSnapshotPacket packet, FriendlyByteBuf buffer) {
+                                      long seed, int remaining, int revision) implements CustomPacketPayload {
+    public static final Type<FrameWorkSnapshotPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "frame_work_snapshot"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, FrameWorkSnapshotPacket> CODEC =
+            StreamCodec.of((RegistryFriendlyByteBuf buffer, FrameWorkSnapshotPacket packet) ->
+                    encode(packet, buffer), FrameWorkSnapshotPacket::decode);
+
+    @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+
+    public static void encode(FrameWorkSnapshotPacket packet, RegistryFriendlyByteBuf buffer) {
         buffer.writeVarInt(packet.containerId);
         buffer.writeBlockPos(packet.pos);
-        buffer.writeItem(packet.preview);
+        ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, packet.preview);
         buffer.writeLong(packet.seed);
         buffer.writeVarInt(packet.remaining);
         buffer.writeVarInt(packet.revision);
     }
 
-    public static FrameWorkSnapshotPacket decode(FriendlyByteBuf buffer) {
-        return new FrameWorkSnapshotPacket(buffer.readVarInt(), buffer.readBlockPos(), buffer.readItem(),
+    public static FrameWorkSnapshotPacket decode(RegistryFriendlyByteBuf buffer) {
+        return new FrameWorkSnapshotPacket(buffer.readVarInt(), buffer.readBlockPos(), ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer),
                 buffer.readLong(), buffer.readVarInt(), buffer.readVarInt());
     }
 
-    public static void handle(FrameWorkSnapshotPacket packet, Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> Client.receive(packet)));
-        context.setPacketHandled(true);
-    }
-
-    private static final class Client {
-        static void receive(FrameWorkSnapshotPacket packet) {
-            var player = net.minecraft.client.Minecraft.getInstance().player;
-            if (player != null && player.containerMenu instanceof FrameWorkbenchMenu menu
-                    && menu.containerId == packet.containerId) {
-                menu.acceptWorkSnapshot(packet.pos, packet.preview, packet.seed, packet.remaining, packet.revision);
-            }
-        }
-    }
 }

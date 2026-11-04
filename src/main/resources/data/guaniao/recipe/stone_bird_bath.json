@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "CSC",
+    " C ",
+    " C "
+  ],
+  "key": {
+    "C": "minecraft:cobblestone",
+    "S": "minecraft:stone_slab"
+  },
+  "result": {
+    "id": "guaniao:stone_bird_bath"
+  }
+}

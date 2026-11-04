@@ -1,23 +1,19 @@
 package EdDYON.guaniao.content.bird.brain;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.content.bird.BirdScanBudget;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
 /** Shares expensive habitat probes between birds occupying the same world section. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdHabitatCache {
     private static final int MAX_CACHE_ENTRIES_PER_LEVEL = 4096;
     private static final int MAX_REFRESH_STAGGER_TICKS = 40;
@@ -58,11 +54,12 @@ public final class BirdHabitatCache {
         return snapshot;
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
-            LEVEL_CACHES.remove(serverLevel);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        LEVEL_CACHES.remove(level);
+    }
+
+    public static void registerCallbacks() {
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static long nextRefreshAt(long now, CacheKey key) {

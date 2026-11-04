@@ -3,8 +3,6 @@ package EdDYON.guaniao.client.camera;
 import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.camera.PhotographData;
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.platform.TextureUtil;
-import com.mojang.blaze3d.systems.RenderSystem;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,29 +18,28 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.Dumpable;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.opengl.GL11;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Asynchronous JPEG decoding with a small per-render-tick GPU upload budget. */
 public final class PhotographTextureCache {
-    // At full capture resolution this bounds GPU storage to 1 GiB. Uploaded
-    // photos do not keep a second uncompressed copy in native system memory.
+    // 26.2 DynamicTexture owns the decoded image while its GPU copy is live.
+    // Bound both count and resident pixel memory after long photo sessions.
     private static final int MAX_TEXTURES = 256;
+    private static final long MAX_RESIDENT_PIXEL_BYTES = 512L * 1024 * 1024;
+    private static long residentPixelBytes;
     private static final int MAX_PENDING_DECODES = 8;
-    private static final int MAX_UPLOADS_PER_FRAME = 2;
+    private static final int MAX_UPLOADS_PER_CLIENT_TICK = 2;
     private static final long UNUSED_TEXTURE_MILLIS = 60_000L;
-    private static final ResourceLocation FALLBACK = new ResourceLocation(GuaniaoMod.MOD_ID, "textures/item/photograph.png");
+    private static final Identifier FALLBACK = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "textures/item/photograph.png");
     private static final Map<String, CachedTexture> TEXTURES = new LinkedHashMap<>(MAX_TEXTURES + 1, 0.75F, true);
     private static final Set<String> DECODING = new HashSet<>();
     /** Keys whose jpeg could not be decoded; retried only after a logout clears it. */
     private static final Set<String> FAILED = new HashSet<>();
     private static final ArrayDeque<DecodedImage> READY = new ArrayDeque<>();
-    private static final ArrayDeque<ResourceLocation> AVAILABLE_SLOTS = new ArrayDeque<>();
+    private static final ArrayDeque<Identifier> AVAILABLE_SLOTS = new ArrayDeque<>();
     private static final ThreadPoolExecutor DECODER = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
             new ArrayBlockingQueue<>(MAX_PENDING_DECODES), runnable -> {
         Thread thread = new Thread(runnable, "Guaniao-Photo-Texture-Decode");
@@ -58,28 +55,32 @@ public final class PhotographTextureCache {
     private PhotographTextureCache() {
     }
 
-    public static ResourceLocation textureFor(ItemStack stack) {
-        ResourceLocation texture = readyTextureFor(stack);
+    public record ReadyImage(Identifier texture, int width, int height) { }
+
+    public static Identifier textureFor(ItemStack stack) {
+        Identifier texture = readyTextureFor(stack);
         return texture == null ? FALLBACK : texture;
     }
 
-    /** Requests the original image without substituting an unrelated item icon. */
+    /** Requests the original photograph; never substitutes an unrelated icon. */
     @Nullable
-    public static ResourceLocation readyTextureFor(ItemStack stack) {
-        if (!PhotographData.hasImage(stack)) {
-            return null;
-        }
+    public static Identifier readyTextureFor(ItemStack stack) {
+        ReadyImage ready = readyImageFor(stack);
+        return ready == null ? null : ready.texture();
+    }
+
+    /** The original decoded JPEG dimensions for exact photo-window cropping. */
+    @Nullable
+    public static ReadyImage readyImageFor(ItemStack stack) {
+        if (!PhotographData.hasImage(stack)) return null;
         String photoId = PhotographData.id(stack);
         String contentHash = PhotographData.contentHash(stack);
-        // This key never becomes a resource path. Avoid two regex replacements
-        // per draw, and keep case-sensitive photo identities distinct.
         String key = photoId + ":" + contentHash;
         CachedTexture cached = TEXTURES.get(key);
         if (cached != null) {
             cached.lastUsedMillis = System.currentTimeMillis();
-            return cached.location;
+            return new ReadyImage(cached.location, cached.width, cached.height);
         }
-
         byte[] jpeg = PhotoClientRepository.getOrRequest(photoId, contentHash);
         if (jpeg != null) imageAvailable(photoId, contentHash, jpeg);
         return null;
@@ -103,20 +104,23 @@ public final class PhotographTextureCache {
         if (!TEXTURES.containsKey(key) && DECODING.size() < MAX_PENDING_DECODES
                 && !FAILED.contains(key) && DECODING.add(key)) {
             int decodeGeneration = generation;
-            DECODER.execute(() -> decode(key, jpeg, decodeGeneration));
+            try {
+                DECODER.execute(() -> decode(key, jpeg, decodeGeneration));
+            } catch (java.util.concurrent.RejectedExecutionException exception) {
+                // A competing decode can fill the executor queue after the check.
+                DECODING.remove(key);
+            }
         }
     }
 
     public static void pumpUploads() {
         Minecraft minecraft = Minecraft.getInstance();
-        for (int uploaded = 0; uploaded < MAX_UPLOADS_PER_FRAME; uploaded++) {
+        for (int uploaded = 0; uploaded < MAX_UPLOADS_PER_CLIENT_TICK; uploaded++) {
             DecodedImage decoded;
             synchronized (READY) {
                 decoded = READY.pollFirst();
             }
-            if (decoded == null) {
-                break;
-            }
+            if (decoded == null) break;
             if (decoded.generation != generation) {
                 decoded.image.close();
                 continue;
@@ -126,19 +130,23 @@ public final class PhotographTextureCache {
                 decoded.image.close();
                 continue;
             }
-            ResourceLocation location = reserveSlot();
-            PhotoTexture texture = null;
+            Identifier location = reserveSlot();
+            DynamicTexture texture = null;
             try {
-                texture = new PhotoTexture(decoded.image);
+                int width = decoded.image.getWidth(), height = decoded.image.getHeight();
+                // Backend-independent 26.2 texture upload (OpenGL or Vulkan).
+                // DynamicTexture takes ownership of these NativeImage pixels.
+                texture = new DynamicTexture(() -> "Guaniao photograph " + decoded.key, decoded.image);
                 minecraft.getTextureManager().register(location, texture);
-                TEXTURES.put(decoded.key, new CachedTexture(location, System.currentTimeMillis()));
+                TEXTURES.put(decoded.key, new CachedTexture(location,
+                        System.currentTimeMillis(), width, height));
+                residentPixelBytes += (long) width * height * 4L;
             } catch (RuntimeException exception) {
                 if (texture != null) texture.close();
+                else decoded.image.close();
                 AVAILABLE_SLOTS.addLast(location);
                 FAILED.add(decoded.key);
                 GuaniaoMod.LOGGER.warn("Could not upload photograph texture {}", decoded.key, exception);
-            } finally {
-                decoded.image.close();
             }
         }
         evictTextures();
@@ -152,6 +160,7 @@ public final class PhotographTextureCache {
             minecraft.getTextureManager().release(texture.location);
         }
         TEXTURES.clear();
+        residentPixelBytes = 0L;
         resetSlots();
         DECODING.clear();
         FAILED.clear();
@@ -211,20 +220,23 @@ public final class PhotographTextureCache {
         Iterator<Map.Entry<String, CachedTexture>> iterator = TEXTURES.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, CachedTexture> entry = iterator.next();
-            if (entry.getValue().lastUsedMillis >= cutoff) {
+            if (entry.getValue().lastUsedMillis >= cutoff
+                    && residentPixelBytes <= MAX_RESIDENT_PIXEL_BYTES) {
                 continue;
             }
+            residentPixelBytes -= entry.getValue().pixelBytes();
             iterator.remove();
             minecraft.getTextureManager().release(entry.getValue().location);
             AVAILABLE_SLOTS.addLast(entry.getValue().location);
         }
     }
 
-    private static ResourceLocation reserveSlot() {
+    private static Identifier reserveSlot() {
         if (!AVAILABLE_SLOTS.isEmpty()) return AVAILABLE_SLOTS.removeFirst();
         Iterator<CachedTexture> iterator = TEXTURES.values().iterator();
         CachedTexture oldest = iterator.next();
         iterator.remove();
+        residentPixelBytes -= oldest.pixelBytes();
         Minecraft.getInstance().getTextureManager().release(oldest.location);
         return oldest.location;
     }
@@ -232,49 +244,7 @@ public final class PhotographTextureCache {
     private static void resetSlots() {
         AVAILABLE_SLOTS.clear();
         for (int slot = 0; slot < MAX_TEXTURES; slot++) {
-            AVAILABLE_SLOTS.addLast(new ResourceLocation(GuaniaoMod.MOD_ID, "dynamic/guaniao_photo/" + slot));
-        }
-    }
-
-    /** Immutable pixels live on the GPU; export continues to use the original JPEG. */
-    private static final class PhotoTexture extends AbstractTexture implements Dumpable {
-        private final int width;
-        private final int height;
-
-        private PhotoTexture(NativeImage image) {
-            width = image.getWidth();
-            height = image.getHeight();
-            try {
-                TextureUtil.prepareImage(getId(), width, height);
-                bind();
-                image.upload(0, 0, 0, false);
-                setFilter(false, false);
-            } catch (RuntimeException exception) {
-                releaseId();
-                throw exception;
-            }
-        }
-
-        @Override
-        public void load(ResourceManager resources) {
-            // Like DynamicTexture, retain the uploaded image across resource reloads.
-        }
-
-        @Override
-        public void close() {
-            releaseId();
-        }
-
-        @Override
-        public void dumpContents(ResourceLocation location, Path directory) throws IOException {
-            int previous = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-            try (NativeImage image = new NativeImage(width, height, false)) {
-                bind();
-                image.downloadTexture(0, false);
-                image.writeToFile(directory.resolve(location.toDebugFileName() + ".png"));
-            } finally {
-                RenderSystem.bindTexture(previous);
-            }
+            AVAILABLE_SLOTS.addLast(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "dynamic/guaniao_photo/" + slot));
         }
     }
 
@@ -284,12 +254,19 @@ public final class PhotographTextureCache {
     }
 
     private static final class CachedTexture {
-        private final ResourceLocation location;
+        private final Identifier location;
+        private final int width, height;
         private long lastUsedMillis;
 
-        private CachedTexture(ResourceLocation location, long lastUsedMillis) {
+        private CachedTexture(Identifier location, long lastUsedMillis, int width, int height) {
             this.location = location;
             this.lastUsedMillis = lastUsedMillis;
+            this.width = width;
+            this.height = height;
+        }
+
+        private long pixelBytes() {
+            return (long) width * height * 4L;
         }
     }
 

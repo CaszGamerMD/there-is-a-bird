@@ -1,14 +1,23 @@
 package EdDYON.guaniao.network;
 
-import EdDYON.guaniao.client.camera.PhotoClientRepository;
 import java.util.UUID;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import EdDYON.guaniao.GuaniaoMod;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public record PhotoCaptureResultPacket(UUID uploadId, boolean success) {
+public record PhotoCaptureResultPacket(UUID uploadId, boolean success) implements CustomPacketPayload {
+    public static final Type<PhotoCaptureResultPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "photo_capture_result"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PhotoCaptureResultPacket> CODEC =
+            StreamCodec.of((RegistryFriendlyByteBuf buffer, PhotoCaptureResultPacket packet) ->
+                    encode(packet, buffer), PhotoCaptureResultPacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+
     public static void encode(PhotoCaptureResultPacket packet, FriendlyByteBuf buffer) {
         buffer.writeUUID(packet.uploadId);
         buffer.writeBoolean(packet.success);
@@ -18,12 +27,4 @@ public record PhotoCaptureResultPacket(UUID uploadId, boolean success) {
         return new PhotoCaptureResultPacket(buffer.readUUID(), buffer.readBoolean());
     }
 
-    public static void handle(PhotoCaptureResultPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(
-                Dist.CLIENT,
-                () -> () -> PhotoClientRepository.captureResult(packet.uploadId, packet.success)
-        ));
-        context.setPacketHandled(true);
-    }
 }

@@ -1,6 +1,5 @@
 package EdDYON.guaniao.event;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdSpecies;
 import EdDYON.guaniao.content.bird.BirdGroundLocomotion;
 import EdDYON.guaniao.content.bird.flight.BirdFlightLock;
@@ -13,17 +12,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.MinecraftServer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.npc.Villager;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.entity.npc.villager.Villager;
 
 /** Ticks only registered birds and affected villagers instead of every LivingEntity. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdServerTickManager {
     private static final Map<ServerLevel, LinkedHashMap<UUID, Mob>> BIRDS = new WeakHashMap<>();
 
@@ -42,22 +39,15 @@ public final class BirdServerTickManager {
         }
     }
 
-    @SubscribeEvent
-    public static void onEntityLeave(EntityLeaveLevelEvent event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            Map<UUID, Mob> birds = BIRDS.get(level);
-            if (birds != null) {
-                birds.remove(event.getEntity().getUUID());
-            }
+    public static void onEntityLeave(Entity entity, ServerLevel level) {
+        Map<UUID, Mob> birds = BIRDS.get(level);
+        if (birds != null) {
+            birds.remove(entity.getUUID());
         }
     }
 
-    @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
-        for (ServerLevel level : event.getServer().getAllLevels()) {
+    public static void onServerTick(MinecraftServer server) {
+        for (ServerLevel level : server.getAllLevels()) {
             Map<UUID, Mob> birds = BIRDS.get(level);
             if (birds == null) {
                 continue;
@@ -87,14 +77,19 @@ public final class BirdServerTickManager {
                 bird.discard();
             }
         }
-        BirdDroppingPrankHandler.tickTrackedVillagers(event.getServer());
+        BirdDroppingPrankHandler.tickTrackedVillagers(server);
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            BIRDS.remove(level);
-            BirdDroppingPrankHandler.forgetLevel(level);
-        }
+    public static void onLevelUnload(ServerLevel level) {
+        BIRDS.remove(level);
+        BirdDroppingPrankHandler.forgetLevel(level);
+    }
+
+    /** Preserve Forge END-tick cadence and entity/world cleanup using Fabric hooks. */
+    public static void registerCallbacks() {
+        ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> trackEntity(entity));
+        ServerEntityEvents.ENTITY_UNLOAD.register(BirdServerTickManager::onEntityLeave);
+        ServerTickEvents.END_SERVER_TICK.register(BirdServerTickManager::onServerTick);
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 }

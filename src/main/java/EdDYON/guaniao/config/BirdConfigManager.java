@@ -9,7 +9,7 @@ import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.bird.BirdAmbientDropControl;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.Reader;
 import java.nio.ByteBuffer;
@@ -29,7 +29,7 @@ public final class BirdConfigManager {
     public static final double BIRD_CAP_VERTICAL_RADIUS = 48.0D;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve(GuaniaoMod.MOD_ID);
+    private static final Path CONFIG_DIR = FabricLoader.getInstance().getConfigDir().resolve(GuaniaoMod.MOD_ID);
     private static final Path GLOBAL_CONFIG_FILE = CONFIG_DIR.resolve("bird_settings.json");
     private static final DateTimeFormatter BROKEN_FILE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
     private static volatile BirdConfigData config = defaultConfig();

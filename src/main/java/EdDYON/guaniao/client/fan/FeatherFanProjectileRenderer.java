@@ -3,62 +3,95 @@ package EdDYON.guaniao.client.fan;
 import EdDYON.guaniao.content.fan.FeatherFanProjectileEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 
-public class FeatherFanProjectileRenderer extends EntityRenderer<FeatherFanProjectileEntity> {
+/**
+ * Extract the authored spinning, piercing, hunting and Riven fan poses before
+ * deferred item submission. Every Riven copy retains its original model seed.
+ */
+public class FeatherFanProjectileRenderer
+        extends EntityRenderer<FeatherFanProjectileEntity, FeatherFanProjectileRenderState> {
     private static final float RENDER_SCALE = 1.35F;
-    private final ItemRenderer itemRenderer;
+    private final ItemModelResolver itemModelResolver;
 
     public FeatherFanProjectileRenderer(EntityRendererProvider.Context context) {
         super(context);
-        this.itemRenderer = context.getItemRenderer();
+        this.itemModelResolver = context.getItemModelResolver();
         this.shadowRadius = 0.0F;
     }
 
     @Override
-    public void render(FeatherFanProjectileEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        if (entity.tickCount < 2) {
-            super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+    public FeatherFanProjectileRenderState createRenderState() {
+        return new FeatherFanProjectileRenderState();
+    }
+
+    @Override
+    public void extractRenderState(FeatherFanProjectileEntity entity,
+                                   FeatherFanProjectileRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        state.ticks = entity.tickCount;
+        state.partialTick = partialTick;
+        state.yaw = Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot());
+        state.pitch = Mth.lerp(partialTick, entity.xRotO, entity.getXRot());
+        state.charge = entity.getCharge();
+        state.rivenTicks = entity.getRivenTicks();
+        state.piercing = entity.isPiercing();
+        state.stuck = entity.isStuck();
+        state.hunting = entity.isHunting();
+        state.returning = entity.isReturning();
+        state.rivenActive = entity.isRivenActive();
+        // Old immediate rendering resolved the GROUND item once per copy,
+        // using entity.getId() for the main fan and id*31+i for Riven.
+        this.itemModelResolver.updateForTopItem(state.mainFan, entity.getItem(),
+                ItemDisplayContext.GROUND, entity.level(), null, entity.getId());
+        for (int i = 0; i < state.rivenFans.length; i++) {
+            this.itemModelResolver.updateForTopItem(state.rivenFans[i], entity.getItem(),
+                    ItemDisplayContext.GROUND, entity.level(), null, entity.getId() * 31 + i);
+        }
+    }
+
+    @Override
+    public void submit(FeatherFanProjectileRenderState state, PoseStack poseStack,
+                       SubmitNodeCollector collector, CameraRenderState camera) {
+        if (state.ticks < 2) {
+            super.submit(state, poseStack, collector, camera);
             return;
         }
 
-        boolean renderMainFan = !entity.isRivenActive()
-                || entity.getRivenTicks() < FeatherFanProjectileEntity.RIVEN_PREPARE_END
-                || entity.getRivenTicks() >= FeatherFanProjectileEntity.RIVEN_CONVERGE_END;
+        boolean renderMainFan = !state.rivenActive
+                || state.rivenTicks < FeatherFanProjectileEntity.RIVEN_PREPARE_END
+                || state.rivenTicks >= FeatherFanProjectileEntity.RIVEN_CONVERGE_END;
         if (renderMainFan) {
-            this.renderMainFan(entity, partialTick, poseStack, bufferSource, packedLight);
+            this.submitMainFan(state, poseStack, collector);
         }
-        if (entity.isRivenActive()) {
-            this.renderRivenArray(entity, partialTick, poseStack, bufferSource);
+        if (state.rivenActive) {
+            this.submitRivenArray(state, poseStack, collector);
         }
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        super.submit(state, poseStack, collector, camera);
     }
 
-    private void renderMainFan(FeatherFanProjectileEntity entity, float partialTick,
-                               PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+    private void submitMainFan(FeatherFanProjectileRenderState state, PoseStack poseStack,
+                               SubmitNodeCollector collector) {
         poseStack.pushPose();
         poseStack.scale(RENDER_SCALE, RENDER_SCALE, RENDER_SCALE);
-        if (entity.isPiercing() || entity.isStuck()) {
-            float yaw = Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot());
-            float pitch = Mth.lerp(partialTick, entity.xRotO, entity.getXRot());
-            // Point the fan along the flight vector without distorting the original item proportions.
-            poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
-            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F - pitch));
+        if (state.piercing || state.stuck) {
+            // Point the fan along the flight vector without changing authored proportions.
+            poseStack.mulPose(Axis.YP.rotationDegrees(state.yaw));
+            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F - state.pitch));
             poseStack.mulPose(Axis.ZP.rotationDegrees(43.0F));
             poseStack.scale(0.90F, 0.90F, 0.90F);
-            if (entity.isRivenActive()
-                    && entity.getRivenTicks() >= FeatherFanProjectileEntity.RIVEN_CONVERGE_END) {
+            if (state.rivenActive
+                    && state.rivenTicks >= FeatherFanProjectileEntity.RIVEN_CONVERGE_END) {
                 float reformProgress = Mth.clamp(
-                        (entity.getRivenTicks() + partialTick - FeatherFanProjectileEntity.RIVEN_CONVERGE_END)
+                        (state.rivenTicks + state.partialTick - FeatherFanProjectileEntity.RIVEN_CONVERGE_END)
                                 / (FeatherFanProjectileEntity.RIVEN_END
                                 - FeatherFanProjectileEntity.RIVEN_CONVERGE_END),
                         0.0F,
@@ -70,28 +103,28 @@ public class FeatherFanProjectileRenderer extends EntityRenderer<FeatherFanProje
                 poseStack.scale(reformScale, reformScale, reformScale);
             }
         } else {
-            float spinSpeed = entity.isHunting()
+            float spinSpeed = state.hunting
                     ? 72.0F
-                    : Mth.lerp(entity.getCharge(), 30.0F, 55.0F);
-            float spinDirection = entity.isReturning() ? -1.0F : 1.0F;
-            // Lay the generated item model flat, then spin it around the world's vertical axis.
-            poseStack.mulPose(Axis.YP.rotationDegrees((entity.tickCount + partialTick) * spinSpeed * spinDirection));
+                    : Mth.lerp(state.charge, 30.0F, 55.0F);
+            float spinDirection = state.returning ? -1.0F : 1.0F;
+            poseStack.mulPose(Axis.YP.rotationDegrees(
+                    (state.ticks + state.partialTick) * spinSpeed * spinDirection));
             poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
-            if (entity.isHunting()) {
+            if (state.hunting) {
                 poseStack.mulPose(Axis.ZP.rotationDegrees(
-                        Mth.sin((entity.tickCount + partialTick) * 0.72F) * 7.5F));
+                        Mth.sin((state.ticks + state.partialTick) * 0.72F) * 7.5F));
                 poseStack.scale(1.08F, 1.08F, 1.08F);
             }
         }
-        this.renderFanCopy(entity, poseStack, bufferSource,
-                entity.isHunting() ? LightTexture.FULL_BRIGHT : packedLight,
-                entity.getId());
+        state.mainFan.submit(poseStack, collector,
+                state.hunting ? LightCoordsUtil.FULL_BRIGHT : state.lightCoords,
+                OverlayTexture.NO_OVERLAY, state.outlineColor);
         poseStack.popPose();
     }
 
-    private void renderRivenArray(FeatherFanProjectileEntity entity, float partialTick,
-                                  PoseStack poseStack, MultiBufferSource bufferSource) {
-        float age = entity.getRivenTicks() + partialTick;
+    private void submitRivenArray(FeatherFanProjectileRenderState state,
+                                  PoseStack poseStack, SubmitNodeCollector collector) {
+        float age = state.rivenTicks + state.partialTick;
         float radius = FeatherFanProjectileEntity.getRivenArrayRadius(age);
         if (radius <= 0.0F) {
             return;
@@ -125,28 +158,9 @@ public class FeatherFanProjectileRenderer extends EntityRenderer<FeatherFanProje
             poseStack.mulPose(Axis.XP.rotationDegrees(90.0F - pitch));
             poseStack.mulPose(Axis.ZP.rotationDegrees(43.0F));
             poseStack.scale(0.82F, 0.82F, 0.82F);
-            this.renderFanCopy(entity, poseStack, bufferSource,
-                    LightTexture.FULL_BRIGHT, entity.getId() * 31 + i);
+            state.rivenFans[i].submit(poseStack, collector, LightCoordsUtil.FULL_BRIGHT,
+                    OverlayTexture.NO_OVERLAY, state.outlineColor);
             poseStack.popPose();
         }
-    }
-
-    private void renderFanCopy(FeatherFanProjectileEntity entity, PoseStack poseStack,
-                               MultiBufferSource bufferSource, int packedLight, int seed) {
-        this.itemRenderer.renderStatic(
-                entity.getItem(),
-                ItemDisplayContext.GROUND,
-                packedLight,
-                OverlayTexture.NO_OVERLAY,
-                poseStack,
-                bufferSource,
-                entity.level(),
-                seed
-        );
-    }
-
-    @Override
-    public ResourceLocation getTextureLocation(FeatherFanProjectileEntity entity) {
-        return TextureAtlas.LOCATION_BLOCKS;
     }
 }

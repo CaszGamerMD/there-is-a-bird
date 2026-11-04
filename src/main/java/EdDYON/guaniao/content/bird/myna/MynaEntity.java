@@ -20,7 +20,7 @@ import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -35,9 +35,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -56,18 +55,18 @@ import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
 /**
  * Crested myna using the shared small-bird flight foundation with its own
  * server-authoritative decorative and sleep states.
  */
-public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleepWakeable {
+public class MynaEntity extends SparrowEntity implements BirdSleepWakeable {
     private static final EntityDataAccessor<Integer> ACTION_STATE =
             SynchedEntityData.defineId(MynaEntity.class, EntityDataSerializers.INT);
 
@@ -115,7 +114,7 @@ public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleep
     }
 
     public static boolean canMynaSpawn(EntityType<MynaEntity> entityType, ServerLevelAccessor level,
-                                       MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+                                       EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)
@@ -197,15 +196,15 @@ public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleep
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(ACTION_STATE, MynaActionState.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ACTION_STATE, MynaActionState.NONE.ordinal());
     }
 
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
 
@@ -379,6 +378,10 @@ public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleep
     }
 
     @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
     public boolean isFlying() {
         return this.isBirdFlightActive() || (!this.onGround() && !this.isInWaterOrBubble());
     }
@@ -391,7 +394,7 @@ public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleep
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (this.isBirdSleeping() && soundPosition != null) {
@@ -405,7 +408,7 @@ public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleep
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             Vec3 sourcePosition = source.getEntity() == null ? this.position() : source.getEntity().position();
             this.wakeFromLoudSound(sourcePosition);
         }
@@ -422,9 +425,9 @@ public class MynaEntity extends SparrowEntity implements FlyingAnimal, BirdSleep
                 this.getDeltaMovement(), 6);
     }
 
-    private <T extends MynaEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(4);
+    private <T extends MynaEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(4);
         RawAnimation preview = this.guidePreviewAnimation.animation();
         if (preview != null) {
             return animationState.setAndContinue(preview);

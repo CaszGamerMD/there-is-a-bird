@@ -4,19 +4,21 @@ import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.joml.Vector3f;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import net.minecraft.util.ARGB;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 public final class BaggedFriesBlockEntity extends BlockEntity implements GeoBlockEntity {
     private static final String FRY_MASK_TAG = "FryMask";
@@ -24,9 +26,9 @@ public final class BaggedFriesBlockEntity extends BlockEntity implements GeoBloc
     private static final int FULL_MASK = (1 << BaggedFriesBlock.TOTAL_FRIES) - 1;
     private static final int AMBIENT_PARTICLE_CHANCE = 8;
     private static final DustParticleOptions DIRTY_BROWN_DUST =
-            new DustParticleOptions(new Vector3f(0.28F, 0.18F, 0.07F), 0.80F);
+            new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.28F, 0.18F, 0.07F), 0.80F);
     private static final DustParticleOptions SICK_GREEN_DUST =
-            new DustParticleOptions(new Vector3f(0.20F, 0.40F, 0.08F), 0.70F);
+            new DustParticleOptions(ARGB.colorFromFloat(1.0F, 0.20F, 0.40F, 0.08F), 0.70F);
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private int fryMask = FULL_MASK;
@@ -99,17 +101,17 @@ public final class BaggedFriesBlockEntity extends BlockEntity implements GeoBloc
 
     public void syncToClient() {
         this.setChanged();
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             BlockState state = this.getBlockState();
             this.level.sendBlockUpdated(this.worldPosition, state, state, net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
         }
     }
 
     public void tick(Level level, BlockPos pos, BlockState state) {
-        if (!level.isClientSide || !this.laxative || this.fryMask == 0) {
+        if (!level.isClientSide() || !this.laxative || this.fryMask == 0) {
             return;
         }
-        RandomSource random = level.random;
+        RandomSource random = level.getRandom();
         if (random.nextInt(AMBIENT_PARTICLE_CHANCE) != 0) {
             return;
         }
@@ -146,47 +148,34 @@ public final class BaggedFriesBlockEntity extends BlockEntity implements GeoBloc
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt(FRY_MASK_TAG, this.fryMask);
-        tag.putBoolean(LAXATIVE_TAG, this.laxative);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.putInt(FRY_MASK_TAG, this.fryMask);
+        output.putBoolean(LAXATIVE_TAG, this.laxative);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if (tag.contains(FRY_MASK_TAG)) {
-            this.fryMask = tag.getInt(FRY_MASK_TAG) & FULL_MASK;
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        if (input.getInt(FRY_MASK_TAG).isPresent()) {
+            this.fryMask = input.getIntOr(FRY_MASK_TAG, 0) & FULL_MASK;
         } else if (this.getBlockState().hasProperty(BaggedFriesBlock.FRIES)) {
             int count = this.getBlockState().getValue(BaggedFriesBlock.FRIES);
             this.fryMask = count <= 0 ? 0 : (1 << Math.min(count, BaggedFriesBlock.TOTAL_FRIES)) - 1;
         } else {
             this.fryMask = FULL_MASK;
         }
-        this.laxative = tag.getBoolean(LAXATIVE_TAG);
+        this.laxative = input.getBooleanOr(LAXATIVE_TAG, false);
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return this.saveWithoutMetadata();
-    }
-
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        this.load(tag);
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return this.saveWithoutMetadata(registries);
     }
 
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
-        CompoundTag tag = packet.getTag();
-        if (tag != null) {
-            this.load(tag);
-        }
     }
 
     @Override

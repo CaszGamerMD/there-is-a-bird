@@ -2,15 +2,15 @@ package EdDYON.guaniao.content.bird;
 
 import EdDYON.guaniao.config.BirdSpecies;
 import java.util.Map;
-import java.util.UUID;
 import java.util.WeakHashMap;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.block.Blocks;
 
 /**
  * Gives every ground bird a stable individual walking speed and a slowly
@@ -18,10 +18,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * follow, chase and escape logic keep their existing tuning.
  */
 public final class BirdGroundLocomotion {
-    private static final String TAG_INDIVIDUAL_FACTOR = "GuaniaoIndividualWalkFactor";
-    private static final UUID GROUND_SPEED_MODIFIER_ID =
-            UUID.fromString("5d7e8914-9a44-4af0-b6fc-1de640e178a1");
-    private static final String GROUND_SPEED_MODIFIER_NAME = "Guaniao ground locomotion";
+    // 26.2 keys modifiers by resource ID, replacing Forge's original UUID/name pair.
+    private static final Identifier GROUND_SPEED_MODIFIER_ID =
+            Identifier.fromNamespaceAndPath("guaniao", "ground_locomotion");
     private static final float PACE_LERP = 0.08F;
     private static final Map<Mob, State> STATES = new WeakHashMap<>();
 
@@ -46,7 +45,8 @@ public final class BirdGroundLocomotion {
             STATES.remove(bird);
             return;
         }
-        if (!bird.onGround() || bird.isPassenger() || bird.isInWaterOrBubble()) {
+        if (!bird.onGround() || bird.isPassenger() || bird.isInWater()
+                || bird.level().getBlockState(bird.blockPosition()).is(Blocks.BUBBLE_COLUMN)) {
             removeModifier(movementSpeed);
             State state = STATES.get(bird);
             if (state != null) {
@@ -87,9 +87,8 @@ public final class BirdGroundLocomotion {
         removeModifier(attribute);
         attribute.addTransientModifier(new AttributeModifier(
                 GROUND_SPEED_MODIFIER_ID,
-                GROUND_SPEED_MODIFIER_NAME,
                 multiplier - 1.0D,
-                AttributeModifier.Operation.MULTIPLY_TOTAL));
+                AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         state.appliedMultiplier = multiplier;
     }
 
@@ -180,20 +179,18 @@ public final class BirdGroundLocomotion {
         }
 
         private static State create(Mob bird, LocomotionProfile profile) {
-            CompoundTag data = bird.getPersistentData();
+            Float savedFactor = bird.getAttached(BirdEntityAttachments.INDIVIDUAL_WALK_FACTOR);
             float individualFactor;
-            if (data.contains(TAG_INDIVIDUAL_FACTOR, 99)) {
-                float savedFactor = data.getFloat(TAG_INDIVIDUAL_FACTOR);
+            if (savedFactor != null) {
                 individualFactor = Mth.clamp(
                         Float.isFinite(savedFactor) ? savedFactor : 1.0F,
                         1.0F - profile.individualVariance,
                         1.0F + profile.individualVariance);
-                data.putFloat(TAG_INDIVIDUAL_FACTOR, individualFactor);
             } else {
                 individualFactor = 1.0F
                         + (bird.getRandom().nextFloat() * 2.0F - 1.0F) * profile.individualVariance;
-                data.putFloat(TAG_INDIVIDUAL_FACTOR, individualFactor);
             }
+            bird.setAttached(BirdEntityAttachments.INDIVIDUAL_WALK_FACTOR, individualFactor);
             GroundPace initialPace = choosePace(bird.getRandom(), profile);
             return new State(
                     individualFactor,

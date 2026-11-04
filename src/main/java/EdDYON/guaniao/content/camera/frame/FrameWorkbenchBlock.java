@@ -1,15 +1,18 @@
 package EdDYON.guaniao.content.camera.frame;
 
+import com.mojang.serialization.MapCodec;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.SimpleMenuProvider;
+
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -20,20 +23,20 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 
 /** The workshop retains one private work area per visiting player. */
 public final class FrameWorkbenchBlock extends BaseEntityBlock {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final MapCodec<FrameWorkbenchBlock> CODEC = simpleCodec(FrameWorkbenchBlock::new);
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     // Table, recessed work surface, cabinet and legs; texture seam offsets do not
     // need sub-pixel collision boxes. These shared shapes are built only once.
     private static final VoxelShape BODY = Shapes.or(
@@ -52,6 +55,11 @@ public final class FrameWorkbenchBlock extends BaseEntityBlock {
     public FrameWorkbenchBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
 
     @Override
@@ -80,34 +88,57 @@ public final class FrameWorkbenchBlock extends BaseEntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
-                                 InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
+    protected InteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos,
+                                          Player player, InteractionHand hand, BlockHitResult hit) {
+        return openWorkbench(level, pos, player);
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                                Player player, BlockHitResult hit) {
+        return openWorkbench(level, pos, player);
+    }
+
+    private InteractionResult openWorkbench(Level level, BlockPos pos, Player player) {
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof FrameWorkbenchBlockEntity bench) {
-            NetworkHooks.openScreen(serverPlayer, new SimpleMenuProvider(
-                    (id, inventory, ignored) -> new FrameWorkbenchMenu(id, inventory, bench),
-                    Component.translatable("gui.guaniao.frame_workbench.title")), pos);
+            serverPlayer.openMenu(new net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider<BlockPos>() {
+                @Override
+                public BlockPos getScreenOpeningData(ServerPlayer player) {
+                    return pos.immutable();
+                }
+
+                @Override
+                public Component getDisplayName() {
+                    return Component.translatable("gui.guaniao.frame_workbench.title");
+                }
+
+                @Override
+                public FrameWorkbenchMenu createMenu(int containerId, net.minecraft.world.entity.player.Inventory inventory,
+                                                     Player ignored) {
+                    return new FrameWorkbenchMenu(containerId, inventory, bench);
+                }
+            });
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
-    @Override public PushReaction getPistonPushReaction(BlockState state) { return PushReaction.BLOCK; }
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new FrameWorkbenchBlockEntity(pos, state);
     }
 
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return level.isClientSide ? null : createTickerHelper(type,
+        return level.isClientSide() ? null : createTickerHelper(type,
                 GuaniaoBlockEntityTypes.FRAME_WORKBENCH.get(), FrameWorkbenchBlockEntity::serverTick);
     }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean movedByPiston) {
-        if (!state.is(replacement.getBlock()) && level.getBlockEntity(pos) instanceof FrameWorkbenchBlockEntity bench) {
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        if (level.getBlockEntity(pos) instanceof FrameWorkbenchBlockEntity bench) {
             bench.dismantle();
         }
-        super.onRemove(state, level, pos, replacement, movedByPiston);
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
     }
 }

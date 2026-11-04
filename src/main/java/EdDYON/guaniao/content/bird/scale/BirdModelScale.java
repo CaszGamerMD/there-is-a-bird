@@ -49,10 +49,7 @@ public final class BirdModelScale {
     }
 
     public static float load(CompoundTag compoundTag, BirdModelScaleProfile profile) {
-        if (!compoundTag.contains(NBT_KEY, 5)) {
-            return DEFAULT_INDIVIDUAL_SCALE;
-        }
-        return sanitize(compoundTag.getFloat(NBT_KEY), profile);
+        return sanitize(compoundTag.getFloat(NBT_KEY).orElse(DEFAULT_INDIVIDUAL_SCALE), profile);
     }
 
     private static float lerp(float amount, float min, float max) {

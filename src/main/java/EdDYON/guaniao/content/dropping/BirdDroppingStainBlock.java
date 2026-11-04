@@ -1,6 +1,5 @@
 package EdDYON.guaniao.content.dropping;
 
-import EdDYON.guaniao.client.particle.PlaceableBlockBreakEffects;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
@@ -11,6 +10,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -18,6 +18,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlockContainer;
@@ -30,20 +31,13 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 
-import java.util.function.Consumer;
 
 public class BirdDroppingStainBlock extends Block implements LiquidBlockContainer {
     private static final VoxelShape SHAPE = Block.box(1.0D, 0.0D, 1.0D, 15.0D, 1.0D, 15.0D);
 
     public BirdDroppingStainBlock(BlockBehaviour.Properties properties) {
         super(properties.pushReaction(PushReaction.DESTROY));
-    }
-
-    @Override
-    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
-        consumer.accept(PlaceableBlockBreakEffects.droppingStain());
     }
 
     @Override
@@ -58,26 +52,28 @@ public class BirdDroppingStainBlock extends Block implements LiquidBlockContaine
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks,
+                                     BlockPos pos, Direction direction, BlockPos neighborPos,
+                                     BlockState neighborState, RandomSource random) {
         if (direction == Direction.DOWN && !this.canSurvive(state, level, pos)) {
             return Blocks.AIR.defaultBlockState();
         }
         if (isTouchingWater(level, pos)) {
             return Blocks.AIR.defaultBlockState();
         }
-        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        ItemStack stack = player.getItemInHand(hand);
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                          Player player, InteractionHand hand, BlockHitResult hit) {
         if (!stack.is(Items.BRUSH)) {
             return InteractionResult.PASS;
         }
-        if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
+        if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
             cleanWithBrush(serverLevel, pos, player, hand, stack);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override
@@ -88,7 +84,7 @@ public class BirdDroppingStainBlock extends Block implements LiquidBlockContaine
     }
 
     @Override
-    public boolean canPlaceLiquid(BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
+    public boolean canPlaceLiquid(LivingEntity user, BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
         return fluid == Fluids.WATER;
     }
 
@@ -106,26 +102,26 @@ public class BirdDroppingStainBlock extends Block implements LiquidBlockContaine
     }
 
     private static void cleanWithBrush(ServerLevel level, BlockPos pos, Player player, InteractionHand hand, ItemStack brush) {
-        Block.popResource(level, pos, BirdDroppingUtil.randomDroppingStack(level.random));
+        Block.popResource(level, pos, BirdDroppingUtil.randomDroppingStack(level.getRandom()));
         level.removeBlock(pos, false);
         spawnParticles(level, pos, ParticleTypes.POOF, 8);
-        level.playSound(null, pos, SoundEvents.SLIME_BLOCK_BREAK, SoundSource.BLOCKS, 0.65F, 0.85F + level.random.nextFloat() * 0.25F);
+        level.playSound(null, pos, SoundEvents.SLIME_BLOCK_BREAK, SoundSource.BLOCKS, 0.65F, 0.85F + level.getRandom().nextFloat() * 0.25F);
         if (!player.getAbilities().instabuild) {
-            brush.hurtAndBreak(1, player, brokenPlayer -> brokenPlayer.broadcastBreakEvent(hand));
+            brush.hurtAndBreak(1, player, hand);
         }
     }
 
     private static void washAway(ServerLevel level, BlockPos pos, ParticleOptions particles, net.minecraft.sounds.SoundEvent sound) {
         level.removeBlock(pos, false);
         spawnParticles(level, pos, particles, 5);
-        level.playSound(null, pos, sound, SoundSource.BLOCKS, 0.35F, 1.1F + level.random.nextFloat() * 0.25F);
+        level.playSound(null, pos, sound, SoundSource.BLOCKS, 0.35F, 1.1F + level.getRandom().nextFloat() * 0.25F);
     }
 
     private static void spawnParticles(ServerLevel level, BlockPos pos, ParticleOptions particles, int count) {
         level.sendParticles(particles, pos.getX() + 0.5D, pos.getY() + 0.08D, pos.getZ() + 0.5D, count, 0.25D, 0.03D, 0.25D, 0.01D);
     }
 
-    private static boolean isTouchingWater(LevelAccessor level, BlockPos pos) {
+    private static boolean isTouchingWater(LevelReader level, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             if (level.getFluidState(pos.relative(direction)).is(Fluids.WATER)) {
                 return true;

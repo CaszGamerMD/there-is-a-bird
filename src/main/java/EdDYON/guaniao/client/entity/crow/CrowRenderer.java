@@ -1,23 +1,26 @@
 package EdDYON.guaniao.client.entity.crow;
 
+import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
 import EdDYON.guaniao.content.bird.crow.CrowEntity;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.MultiBufferSource;
+import com.geckolib.renderer.GeoEntityRenderer;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.RenderPassInfo;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 
-public class CrowRenderer extends GeoEntityRenderer<CrowEntity> {
-    public CrowRenderer(EntityRendererProvider.Context renderManager) {
-        super(renderManager, (GeoModel)new CrowModel());
-        this.addRenderLayer(new CrowHeldFoodLayer(this));
+public class CrowRenderer<R extends LivingEntityRenderState & GeoRenderState>
+        extends GeoEntityRenderer<CrowEntity, R> {
+    public CrowRenderer(EntityRendererProvider.Context context) {
+        super(context, new CrowModel());
+        this.addRenderLayer(new CrowHeldFoodLayer<>(context, this));
         this.shadowRadius = 0.17F;
     }
 
     @Override
-    public void preRender(PoseStack poseStack, CrowEntity animatable, BakedGeoModel model, MultiBufferSource bufferSource, com.mojang.blaze3d.vertex.VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        this.withScale(animatable.getModelRenderScale());
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+    public void scaleModelForRender(RenderPassInfo<R> renderPassInfo,
+                                    float widthScale, float heightScale) {
+        float scale = renderPassInfo.renderState().getOrDefaultGeckolibData(
+                BirdMutationRenderData.MODEL_SCALE, 1.0F);
+        super.scaleModelForRender(renderPassInfo, widthScale * scale, heightScale * scale);
     }
 }

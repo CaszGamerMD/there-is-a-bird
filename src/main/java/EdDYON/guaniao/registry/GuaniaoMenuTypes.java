@@ -1,23 +1,37 @@
 package EdDYON.guaniao.registry;
 
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.nest.CrowNestMenu;
 import EdDYON.guaniao.content.camera.frame.FrameWorkbenchMenu;
+import EdDYON.guaniao.fabric.FabricRegistryQueue;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
+/**
+ * Keep the original two menu IDs and send the exact block position on open.
+ * Fabric 26.2 ExtendedMenuType retains block-position opening without removing
+ * the server-authoritative nest search or persistent frame workbench jobs.
+ */
 public final class GuaniaoMenuTypes {
-    public static final DeferredRegister<MenuType<?>> MENU_TYPES = DeferredRegister.create(ForgeRegistries.MENU_TYPES, GuaniaoMod.MOD_ID);
+    public static final FabricRegistryQueue<MenuType<?>> MENU_TYPES =
+            new FabricRegistryQueue<>(BuiltInRegistries.MENU, "guaniao");
 
-    public static final RegistryObject<MenuType<CrowNestMenu>> CROW_NEST = MENU_TYPES.register("crow_nest",
-            () -> IForgeMenuType.create(CrowNestMenu::new));
+    private static final StreamCodec<RegistryFriendlyByteBuf, BlockPos> BLOCK_POSITION =
+            StreamCodec.of((buffer, pos) -> buffer.writeBlockPos(pos),
+                    (RegistryFriendlyByteBuf buffer) -> buffer.readBlockPos());
 
-    public static final RegistryObject<MenuType<FrameWorkbenchMenu>> FRAME_WORKBENCH = MENU_TYPES.register("frame_workbench",
-            () -> IForgeMenuType.create(FrameWorkbenchMenu::new));
+    public static final FabricRegistryQueue.Ref<MenuType<CrowNestMenu>> CROW_NEST =
+            MENU_TYPES.register("crow_nest", () -> new ExtendedMenuType<>(
+                    (containerId, inventory, pos) -> new CrowNestMenu(containerId, inventory, pos),
+                    BLOCK_POSITION));
 
-    private GuaniaoMenuTypes() {
-    }
+    public static final FabricRegistryQueue.Ref<MenuType<FrameWorkbenchMenu>> FRAME_WORKBENCH =
+            MENU_TYPES.register("frame_workbench", () -> new ExtendedMenuType<>(
+                    (containerId, inventory, pos) -> new FrameWorkbenchMenu(containerId, inventory, pos),
+                    BLOCK_POSITION));
+
+    private GuaniaoMenuTypes() { }
 }

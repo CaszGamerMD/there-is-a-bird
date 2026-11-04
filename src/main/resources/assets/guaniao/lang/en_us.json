@@ -315,6 +315,7 @@
   "key.guaniao.camera.open_creative_controls": "Open Creative Camera Controls",
   "key.guaniao.camera.focus": "Focus Camera",
   "key.categories.guaniao": "Birdwatching",
+  "key.category.guaniao.camera": "Birdwatching",
   "item.guaniao.photograph.tooltip.empty": "Empty frame",
   "item.guaniao.photograph.tooltip.photographer": "Photographer: %s",
   "item.guaniao.photograph.tooltip.actions": "Right-click to view; use on a wall to hang",
@@ -1210,5 +1211,6 @@
   "gui.guaniao.camera_help.short.settings": "%s: Settings",
   "gui.guaniao.camera_help.short.filters": "%s: Filters",
   "gui.guaniao.camera_help.short.focus": "%s: Focus",
-  "gui.guaniao.camera_help.resume_short": "After screenshots or switching back, click once to resume."
+  "gui.guaniao.camera_help.resume_short": "After screenshots or switching back, click once to resume.",
+  "gui.guaniao.camera_preview.unavailable": "Live preview requires 26.2 renderer"
 }

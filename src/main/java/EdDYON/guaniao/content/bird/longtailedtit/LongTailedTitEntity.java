@@ -32,7 +32,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.BreedGoal;
 import net.minecraft.world.entity.player.Player;
@@ -45,14 +45,14 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -76,7 +76,7 @@ public class LongTailedTitEntity extends SparrowEntity {
         super(entityType, level);
     }
 
-    public static boolean canLongTailedTitSpawn(EntityType<LongTailedTitEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canLongTailedTitSpawn(EntityType<LongTailedTitEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean forestFloor = below.is(BlockTags.ANIMALS_SPAWNABLE_ON)
                 || below.is(BlockTags.DIRT)
@@ -104,7 +104,7 @@ public class LongTailedTitEntity extends SparrowEntity {
         if (this.threatScanCooldown > 0) {
             --this.threatScanCooldown;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.tickFlockFlightResponse();
             this.tickLargeBirdResponse();
         }
@@ -120,7 +120,7 @@ public class LongTailedTitEntity extends SparrowEntity {
         } else {
             result = super.mobInteract(player, hand);
         }
-        if (trustFood && !this.level().isClientSide && result.consumesAction()) {
+        if (trustFood && !this.level().isClientSide() && result.consumesAction()) {
             this.shareTrustWithFlock();
             this.playSound(GuaniaoSoundEvents.LONG_TAILED_TIT_AMBIENT.get(), 0.34F, 0.96F + this.getRandom().nextFloat() * 0.16F);
         }
@@ -128,7 +128,7 @@ public class LongTailedTitEntity extends SparrowEntity {
     }
 
     private InteractionResult feedExtraTrustFood(Player player, ItemStack stack) {
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
@@ -143,7 +143,7 @@ public class LongTailedTitEntity extends SparrowEntity {
                 }
                 this.level().broadcastEntityEvent(this, (byte) 7);
             } else if (this.getRandom().nextInt(3) == 0
-                    && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, player)) {
+                    && EdDYON.guaniao.event.BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
                 this.tame(player);
                 this.setBirdCommandMode(BirdCommandMode.FOLLOW);
                 this.getNavigation().stop();
@@ -153,7 +153,7 @@ public class LongTailedTitEntity extends SparrowEntity {
                 this.level().broadcastEntityEvent(this, (byte) 6);
             }
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return InteractionResult.sidedSuccess(this.level().isClientSide());
     }
 
     private void shareTrustWithFlock() {
@@ -262,9 +262,9 @@ public class LongTailedTitEntity extends SparrowEntity {
         controllers.add(new AnimationController[]{new BirdMovementAnimationController((GeoAnimatable) this, "movement", 4, this::movementController)});
     }
 
-    private <T extends LongTailedTitEntity> PlayState movementController(AnimationState<T> state) {
-        state.getController().setAnimationSpeed(1.0D);
-        state.getController().transitionLength(4);
+    private <T extends LongTailedTitEntity> PlayState movementController(AnimationTest<T> state) {
+        state.controller().setAnimationSpeed(1.0D);
+        state.controller().setTransitionTicks(4);
         RawAnimation preview = this.guidePreviewAnimation.animation;
         if (preview != null) {
             return state.setAndContinue(preview);

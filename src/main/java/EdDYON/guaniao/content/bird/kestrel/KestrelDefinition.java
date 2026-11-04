@@ -1,7 +1,7 @@
 package EdDYON.guaniao.content.bird.kestrel;
 
 import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class KestrelDefinition {
     public static final String ENTITY_ID = "kestrel";
@@ -22,14 +22,14 @@ public final class KestrelDefinition {
     public static final double MIN_PREY_DROP_HEIGHT = 9.0D;
     public static final double MAX_PREY_DROP_HEIGHT = 13.0D;
 
-    public static final ResourceLocation MODEL = resource("geo/kestrel.geo.json");
-    public static final ResourceLocation TEXTURE = resource("textures/entity/kestrel.png");
-    public static final ResourceLocation ANIMATION = resource("animations/kestrel.animation.json");
+    public static final Identifier MODEL = resource("geo/kestrel.geo.json");
+    public static final Identifier TEXTURE = resource("textures/entity/kestrel.png");
+    public static final Identifier ANIMATION = resource("animations/kestrel.animation.json");
 
     private KestrelDefinition() {
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation(GuaniaoMod.MOD_ID, path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, path);
     }
 }

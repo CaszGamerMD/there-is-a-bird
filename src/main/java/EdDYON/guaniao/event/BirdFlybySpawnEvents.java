@@ -19,8 +19,12 @@ import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.MinecraftServer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
@@ -29,10 +33,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
@@ -42,13 +46,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdFlybySpawnEvents {
     private static final TagKey<Biome> NIGHT_HERON_HABITAT = biomeTag("night_heron_habitat");
     private static final TagKey<Biome> SPARROW_HABITAT = biomeTag("sparrow_habitat");
@@ -64,14 +62,13 @@ public final class BirdFlybySpawnEvents {
     private BirdFlybySpawnEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player) || player.isSpectator()) {
+    public static void onPlayerTick(ServerPlayer player) {
+        if (player.isSpectator()) {
             return;
         }
         ServerLevel level = player.serverLevel();
         if (level.dimension() != Level.OVERWORLD || BirdConfigManager.maxBirdsNearby() <= 0
-                || !level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
+                || !level.getGameRules().get(GameRules.SPAWN_MOBS)) {
             return;
         }
         if (!isPlayerNearSurface(level, player)) {
@@ -100,18 +97,27 @@ public final class BirdFlybySpawnEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        UUID playerId = event.getEntity().getUUID();
+    public static void onPlayerLoggedOut(ServerPlayer player) {
+        UUID playerId = player.getUUID();
         PLAYER_COOLDOWNS.remove(playerId);
         SeagullEntity.clearTheftTargetsFor(playerId);
     }
 
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            DIMENSION_ATTEMPTS.remove(level);
+    public static void onLevelUnload(ServerLevel level) {
+        DIMENSION_ATTEMPTS.remove(level);
+    }
+
+    public static void onServerTick(MinecraftServer server) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            onPlayerTick(player);
         }
+    }
+
+    public static void registerCallbacks() {
+        ServerTickEvents.END_SERVER_TICK.register(BirdFlybySpawnEvents::onServerTick);
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                onPlayerLoggedOut(handler.getPlayer()));
+        ServerLevelEvents.UNLOAD.register((server, level) -> onLevelUnload(level));
     }
 
     private static boolean trySpawnFlyby(ServerLevel level, ServerPlayer player, RandomSource random) {
@@ -211,7 +217,7 @@ public final class BirdFlybySpawnEvents {
             Vec3 target = Vec3.atBottomCenterOf(landing).add(0.0D, 0.08D, 0.0D);
             Vec3 direction = target.subtract(airPos).multiply(1.0D, 0.0D, 1.0D).normalize();
             placeMobForFlyby(sparrow, airPos, direction);
-            sparrow.finalizeSpawn(level, level.getCurrentDifficultyAt(sparrow.blockPosition()), MobSpawnType.NATURAL, null, null);
+            sparrow.finalizeSpawn(level, level.getCurrentDifficultyAt(sparrow.blockPosition()), EntitySpawnReason.NATURAL, null);
             BirdPopulationTracker.markTransientFlyby(sparrow);
             if (!level.noCollision((Entity)sparrow, sparrow.getBoundingBox()) || !sparrow.startFlybyFlight(target)) {
                 continue;
@@ -240,7 +246,7 @@ public final class BirdFlybySpawnEvents {
             }
             Vec3 direction = airTarget.subtract(airPos).multiply(1.0D, 0.0D, 1.0D).normalize();
             placeMobForFlyby(budgerigar, airPos, direction);
-            budgerigar.finalizeSpawn(level, level.getCurrentDifficultyAt(budgerigar.blockPosition()), MobSpawnType.NATURAL, null, null);
+            budgerigar.finalizeSpawn(level, level.getCurrentDifficultyAt(budgerigar.blockPosition()), EntitySpawnReason.NATURAL, null);
             BirdPopulationTracker.markTransientFlyby(budgerigar);
             if (!level.noCollision((Entity)budgerigar, budgerigar.getBoundingBox())) {
                 continue;
@@ -270,7 +276,7 @@ public final class BirdFlybySpawnEvents {
             }
             Vec3 direction = Vec3.atBottomCenterOf(landing).subtract(airPos).multiply(1.0D, 0.0D, 1.0D).normalize();
             placeMobForFlyby(nightHeron, airPos, direction);
-            nightHeron.finalizeSpawn(level, level.getCurrentDifficultyAt(nightHeron.blockPosition()), MobSpawnType.NATURAL, null, null);
+            nightHeron.finalizeSpawn(level, level.getCurrentDifficultyAt(nightHeron.blockPosition()), EntitySpawnReason.NATURAL, null);
             BirdPopulationTracker.markTransientFlyby(nightHeron);
             if (!level.noCollision((Entity)nightHeron, nightHeron.getBoundingBox())) {
                 continue;
@@ -309,7 +315,7 @@ public final class BirdFlybySpawnEvents {
             }
             direction = direction.normalize();
             placeMobForFlyby(columbid, airPos, direction);
-            columbid.finalizeSpawn(level, level.getCurrentDifficultyAt(columbid.blockPosition()), MobSpawnType.NATURAL, null, null);
+            columbid.finalizeSpawn(level, level.getCurrentDifficultyAt(columbid.blockPosition()), EntitySpawnReason.NATURAL, null);
             BirdPopulationTracker.markTransientFlyby(columbid);
             if (!level.noCollision((Entity)columbid, columbid.getBoundingBox())) {
                 continue;
@@ -509,7 +515,7 @@ public final class BirdFlybySpawnEvents {
     }
 
     private static TagKey<Biome> biomeTag(String id) {
-        return TagKey.create(Registries.BIOME, new ResourceLocation(GuaniaoMod.MOD_ID, id));
+        return TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, id));
     }
 
     private enum BirdKind {

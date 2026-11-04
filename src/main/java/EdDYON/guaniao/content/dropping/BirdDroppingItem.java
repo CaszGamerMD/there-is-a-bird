@@ -2,8 +2,8 @@ package EdDYON.guaniao.content.dropping;
 
 import EdDYON.guaniao.GuaniaoMod;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -11,17 +11,17 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BonemealableBlock;
-import net.minecraft.world.level.block.FarmBlock;
+import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BirdDroppingItem extends Item {
-    private static final ResourceLocation EVIDENCE_COLLECTOR_ADVANCEMENT = new ResourceLocation(GuaniaoMod.MOD_ID, "husbandry/evidence_collector");
+    private static final Identifier EVIDENCE_COLLECTOR_ADVANCEMENT = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "husbandry/evidence_collector");
     private static final int USE_DURATION_TICKS = 72000;
     private static final int MIN_THROW_CHARGE_TICKS = 3;
     private static final float MIN_THROW_SPEED = 0.45F;
@@ -42,37 +42,37 @@ public class BirdDroppingItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         player.startUsingItem(hand);
-        return InteractionResultHolder.consume(stack);
+        return InteractionResult.CONSUME;
     }
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         BlockState clickedState = level.getBlockState(context.getClickedPos());
-        if (clickedState.getBlock() instanceof FarmBlock) {
+        if (clickedState.getBlock() instanceof FarmlandBlock) {
             return this.fertilizeAroundFarmland(context);
         }
 
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override
-    public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeLeft) {
+    public boolean releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeLeft) {
         if (!(entity instanceof Player player)) {
-            return;
+            return false;
         }
 
-        int chargeTicks = this.getUseDuration(stack) - timeLeft;
+        int chargeTicks = this.getUseDuration(stack, entity) - timeLeft;
         if (chargeTicks < MIN_THROW_CHARGE_TICKS) {
-            return;
+            return false;
         }
 
         float power = getThrowPower(chargeTicks);
-        if (!level.isClientSide) {
-            level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL, 0.45F + power * 0.15F, 0.72F + level.random.nextFloat() * 0.22F);
+        if (!level.isClientSide()) {
+            level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL, 0.45F + power * 0.15F, 0.72F + level.getRandom().nextFloat() * 0.22F);
 
             BirdDroppingProjectileEntity projectile = new BirdDroppingProjectileEntity(level, player, this.variant);
             ItemStack renderStack = stack.copy();
@@ -82,27 +82,28 @@ public class BirdDroppingItem extends Item {
             level.addFreshEntity(projectile);
 
             player.awardStat(Stats.ITEM_USED.get(this));
-            player.getCooldowns().addCooldown(this, 10);
+            player.getCooldowns().addCooldown(stack, 10);
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
         }
+        return true;
     }
 
     @Override
-    public int getUseDuration(ItemStack stack) {
+    public int getUseDuration(ItemStack stack, LivingEntity user) {
         return USE_DURATION_TICKS;
     }
 
     @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.BOW;
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return ItemUseAnimation.BOW;
     }
 
     @Override
-    public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (!level.isClientSide && entity instanceof ServerPlayer player) {
+    public void inventoryTick(@NotNull ItemStack stack, @NotNull ServerLevel level, @NotNull Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
+        if (entity instanceof ServerPlayer player) {
             BirdDroppingMessageUtil.grant(player, EVIDENCE_COLLECTOR_ADVANCEMENT, "has_dropping");
         }
     }
@@ -113,7 +114,7 @@ public class BirdDroppingItem extends Item {
 
     private InteractionResult fertilizeAroundFarmland(UseOnContext context) {
         Level level = context.getLevel();
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (!(level instanceof ServerLevel serverLevel)) {
@@ -140,12 +141,12 @@ public class BirdDroppingItem extends Item {
         float chance = BirdDroppingUtil.farmlandFertilizeChance(this.variant);
         for (BlockPos cropPos : targets) {
             BlockState cropState = level.getBlockState(cropPos);
-            if (!isValidFertilizeTarget(level, cropPos, cropState) || level.random.nextFloat() >= chance) {
+            if (!isValidFertilizeTarget(level, cropPos, cropState) || level.getRandom().nextFloat() >= chance) {
                 continue;
             }
             BonemealableBlock crop = (BonemealableBlock)cropState.getBlock();
-            if (crop.isBonemealSuccess(level, level.random, cropPos, cropState)) {
-                crop.performBonemeal(serverLevel, level.random, cropPos, cropState);
+            if (crop.isBonemealSuccess(level, level.getRandom(), cropPos, cropState)) {
+                crop.performBonemeal(serverLevel, level.getRandom(), cropPos, cropState);
                 level.levelEvent(1505, cropPos, 0);
                 grewAny = true;
             }
@@ -158,9 +159,9 @@ public class BirdDroppingItem extends Item {
         }
 
         if (grewAny) {
-            level.playSound(null, center, SoundEvents.COMPOSTER_FILL_SUCCESS, SoundSource.BLOCKS, 0.8F, 0.9F + level.random.nextFloat() * 0.2F);
+            level.playSound(null, center, SoundEvents.COMPOSTER_FILL_SUCCESS, SoundSource.BLOCKS, 0.8F, 0.9F + level.getRandom().nextFloat() * 0.2F);
         } else {
-            level.playSound(null, center, SoundEvents.COMPOSTER_FILL, SoundSource.BLOCKS, 0.55F, 0.8F + level.random.nextFloat() * 0.2F);
+            level.playSound(null, center, SoundEvents.COMPOSTER_FILL, SoundSource.BLOCKS, 0.55F, 0.8F + level.getRandom().nextFloat() * 0.2F);
             serverLevel.sendParticles(ParticleTypes.POOF, center.getX() + 0.5D, center.getY() + 1.05D, center.getZ() + 0.5D, 4, 0.35D, 0.08D, 0.35D, 0.01D);
         }
 
@@ -168,7 +169,7 @@ public class BirdDroppingItem extends Item {
     }
 
     private static boolean isValidFertilizeTarget(Level level, BlockPos pos, BlockState state) {
-        return state.getBlock() instanceof BonemealableBlock crop && crop.isValidBonemealTarget(level, pos, state, false);
+        return state.getBlock() instanceof BonemealableBlock crop && crop.isValidBonemealTarget(level, pos, state);
     }
 
     private static float getThrowPower(int chargeTicks) {

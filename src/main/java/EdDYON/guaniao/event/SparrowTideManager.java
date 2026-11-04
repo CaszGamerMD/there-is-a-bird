@@ -8,6 +8,9 @@ import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
 import EdDYON.guaniao.content.bird.sparrow.SparrowTideRules;
 import EdDYON.guaniao.content.bird.sparrow.SparrowTideRules.Phase;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -18,7 +21,8 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
@@ -26,8 +30,8 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
@@ -35,17 +39,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /** One controller per level; bounded, loaded-chunk-only waves rather than larger spawn groups. */
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class SparrowTideManager {
     private static final TagKey<Biome> HABITAT = TagKey.create(Registries.BIOME,
-            new ResourceLocation(GuaniaoMod.MOD_ID, "sparrow_tide_habitat"));
+            Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "sparrow_tide_habitat"));
     private static final int MAX_EVENTS_PER_LEVEL = 128;
     private static final int MAX_ACTIVE_EVENTS = 2;
     private static final Map<ServerLevel, LevelTides> LEVELS = new WeakHashMap<>();
@@ -53,12 +51,14 @@ public final class SparrowTideManager {
     private SparrowTideManager() {
     }
 
-    @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
-        for (ServerLevel level : event.getServer().getAllLevels()) {
+    public static void registerCallbacks() {
+        ServerTickEvents.END_SERVER_TICK.register(SparrowTideManager::onServerTick);
+        ServerLevelEvents.UNLOAD.register((server, level) -> LEVELS.remove(level));
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> LEVELS.clear());
+    }
+
+    private static void onServerTick(MinecraftServer server) {
+        for (ServerLevel level : server.getAllLevels()) {
             if (level.dimension() != Level.OVERWORLD || level.getGameTime() % 5L != 0L) {
                 continue;
             }
@@ -79,13 +79,13 @@ public final class SparrowTideManager {
                 && BirdConfigManager.allowsNaturalSpawning(BirdSpecies.SPARROW)
                 && BirdConfigManager.maxBirdsNearby() > 0
                 && BirdConfigManager.maxWildNearby(BirdSpecies.SPARROW) > 0
-                && level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING);
+                && level.getGameRules().get(GameRules.SPAWN_MOBS);
     }
 
     private static void tickLevel(ServerLevel level, LevelTides tides) {
         long now = level.getGameTime();
         boolean enabled = enabled(level);
-        double activity = SparrowTideRules.activityMultiplier(level.getDayTime(), level.isRaining(), level.isThundering());
+        double activity = SparrowTideRules.activityMultiplier(level.getOverworldClockTime(), level.isRaining(), level.isThundering());
         Iterator<TideEvent> iterator = tides.events.values().iterator();
         int activeEvents = 0;
         while (iterator.hasNext()) {
@@ -102,7 +102,7 @@ public final class SparrowTideManager {
                     Math.max(tide.localSparrows, countSparrows(level, tide.origin)) >= tide.target);
             Phase phase = tide.timeline.phase();
             if (phase == Phase.ACTIVE && previous == Phase.GATHERING) {
-                tide.nextMove = now + Mth.nextInt(level.random, 40 * 20, 120 * 20);
+                tide.nextMove = now + Mth.nextInt(level.getRandom(), 40 * 20, 120 * 20);
             }
             if (phase == Phase.DISPERSING || phase == Phase.COOLDOWN) {
                 if (previous != Phase.DISPERSING && previous != Phase.COOLDOWN) {
@@ -110,7 +110,7 @@ public final class SparrowTideManager {
                 }
                 if (phase == Phase.COOLDOWN) {
                     tide.cooldownUntil = now + (tide.spawned > 0
-                            ? Mth.nextInt(level.random, SparrowTideRules.COOLDOWN_MIN, SparrowTideRules.COOLDOWN_MAX)
+                            ? Mth.nextInt(level.getRandom(), SparrowTideRules.COOLDOWN_MIN, SparrowTideRules.COOLDOWN_MAX)
                             : 30 * 20);
                 }
                 continue;
@@ -123,10 +123,10 @@ public final class SparrowTideManager {
             if (phase == Phase.GATHERING) {
                 tickWave(level, tide, now);
             } else if (now >= tide.nextMove && activity > 0.0D && !level.isRaining()) {
-                tide.nextMove = now + Mth.nextInt(level.random, 40 * 20, 120 * 20);
-                if (level.random.nextFloat() < 0.30F && BirdScanBudget.tryAcquire(level, 1)) {
-                    double angle = level.random.nextDouble() * Math.PI * 2.0D;
-                    double distance = Mth.nextDouble(level.random, 20.0D, 40.0D);
+                tide.nextMove = now + Mth.nextInt(level.getRandom(), 40 * 20, 120 * 20);
+                if (level.getRandom().nextFloat() < 0.30F && BirdScanBudget.tryAcquire(level, 1)) {
+                    double angle = level.getRandom().nextDouble() * Math.PI * 2.0D;
+                    double distance = Mth.nextDouble(level.getRandom(), 20.0D, 40.0D);
                     BlockPos next = surfaceAt(level, tide.center.getX() + Mth.floor(Math.cos(angle) * distance),
                             tide.center.getZ() + Mth.floor(Math.sin(angle) * distance));
                     if (next != null && horizontalDistanceSqr(next, tide.origin) <= 48.0D * 48.0D
@@ -148,8 +148,8 @@ public final class SparrowTideManager {
             if (!player.isAlive() || player.isSpectator() || now < tides.playerAttempts.getOrDefault(player.getUUID(), 0L)) {
                 continue;
             }
-            tides.playerAttempts.put(player.getUUID(), now + Mth.nextInt(level.random, 100, 200));
-            if (level.random.nextDouble() < 0.08D * activity) {
+            tides.playerAttempts.put(player.getUUID(), now + Mth.nextInt(level.getRandom(), 100, 200));
+            if (level.getRandom().nextDouble() < 0.08D * activity) {
                 tryStart(level, tides, player, now);
             }
             break;
@@ -160,8 +160,8 @@ public final class SparrowTideManager {
         if (!level.canSeeSky(player.blockPosition()) || !BirdScanBudget.tryAcquire(level, 1)) {
             return;
         }
-        double angle = level.random.nextDouble() * Math.PI * 2.0D;
-        double distance = Mth.nextDouble(level.random, 16.0D, 48.0D);
+        double angle = level.getRandom().nextDouble() * Math.PI * 2.0D;
+        double distance = Mth.nextDouble(level.getRandom(), 16.0D, 48.0D);
         BlockPos center = surfaceAt(level, player.getBlockX() + Mth.floor(Math.cos(angle) * distance),
                 player.getBlockZ() + Mth.floor(Math.sin(angle) * distance));
         if (center == null || Math.abs(center.getY() - player.getY()) > 12.0D || !suitableHabitat(level, center)) {
@@ -179,11 +179,11 @@ public final class SparrowTideManager {
         if (minimum == 0) {
             return;
         }
-        int target = Mth.nextInt(level.random, minimum, SparrowTideRules.maxTarget(score));
+        int target = Mth.nextInt(level.getRandom(), minimum, SparrowTideRules.maxTarget(score));
         if (remainingCapacity(level, center, target, countSparrows(level, center)) <= 0) {
             return;
         }
-        TideEvent tide = new TideEvent(center, target, now, level.random);
+        TideEvent tide = new TideEvent(center, target, now, level.getRandom());
         tides.events.put(cellKey(cellX, cellZ), tide);
     }
 
@@ -195,10 +195,10 @@ public final class SparrowTideManager {
             if (now < tide.nextWave) {
                 return;
             }
-            tide.waveRemaining = Mth.nextInt(level.random, SparrowTideRules.WAVE_MIN, SparrowTideRules.WAVE_MAX);
+            tide.waveRemaining = Mth.nextInt(level.getRandom(), SparrowTideRules.WAVE_MIN, SparrowTideRules.WAVE_MAX);
             tide.waveAttempts = tide.waveRemaining * 4;
             tide.waveAngle += 2.399963229728653D;
-            tide.nextWave = now + Mth.nextInt(level.random, SparrowTideRules.WAVE_DELAY_MIN, SparrowTideRules.WAVE_DELAY_MAX);
+            tide.nextWave = now + Mth.nextInt(level.getRandom(), SparrowTideRules.WAVE_DELAY_MIN, SparrowTideRules.WAVE_DELAY_MAX);
         }
         if (!BirdScanBudget.tryAcquire(level, 1)) {
             return;
@@ -213,33 +213,33 @@ public final class SparrowTideManager {
             tide.waveRemaining = 0;
             return;
         }
-        double angle = tide.waveAngle + Mth.nextDouble(level.random, -0.65D, 0.65D);
-        double distance = Mth.nextDouble(level.random, 20.0D, 45.0D);
+        double angle = tide.waveAngle + Mth.nextDouble(level.getRandom(), -0.65D, 0.65D);
+        double distance = Mth.nextDouble(level.getRandom(), 20.0D, 45.0D);
         BlockPos ground = surfaceAt(level, tide.center.getX() + Mth.floor(Math.cos(angle) * distance),
                 tide.center.getZ() + Mth.floor(Math.sin(angle) * distance));
-        BlockPos landing = findGatheringPoint(level, tide.center, level.random);
+        BlockPos landing = findGatheringPoint(level, tide.center, level.getRandom());
         if (ground == null || landing == null || Math.abs(ground.getY() - tide.center.getY()) > 10
                 || horizontalDistanceSqr(ground, tide.origin) > SparrowTideRules.EVENT_RADIUS * SparrowTideRules.EVENT_RADIUS
                 || !suitableHabitat(level, ground)
                 || remainingCapacity(level, ground, tide.target, current) <= 0) {
             return;
         }
-        boolean flying = level.random.nextFloat() < 0.70F;
-        Vec3 start = Vec3.atBottomCenterOf(ground).add(0.0D, flying ? Mth.nextDouble(level.random, 2.0D, 4.0D) : 0.05D, 0.0D);
+        boolean flying = level.getRandom().nextFloat() < 0.70F;
+        Vec3 start = Vec3.atBottomCenterOf(ground).add(0.0D, flying ? Mth.nextDouble(level.getRandom(), 2.0D, 4.0D) : 0.05D, 0.0D);
         if (!BirdFlybySpawnEvents.isHiddenFromNearbyPlayers(level, start)) {
             return;
         }
-        SparrowEntity bird = GuaniaoEntityTypes.SPARROW.get().create(level);
+        SparrowEntity bird = GuaniaoEntityTypes.SPARROW.get().create(level, EntitySpawnReason.NATURAL);
         if (bird == null) {
             return;
         }
         Vec3 target = Vec3.atBottomCenterOf(landing).add(0.0D, 0.05D, 0.0D);
         Vec3 direction = target.subtract(start);
         float yaw = (float)Math.toDegrees(Math.atan2(direction.z, direction.x)) - 90.0F;
-        bird.moveTo(start.x, start.y, start.z, yaw, 0.0F);
+        bird.snapTo(start.x, start.y, start.z, yaw, 0.0F);
         bird.setYHeadRot(yaw);
         bird.yBodyRot = yaw;
-        bird.finalizeSpawn(level, level.getCurrentDifficultyAt(ground), MobSpawnType.NATURAL, null, null);
+        bird.finalizeSpawn(level, level.getCurrentDifficultyAt(ground), EntitySpawnReason.NATURAL, null);
         if (!level.noCollision(bird, bird.getBoundingBox()) || (flying && !bird.startFlybyFlight(target))) {
             return;
         }
@@ -312,7 +312,7 @@ public final class SparrowTideManager {
         }
         int height = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         for (int y = height + 1; y >= height - 2; y--) {
-            if (y <= level.getMinBuildHeight() || y + 1 >= level.getMaxBuildHeight()) {
+            if (y <= level.getMinY() || y + 1 >= level.getMaxY()) {
                 continue;
             }
             BlockPos pos = new BlockPos(x, y, z);
@@ -351,18 +351,6 @@ public final class SparrowTideManager {
 
     private static long cellKey(int x, int z) {
         return (x & 0xffffffffL) | ((z & 0xffffffffL) << 32);
-    }
-
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            LEVELS.remove(level);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onServerStopping(ServerStoppingEvent event) {
-        LEVELS.clear();
     }
 
     private static final class LevelTides {

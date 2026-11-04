@@ -5,22 +5,20 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.MilkBucketItem;
 import net.minecraft.world.item.PotionItem;
-import net.minecraft.world.level.block.AbstractGlassBlock;
 import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.CakeBlock;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.StainedGlassPaneBlock;
-import net.minecraftforge.common.Tags;
 
 /** Built from the live registry, so installed mods and translated item names work too. */
 final class FrameMaterialPalette {
@@ -31,7 +29,7 @@ final class FrameMaterialPalette {
     private static final List<String> STONE_FAMILIES=List.of("stone","cobblestone","granite","diorite","andesite",
             "deepslate","tuff","calcite","basalt","blackstone","sandstone","quartz","brick","bricks",
             "prismarine","netherrack","end_stone","purpur","obsidian","bedrock");
-    private record Entry(ItemStack stack,Category category,ResourceLocation id,String family,int color) {}
+    private record Entry(ItemStack stack,Category category,Identifier id,String family,int color) {}
 
     static List<ItemStack> entries(Kind kind,String query) {
         return entries(kind,Category.ALL,query);
@@ -39,10 +37,10 @@ final class FrameMaterialPalette {
     static List<ItemStack> entries(Kind kind,Category category,String query) {
         String search=query.strip().toLowerCase(Locale.ROOT);
         return BuiltInRegistries.ITEM.stream().filter(item->allowed(kind,item))
-                .filter(item->search.isEmpty() || item.getDescription().getString().toLowerCase(Locale.ROOT).contains(search)
+                .filter(item->search.isEmpty() || new ItemStack(item).getHoverName().getString().toLowerCase(Locale.ROOT).contains(search)
                         || BuiltInRegistries.ITEM.getKey(item).toString().contains(search))
                 .map(item->{
-                    ItemStack stack=new ItemStack(item);ResourceLocation id=BuiltInRegistries.ITEM.getKey(item);
+                    ItemStack stack=new ItemStack(item);Identifier id=BuiltInRegistries.ITEM.getKey(item);
                     int color=colorIndex(id.getPath());
                     String family=color<0 ? id.getPath() : id.getPath().substring(COLORS.get(color).length()+1);
                     return new Entry(stack,category(stack),id,family,color);
@@ -63,26 +61,31 @@ final class FrameMaterialPalette {
     }
     static Category category(ItemStack stack) {
         Item item=stack.getItem();String path=BuiltInRegistries.ITEM.getKey(item).getPath();
-        if(item.isEdible() || item instanceof PotionItem || item instanceof MilkBucketItem
+        if(stack.has(DataComponents.FOOD) || item instanceof PotionItem || item==Items.MILK_BUCKET
                 || item instanceof BlockItem block && block.getBlock() instanceof CakeBlock)return Category.FOOD;
         if(item instanceof BlockItem block) {
             var state=block.getBlock().defaultBlockState();
-            if(state.is(Tags.Blocks.GLASS) || state.is(Tags.Blocks.GLASS_PANES)
-                    || block.getBlock() instanceof AbstractGlassBlock || block.getBlock() instanceof StainedGlassPaneBlock)
+            if(block.getBlock() instanceof StainedGlassPaneBlock
+                    || path.contains("glass") || path.endsWith("_pane"))
                 return Category.GLASS;
             if(state.is(BlockTags.LOGS) || state.is(BlockTags.PLANKS) || state.is(BlockTags.WOODEN_BUTTONS)
                     || state.is(BlockTags.WOODEN_DOORS) || state.is(BlockTags.WOODEN_FENCES)
                     || state.is(BlockTags.WOODEN_PRESSURE_PLATES) || state.is(BlockTags.WOODEN_SLABS)
                     || state.is(BlockTags.WOODEN_STAIRS) || state.is(BlockTags.WOODEN_TRAPDOORS)
-                    || state.is(Tags.Blocks.FENCE_GATES_WOODEN) || path.startsWith("bamboo_mosaic"))return Category.WOOD;
+                    || state.is(BlockTags.FENCE_GATES) || path.startsWith("bamboo_mosaic"))return Category.WOOD;
             if(block.getBlock() instanceof BushBlock || block.getBlock() instanceof LeavesBlock
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.LEAVES))return Category.NATURE;
-            if(state.is(Tags.Blocks.STONE) || state.is(Tags.Blocks.COBBLESTONE) || state.is(Tags.Blocks.ORES)
-                    || STONE_FAMILIES.stream().anyMatch(stone->family(path,stone)))return Category.STONE;
+            if(state.is(BlockTags.BASE_STONE_OVERWORLD) || state.is(BlockTags.BASE_STONE_NETHER)
+                    || state.is(BlockTags.GOLD_ORES) || state.is(BlockTags.IRON_ORES)
+                    || state.is(BlockTags.COPPER_ORES)
+                    || path.endsWith("_ore") || STONE_FAMILIES.stream().anyMatch(stone->family(path,stone)))return Category.STONE;
             if(colorIndex(path)>=0)return Category.COLORED;
             return Category.BUILDING;
         }
-        if(stack.is(ItemTags.TOOLS) || stack.is(Tags.Items.TOOLS) || stack.is(Tags.Items.ARMORS)
+        if(stack.is(ItemTags.SWORDS) || stack.is(ItemTags.AXES) || stack.is(ItemTags.HOES)
+                || stack.is(ItemTags.PICKAXES) || stack.is(ItemTags.SHOVELS)
+                || stack.is(ItemTags.HEAD_ARMOR) || stack.is(ItemTags.CHEST_ARMOR)
+                || stack.is(ItemTags.LEG_ARMOR) || stack.is(ItemTags.FOOT_ARMOR)
                 || stack.isDamageableItem() || item==Items.COMPASS || item==Items.RECOVERY_COMPASS
                 || item==Items.CLOCK || item==Items.SPYGLASS)return Category.EQUIPMENT;
         return Category.OTHER;
@@ -101,5 +104,11 @@ final class FrameMaterialPalette {
         if(kind==Kind.LINING && item==Items.PAPER) return true;
         return item instanceof BlockItem block && block.getBlock().defaultBlockState().getRenderShape()!=RenderShape.INVISIBLE;
     }
-    static ItemStack stack(ResourceLocation id) {return new ItemStack(BuiltInRegistries.ITEM.get(id));}
+    static ItemStack stack(Identifier id) {
+        // A saved design may refer to an optional mod that's no longer installed.
+        // Preserve the editor's original missing-material fallback instead of
+        // making the palette crash while browsing that design.
+        Item item=BuiltInRegistries.ITEM.getValue(id);
+        return new ItemStack(item==null ? Items.AIR : item);
+    }
 }

@@ -1,0 +1,433 @@
+name: Fabric 26.2 port (work in progress)
+on:
+  push:
+    branches: ["port/fabric-26.2"]
+  pull_request:
+    branches: ["port/fabric-26.2"]
+concurrency:
+  group: fabric-26-2-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Audit legacy API references
+        run: python3 tools/port-audit.py
+      - name: Verify resource and registry ID parity
+        run: python3 tools/check-registry-parity.py
+      - name: Verify item model bridges and jukebox song data
+        run: python3 tools/check-port-resources.py
+      - name: Verify both custom Fabric 26.2 menus preserve block-position opening and gameplay
+        run: python3 tools/check-extended-menus-port.py
+      - name: Verify Fabric server lifecycle parity and bootstrap order
+        run: python3 tools/check-lifecycle-port.py
+      - name: Verify all eight Fabric particle providers and authored flight/fade formulas
+        run: python3 tools/check-particle-providers-26-2.py
+      - name: Verify all six Fabric client block break effects preserve authored particles
+        run: python3 tools/check-block-break-particle-port.py
+      - name: Verify GeckoLib 5 block-entity gameplay source parity
+        run: python3 tools/check-geckolib-blockentities.py
+      - name: Verify private frame workbench persistence and unchanged crafting gameplay
+        run: python3 tools/check-frame-workbench-port.py
+      - name: Verify bird entity spawn and pathfinding class migrations
+        run: python3 tools/check-bird-entity-enums.py
+      - name: Verify bird synced-data initial values and inheritance order
+        run: python3 tools/check-bird-synced-data-port.py
+      - name: Verify bird-brain 26.2 optional NBT reads and saved-key parity
+        run: python3 tools/check-bird-brain-persistence-26-2.py
+      - name: Verify authored projectile and photograph entity gameplay after 26.2 API updates
+        run: python3 tools/check-bird-projectile-entity-api.py
+      - name: Verify droppings projectile 26.2 saves, gravity and impact/strip gameplay
+        run: python3 tools/check-dropping-projectile-fabric-26-2.py
+      - name: Verify splat 26.2 attachment saves, rain/piston rules and brush cleanup
+        run: python3 tools/check-dropping-splat-fabric-26-2.py
+      - name: Verify photograph hanging-entity 26.2 attachment, saves and frame parity
+        run: python3 tools/check-photograph-entity-fabric-26-2.py
+      - name: Verify original photograph frame styles use 26.2 custom item data
+        run: python3 tools/check-photograph-frame-style-26-2.py
+      - name: Verify private photo ID, photographer UUID and legacy pixel data component parity
+        run: python3 tools/check-photograph-data-components-26-2.py
+      - name: Verify camera settings defaults, lenses and 26.2 custom data component storage
+        run: python3 tools/check-camera-settings-components-26-2.py
+      - name: Verify frame workbench photo bounds, source data and legacy import parity
+        run: python3 tools/check-photo-workbench-items-fabric-26-2.py
+      - name: Verify original workbench menu and collision preserved under 26.2 block hooks
+        run: python3 tools/check-frame-workbench-block-fabric-26-2.py
+      - name: Verify saved FrameDesign data and exact original binary wire format
+        run: python3 tools/check-frame-design-components-26-2.py
+      - name: Verify original window-masked photo fit, rotation and UV geometry
+        run: python3 tools/check-frame-photo-26-2.py
+      - name: Run standalone photo clipping geometry regression in real Java 25
+        run: |
+          mkdir -p "$RUNNER_TEMP/frame-photo"
+          javac -d "$RUNNER_TEMP/frame-photo" src/main/java/EdDYON/guaniao/client/camera/frame/FrameWorkbenchMeshGeometry.java src/main/java/EdDYON/guaniao/client/camera/frame/FrameWorkbenchPhotoGeometry.java tools/port-probes/GuaniaoFramePhotoGeometryRegression.java
+          java -cp "$RUNNER_TEMP/frame-photo" GuaniaoFramePhotoGeometryRegression
+      - name: Verify real photo cache, dimension handoff and 26.2 GPU lifecycle
+        run: python3 tools/check-photo-texture-cache-26-2.py
+      - name: Verify 26.2 frame mesh formulas and registered 3D renderer
+        run: python3 tools/check-frame-mesh-26-2.py
+      - name: Run standalone original 32x32 frame geometry tests (real Java 25)
+        run: |
+          mkdir -p "$RUNNER_TEMP/frame-mesh"
+          javac -d "$RUNNER_TEMP/frame-mesh" src/main/java/EdDYON/guaniao/client/camera/frame/FrameWorkbenchMeshGeometry.java tools/port-probes/GuaniaoFrameMeshGeometryRegression.java
+          java -cp "$RUNNER_TEMP/frame-mesh" GuaniaoFrameMeshGeometryRegression
+      - name: Verify crafting bird meadow sprites and placement fidelity
+        run: python3 tools/check-frame-meadow-26-2.py
+      - name: Verify Frame Workbench deferred 3D submission API bridge
+        run: python3 tools/check-frame-workbench-pip-26-2.py
+      - name: Verify Fabric-native Frame Workbench material picker parity
+        run: python3 tools/check-frame-material-palette-26-2.py
+      - name: Verify 26.2 Frame Workbench canvas, slots, modal and crafting 2D parity
+        run: python3 tools/check-frame-extraction-26-2.py
+      - name: Verify Frame Workbench input, outline tools and original 3D features preserved
+        run: python3 tools/check-frame-workbench-gui-26-2.py
+      - name: Verify Crow Nest screen GUI extractor and original masked loot layout
+        run: python3 tools/check-crow-nest-screen-26-2.py
+      - name: Verify original bird movement sync signals on Minecraft 26.2
+        run: python3 tools/check-bird-movement-sync-port.py
+      - name: Verify bird build-height limits preserved on modern world accessors
+        run: python3 tools/check-bird-world-height-port.py
+      - name: Verify bird client server guards use 26.2 method access
+        run: python3 tools/check-bird-client-guards-port.py
+      - name: Verify remaining bird Nullable and relocated entity imports
+        run: python3 tools/check-bird-relocated-api.py
+      - name: Verify original bird nullable annotations through 26.2 relocation
+        run: python3 tools/check-bird-nullable-port.py
+      - name: Verify migrating birds retain habitat and steering logic after 26.2 identifier update
+        run: python3 tools/check-bird-migration-goal-identifier-26-2.py
+      - name: Verify nine original bird flight marker migrations
+        run: python3 tools/check-bird-flight-marker-port.py
+      - name: Verify original GeckoLib 5 staged models and animations are byte-identical
+        run: python3 tools/check-geckolib-assets-26.2.py
+      - name: Verify per-bird GeckoLib 5 mutation and render-scale state
+        run: python3 tools/check-geckolib-bird-renderstate.py
+      - name: Verify bird AI preserved through GeckoLib 5 API substitutions
+        run: python3 tools/check-geckolib-birds.py
+      - name: Verify all 19 original bird attribute profiles
+        run: python3 tools/check-bird-attributes.py
+      - name: Verify original three feather-fan enchanted book visuals and tooltip keys
+        run: python3 tools/check-feather-book-tooltips.py
+      - name: Verify bagged fries food and laxative behavior on Minecraft 26.2 block hooks
+        run: python3 tools/check-bagged-fries-block-fabric-26-2.py
+      - name: Verify breadcrumb ecology and serving lifecycle on 26.2 block hooks
+        run: python3 tools/check-breadcrumb-block-fabric-26-2.py
+      - name: Verify dropping stain brushing and rain wash on 26.2 block hooks
+        run: python3 tools/check-dropping-stain-block-fabric-26-2.py
+      - name: Verify feather fan physics leases cleaned on Fabric entity unload
+        run: python3 tools/check-feather-fan-unload-port.py
+      - name: Verify all four dropping dispenser projectiles use vanilla 26.2 launch contract
+        run: python3 tools/check-dropping-dispenser-fabric-26-2.py
+      - name: Verify charged dropping throw and 3x3 fertilization parity on 26.2 item APIs
+        run: python3 tools/check-bird-dropping-item-fabric-26-2.py
+      - name: Verify original breadcrumb throw, serving and scatter through 26.2 item APIs
+        run: python3 tools/check-breadcrumb-item-fabric-26-2.py
+      - name: Verify bird bath only accepts plain water bottles via 26.2 potion components
+        run: python3 tools/check-bird-bath-water-bottle-fabric-26-2.py
+      - name: Verify bird bath AI hop and settle motions use 26.2 velocity updates
+        run: python3 tools/check-bird-bath-use-goal-fabric-26-2.py
+      - name: Verify all six bird bath items use 26.2 GeckoLib render providers
+        run: python3 tools/check-bird-bath-geoitem-fabric-26-2.py
+      - name: Verify authored bath inventory 3D models, GUI framing and bone hiding on GeckoLib 5
+        run: python3 tools/check-bird-bath-item-visuals-fabric-26-2.py
+      - name: Verify bath water, food and dirt bone visibility on GeckoLib 5 snapshots
+        run: python3 tools/check-bird-bath-bones-fabric-26-2.py
+      - name: Verify six placed-bath GeoModel variants and 26.2 render-state asset mapping
+        run: python3 tools/check-bird-bath-model-fabric-26-2.py
+      - name: Verify placed bird baths retain content, tint and dirt rendering on GeckoLib 5
+        run: python3 tools/check-bird-bath-renderer-fabric-26-2.py
+      - name: Verify all four placed block renderers and authored cage, egg and fry visuals
+        run: python3 tools/check-placed-block-renderers-fabric-26-2.py
+      - name: Verify all three bird cage items keep authored GeckoLib 5 inventory visuals
+        run: python3 tools/check-bird-cage-item-visuals-fabric-26-2.py
+      - name: Verify empty crow nest inventory model and GeckoLib 5 bone visibility
+        run: python3 tools/check-crow-nest-item-visuals-fabric-26-2.py
+      - name: Verify Nikon camera use and all authored item display transforms on GeckoLib 5
+        run: python3 tools/check-nikon-camera-geoitem-fabric-26-2.py
+      - name: Verify FilmItem's 26.2 migration, right-click preview and original tooltips
+        run: python3 tools/check-film-item-fabric-26-2.py
+      - name: Verify photograph item's original preview, wall placement and tooltips on Fabric
+        run: python3 tools/check-photograph-item-fabric-26-2.py
+      - name: Verify 26.2 plume enchantment data and original custom-anvil rules
+        run: python3 tools/check-feather-fan-enchantments-26-2.py
+      - name: Verify polluted cake SavedData format and original runtime behavior
+        run: python3 tools/check-polluted-cake-saveddata-port.py
+      - name: Verify prank food and dropping effects against original authored gameplay
+        run: python3 tools/check-dropping-effects-port.py
+      - name: Verify dropping projectile mob reactions after 26.2 entity relocations
+        run: python3 tools/check-dropping-interaction-handler-fabric-26-2.py
+      - name: Verify bird-dropping pressure-plate pulse timing and Fabric callbacks
+        run: python3 tools/check-bird-pressure-pulse-port.py
+      - name: Verify bird population, cassowary AI and advancement parity
+        run: python3 tools/check-bird-entity-events.py
+      - name: Verify Fabric 26.2 per-entity cooldowns, walking and culling persistence
+        run: python3 tools/check-bird-entity-attachments-26-2.py
+      - name: Verify player-specific villager and golem prank memory and trade penalty lifecycle
+        run: python3 tools/check-bird-prank-attachments-26-2.py
+      - name: Verify original vanilla Creative tab contents
+        run: python3 tools/check-bird-creative.py
+      - name: Verify vanilla natural spawning also applies dynamic bird modifiers
+        run: python3 tools/check-bird-potential-spawns-mixin.py
+      - name: Verify 26.2 bird weighted spawn pools and repopulation source parity
+        run: python3 tools/check-bird-weighted-spawns-port.py
+      - name: Verify all 19 original bird biome spawn entries use Fabric 26.2 callbacks
+        run: python3 tools/check-bird-biome-spawns-26-2.py
+      - name: Verify original flock ambient-call limits and Fabric level-unload cleanup
+        run: python3 tools/check-bird-flock-sounds-26-2.py
+      - name: Verify hummingbird pollination veto, original settings, and habitat cleanup
+        run: python3 tools/check-hummingbird-ecology-26-2.py
+      - name: Verify hummingbird old-world saves and four birds' pre-tame permissions on Fabric
+        run: python3 tools/check-hummingbird-persistence-26-2.py
+      - name: Verify sparrow, long-tailed tit and columbid tame vetoes on Fabric
+        run: python3 tools/check-bird-tame-permission-fabric-26-2.py
+      - name: Verify budgerigar and umbrella cockatoo tame vetoes preserve authored behavior
+        run: python3 tools/check-budgerigar-cockatoo-taming-port.py
+      - name: Verify bird repopulation cadence and loaded-world cleanup in Fabric
+        run: python3 tools/check-bird-repopulation-lifecycle.py
+      - name: Verify sparrow tide Fabric lifecycle, 26.2 spawning and authored wave rules
+        run: python3 tools/check-sparrow-tide-fabric-26-2.py
+      - name: Verify sparrow breadcrumb SavedData and its original claim timers on 26.2
+        run: python3 tools/check-sparrow-breadcrumb-saveddata-26-2.py
+      - name: Verify earthworm spawning, ownerless interaction, burrow motion and 26.2 entity saves
+        run: python3 tools/check-earthworm-entity-fabric-26-2.py
+      - name: Verify Hummingbird sound loop parity and Fabric client lifecycle callbacks
+        run: python3 tools/check-hummingbird-sound-fabric-26-2.py
+      - name: Verify cockatoo special-call replay guards and Fabric client lifecycle callbacks
+        run: python3 tools/check-cockatoo-special-call-fabric-26-2.py
+      - name: Verify frame-workbench Fabric settings preserve size bounds and pixel rounding
+        run: python3 tools/check-frame-workbench-config-fabric-26-2.py
+      - name: Verify 26.2 flyby initializers and kingfisher spawn-egg bypass
+        run: python3 tools/check-bird-spawn-reason-port.py
+      - name: Verify flyby spawns, colony scores and polluted cake parity
+        run: python3 tools/check-bird-spawn-events.py
+      - name: Verify all 19 bird spawn placements and leaves predicates
+        run: python3 tools/check-bird-spawn-placements.py
+      - name: Verify original mod setup, bird compost and farmland chances
+        run: python3 tools/check-bird-setup-parity.py
+      - name: Verify 98 original advancements, loot tables and tags survive 26.2 paths
+        run: python3 tools/check-26-2-datapack-paths.py
+      - name: Verify cancellable night heron fish-capture callback
+        run: python3 tools/check-night-heron-capture-port.py
+      - name: Verify native tick-driven bird droppings without retired Forge subscriber
+        run: python3 tools/check-bird-dropping-subscription.py
+      - name: Verify prank-food data components, eating callback and tooltips
+        run: python3 tools/check-prank-food-port.py
+      - name: Verify original feather and droppings lifetimes via native 26.2 item ages
+        run: python3 tools/check-bird-ambient-drop-port.py
+      - name: Verify Fabric scan quotas and droppings area cleanup preserve original server budgets
+        run: python3 tools/check-bird-runtime-budgets-fabric-26-2.py
+      - name: Verify all four world-scoped bird search caches clean up through Fabric unload hooks
+        run: python3 tools/check-bird-cache-unload-fabric-26-2.py
+      - name: Verify original bird shearing, regrowth and persistent flight restriction
+        run: python3 tools/check-bird-shearing-port.py
+      - name: Verify all 15 original network packets and server commands migrated
+        run: python3 tools/check-final-network-port.py
+      - name: Verify seven Fabric photo-transfer payloads preserve original bounded wire codecs
+        run: python3 tools/check-photo-transfer-network-port.py
+      - name: Verify Fabric runtime-config synchronization and original boolean order
+        run: python3 tools/check-runtime-config-network-port.py
+      - name: Verify charged feather fan Fabric input and C2S packet chain
+        run: python3 tools/check-feather-fan-network-port.py
+      - name: Verify feather fan 26.2 item use, targeting and original first-person pose
+        run: python3 tools/check-feather-fan-item-fabric-26-2.py
+      - name: Verify feather fan combat protection and kill particle parity
+        run: python3 tools/check-feather-fan-combat-port.py
+      - name: Verify vanilla 26.2 feather fan projectile spawning preserves all combat states
+        run: python3 tools/check-feather-fan-spawn-packet-port.py
+      - name: Verify feather fan projectile original states, saved keys and combat damage on Fabric
+        run: python3 tools/check-feather-fan-projectile-fabric-26-2.py
+      - name: Verify Fabric 26.2 deferred feather fan render-state and eight Riven visual copies
+        run: python3 tools/check-feather-fan-renderer-fabric-26-2.py
+      - name: Verify original bird feathers, no-death-loot rule and golden rewards
+        run: python3 tools/check-bird-death-drops-port.py
+      - name: Verify all three additive Fabric loot modifiers retain source rates
+        run: python3 tools/check-bird-all-loot-modifiers-port.py
+      - name: Verify Fabric chest-note loot insertion and source rarity parity
+        run: python3 tools/check-bird-note-loot-port.py
+      - name: Verify authored bird note content and 26.2 advancement callbacks
+        run: python3 tools/check-bird-note-components-port.py
+      - name: Verify packaged 26.2 advancement display icons
+        run: |
+          chmod +x gradlew
+          ./gradlew processResources --no-daemon
+          python3 tools/check-26-2-advancement-codecs.py
+      - name: Verify Fabric 26.2 camera key registrations and preserved old focus-key binding
+        run: python3 tools/check-camera-key-mappings-26-2.py
+      - name: Verify 26.2 viewfinder guide/bezel parity and real filtered lens contract
+        run: python3 tools/check-camera-viewfinder-hud-26-2.py
+      - name: Run standalone viewfinder/JPEG bounds regression in Java 25
+        run: |
+          mkdir -p "$RUNNER_TEMP/viewfinder-frame"
+          javac -d "$RUNNER_TEMP/viewfinder-frame" src/main/java/EdDYON/guaniao/client/camera/CameraViewfinderFrame.java tools/port-probes/GuaniaoViewfinderFrameRegression.java
+          java -cp "$RUNNER_TEMP/viewfinder-frame" EdDYON.guaniao.client.camera.GuaniaoViewfinderFrameRegression
+      - name: Verify photograph viewer preserves original image, mat and export on Fabric
+        run: python3 tools/check-photograph-viewer-26-2.py
+      - name: Verify author-equivalent camera focal length and sensitivity migration
+        run: python3 tools/check-camera-lens-math-26-2.py
+      - name: Run standalone Java 25 camera optics regression
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-optics"
+          javac -d "$RUNNER_TEMP/camera-optics" src/main/java/EdDYON/guaniao/client/camera/CameraLensMath.java tools/port-probes/GuaniaoCameraLensMathRegression.java
+          java -cp "$RUNNER_TEMP/camera-optics" EdDYON.guaniao.client.camera.GuaniaoCameraLensMathRegression
+      - name: Verify first-use camera help screen retains original 26.2 layout and controls
+        run: python3 tools/check-camera-help-screen-26-2.py
+      - name: Verify all original dynamic Nikon lens settings map to 26.2 uniform block
+        run: python3 tools/check-camera-optics-parameters-26-2.py
+      - name: Run standalone dynamic camera optics regression (Java 25)
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-optics-params"
+          javac -d "$RUNNER_TEMP/camera-optics-params" src/main/java/EdDYON/guaniao/content/camera/CameraFilterCategory.java src/main/java/EdDYON/guaniao/content/camera/CameraFilter.java src/main/java/EdDYON/guaniao/content/camera/CameraLens.java src/main/java/EdDYON/guaniao/content/camera/CameraFocusMode.java src/main/java/EdDYON/guaniao/content/camera/CameraAperture.java src/main/java/EdDYON/guaniao/content/camera/CameraShootingMode.java src/main/java/EdDYON/guaniao/content/camera/CameraState.java src/main/java/EdDYON/guaniao/client/camera/CameraOpticsParameters.java tools/port-probes/GuaniaoCameraOpticsParametersRegression.java
+          java -cp "$RUNNER_TEMP/camera-optics-params" EdDYON.guaniao.client.camera.GuaniaoCameraOpticsParametersRegression
+      - name: Verify camera 26.2 reversed depth sky and original focus calculations
+        run: python3 tools/check-camera-reversed-depth-26-2.py
+      - name: Run real numerical reversed-Z Nikon optics regression with Java 25
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-depth"
+          javac -d "$RUNNER_TEMP/camera-depth" tools/port-probes/GuaniaoCameraReversedDepthRegression.java
+          java -cp "$RUNNER_TEMP/camera-depth" EdDYON.guaniao.client.camera.GuaniaoCameraReversedDepthRegression
+      - name: Verify original 32-tap Nikon optics GLSL port and 26.2 sampler/UBO schema
+        run: python3 tools/check-camera-optics-shader-26-2.py
+      - name: Verify original viewfinder/thumbnail crop and modern screen access
+        run: python3 tools/check-camera-preview-uv-26-2.py
+      - name: Run standalone viewfinder/preview UV regression (Java 25)
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-uv"
+          javac -d "$RUNNER_TEMP/camera-uv" src/main/java/EdDYON/guaniao/client/camera/CameraPreviewUv.java tools/port-probes/GuaniaoCameraPreviewUvRegression.java
+          java -cp "$RUNNER_TEMP/camera-uv" EdDYON.guaniao.client.camera.GuaniaoCameraPreviewUvRegression
+      - name: Verify native 26.2 author GPU filter process writes only the private framebuffer
+        run: python3 tools/check-camera-private-filter-process-26-2.py
+      - name: Verify native 26.2 world-render capture hook and private GPU lifecycle
+        run: python3 tools/check-camera-world-frame-26-2.py
+      - name: Verify camera offscreen world color and reversed-depth copies on 26.2
+        run: python3 tools/check-camera-offscreen-26-2.py
+      - name: Run standalone camera framebuffer sizing regression
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-framebuffer"
+          javac -d "$RUNNER_TEMP/camera-framebuffer" src/main/java/EdDYON/guaniao/client/camera/CameraFramebufferSize.java tools/port-probes/GuaniaoCameraFramebufferSizeRegression.java
+          java -cp "$RUNNER_TEMP/camera-framebuffer" EdDYON.guaniao.client.camera.GuaniaoCameraFramebufferSizeRegression
+      - name: Verify native 26.2 post-chain resource lookup for 50 filters and Nikon optics
+        run: python3 tools/check-camera-postchain-lookup-26-2.py
+      - name: Verify all 50 authored universal camera GPU filters survive 26.2 GLSL migration
+        run: python3 tools/check-camera-universal-shader-26-2.py
+      - name: Verify 51 native camera post effects use the current screen triangle
+        run: python3 tools/check-camera-screen-triangle-26-2.py
+      - name: Verify all 50 migrated 26.2 post effect JSON resources against original filters
+        run: python3 tools/check-camera-post-effects-26-2.py
+      - name: Verify all original 51 author camera filters and pure-Java source identity
+        run: python3 tools/check-camera-filter-core-26-2.py
+      - name: Run all 51 CPU camera filter regression tests in standalone Java 25
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-effects"
+          javac -d "$RUNNER_TEMP/camera-effects" src/main/java/EdDYON/guaniao/client/camera/CameraFilterPixelCore.java tools/port-probes/GuaniaoCameraFilterCoreRegression.java
+          java -cp "$RUNNER_TEMP/camera-effects" EdDYON.guaniao.client.camera.GuaniaoCameraFilterCoreRegression
+      - name: Verify actual 26.2 screenshot callback lifecycle and ABGR pixel conversion
+        run: python3 tools/check-camera-screenshot-26-2.py
+      - name: Run screenshot ARGB-to-original-ABGR pixel regression (Java 25)
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-color"
+          javac -d "$RUNNER_TEMP/camera-color" src/main/java/EdDYON/guaniao/client/camera/CameraViewfinderFrame.java src/main/java/EdDYON/guaniao/client/camera/CameraPhotoSampler.java tools/port-probes/GuaniaoCameraPixelColorRegression.java
+          java -cp "$RUNNER_TEMP/camera-color" EdDYON.guaniao.client.camera.GuaniaoCameraPixelColorRegression
+      - name: Verify original photo crop and 26.2 screenshot sampler integration
+        run: python3 tools/check-camera-photo-sampler-26-2.py
+      - name: Run pixel-level camera photograph crop regression in standalone Java
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-sampler"
+          javac -d "$RUNNER_TEMP/camera-sampler" src/main/java/EdDYON/guaniao/client/camera/CameraViewfinderFrame.java src/main/java/EdDYON/guaniao/client/camera/CameraPhotoSampler.java tools/port-probes/GuaniaoCameraPhotoSamplerRegression.java
+          java -cp "$RUNNER_TEMP/camera-sampler" EdDYON.guaniao.client.camera.GuaniaoCameraPhotoSamplerRegression
+      - name: Verify 26.2 world FOV hook preserves Nikon zoom and clean shutter
+        run: python3 tools/check-camera-fov-26-2.py
+      - name: Verify original Escape, screenshot and shortcut keyboard event port
+        run: python3 tools/check-camera-keyboard-input-26-2.py
+      - name: Verify real 26.2 in-world camera mouse input and safety
+        run: python3 tools/check-camera-mouse-input-26-2.py
+      - name: Run standalone shutter release and keyboard-shortcut regression (Java 25)
+        run: |
+          mkdir -p "$RUNNER_TEMP/camera-shutter"
+          javac -d "$RUNNER_TEMP/camera-shutter" src/main/java/EdDYON/guaniao/client/camera/CameraShutterInput.java tools/port-probes/GuaniaoCameraShutterInputRegression.java
+          java -cp "$RUNNER_TEMP/camera-shutter" EdDYON.guaniao.client.camera.GuaniaoCameraShutterInputRegression
+      - name: Verify native Fabric HUD registration and genuine-filter guard
+        run: python3 tools/check-camera-hud-registry-26-2.py
+      - name: Verify original camera layouts, clipping, and deferred 26.2 extraction
+        run: python3 tools/check-camera-screen-extraction-26-2.py
+      - name: Verify original camera filter picker and creative control inputs on 26.2
+        run: python3 tools/check-camera-screen-input-26-2.py
+      - name: Verify 26.2 clean-shutter HUD visibility and overlay blocking parity
+        run: python3 tools/check-camera-hud-26-2.py
+      - name: Verify Fabric viewfinder tick, continuous focus, disconnect and config cleanup
+        run: python3 tools/check-camera-fabric-lifecycle-26-2.py
+      - name: Verify camera tooltip parity and Fabric client bootstrap
+        run: python3 tools/check-camera-tooltip-port.py
+      - name: Verify all 21 original recipes survive the 26.2 datapack schema
+        run: python3 tools/check-26-2-recipes.py
+      - name: Verify five GeckoLib 5 static model asset paths and API adaptation
+        run: python3 tools/check-geckolib-static-models.py
+      - name: Verify 17 original species definition constants and geometry/texture IDs
+        run: python3 tools/check-bird-definition-identifiers.py
+      - name: Verify original night heron AI and bird bath lookup through 26.2 type relocations
+        run: python3 tools/check-safe-api-relocations.py
+      - name: Verify original diet tags, sky-bird ecology, and handbook IDs
+        run: python3 tools/check-identifier-only-ports.py
+      - name: Verify sky-bird sprites, flock sizes and animation timing parity
+        run: python3 tools/check-skybird-port.py
+      - name: Verify migrated sound and particle APIs compile on 26.2
+        run: |
+          chmod +x gradlew
+          ./gradlew verifyRegistriesPort --no-daemon --stacktrace
+      - name: Verify distance-driven walking regression behavior
+        run: java -cp build/port-proof/sounds EdDYON.guaniao.content.bird.BirdWalkDistanceRegression
+      - name: Gradle compilation (must pass before release)
+        run: |
+          chmod +x gradlew
+          ./gradlew compileJava --no-daemon --stacktrace
+      - name: Verify port and package
+        run: ./gradlew build --no-daemon
+      # Only collect an actual fully compiled/mod-remapped test JAR. No public
+      # release is created and a partial or uncompiled migration is never
+      # advertised as playable.
+      - name: Upload successful private Fabric test JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: guaniao-fabric-26.2-private-test
+          path: |
+            build/libs/*.jar
+            !build/libs/*-sources.jar
+            !build/libs/*-dev.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  # Independent compilation evidence: source parity checks above may fail
+  # early while the 26.2 port is still underway. This job surfaces actual
+  # Gradle/JDK/Minecraft compiler errors without weakening the release gate
+  # or uploading an unfinished JAR.
+  diagnose-java-compile:
+    name: Diagnose Fabric 26.2 Java compilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile migrated registry/renderer subset (focused diagnostic)
+        continue-on-error: true
+        run: |
+          chmod +x gradlew
+          ./gradlew verifyRegistriesPort --no-daemon --stacktrace --console=plain
+      - name: Compile Fabric port (diagnostic; no artifacts)
+        run: |
+          chmod +x gradlew
+          ./gradlew compileJava --no-daemon --stacktrace --console=plain

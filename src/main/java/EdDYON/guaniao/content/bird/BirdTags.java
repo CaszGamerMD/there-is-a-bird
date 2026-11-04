@@ -2,7 +2,7 @@ package EdDYON.guaniao.content.bird;
 
 import EdDYON.guaniao.GuaniaoMod;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
@@ -38,7 +38,7 @@ public final class BirdTags {
     public static final TagKey<Item> CROW_PROTECTED_ITEMS = item("crow_protected_items");
     public static final TagKey<Item> BIRD_TOXIC_FOODS = item("bird_toxic_foods");
     public static final TagKey<Item> FEATHERS = item("wind_feather_fan_feathers");
-    public static final TagKey<Item> FORGE_ORES = TagKey.create(Registries.ITEM, new ResourceLocation("forge", "ores"));
+    public static final TagKey<Item> FORGE_ORES = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("forge", "ores"));
 
     public static final TagKey<Block> BIRD_PERCHES = block("bird_perches");
     public static final TagKey<Block> KIWI_FORAGE_GROUND = block("kiwi_forage_ground");
@@ -57,14 +57,14 @@ public final class BirdTags {
     }
 
     private static TagKey<Item> item(String path) {
-        return TagKey.create(Registries.ITEM, new ResourceLocation(GuaniaoMod.MOD_ID, path));
+        return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, path));
     }
 
     private static TagKey<Block> block(String path) {
-        return TagKey.create(Registries.BLOCK, new ResourceLocation(GuaniaoMod.MOD_ID, path));
+        return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, path));
     }
 
     private static TagKey<EntityType<?>> entityType(String path) {
-        return TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation(GuaniaoMod.MOD_ID, path));
+        return TagKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, path));
     }
 }

@@ -4,9 +4,10 @@ import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.network.Connection;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -20,10 +21,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,16 +81,18 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     @Override
-    public void onLoad() {
-        super.onLoad();
-        if (this.level != null && !this.level.isClientSide) {
-            LOADED_NESTS.computeIfAbsent(this.level, ignored -> new HashSet<>()).add(this);
+    public void setLevel(Level level) {
+        // BlockEntity.onLoad no longer exists in 26.2. Index the nest when
+        // Minecraft assigns the level; setRemoved still unregisters it.
+        super.setLevel(level);
+        if (level != null && !level.isClientSide()) {
+            LOADED_NESTS.computeIfAbsent(level, ignored -> new HashSet<>()).add(this);
         }
     }
 
     @Override
     public void setRemoved() {
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             Set<CrowNestBlockEntity> nests = LOADED_NESTS.get(this.level);
             if (nests != null) {
                 nests.remove(this);
@@ -272,7 +275,7 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     /** Removes a full revealed stack. Callers must hand it to the player themselves. */
     public ItemStack takeDiscoveredTreasure(int slot) {
-        if (this.level == null || this.level.isClientSide || !this.isSlotRummaged(slot) || slot == this.currentSearchSlot) {
+        if (this.level == null || this.level.isClientSide() || !this.isSlotRummaged(slot) || slot == this.currentSearchSlot) {
             return ItemStack.EMPTY;
         }
         ItemStack result = ContainerHelper.takeItem(this.treasures, slot);
@@ -291,7 +294,7 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     public boolean takeOneEgg() {
-        if (this.level == null || this.level.isClientSide) {
+        if (this.level == null || this.level.isClientSide()) {
             return false;
         }
         BlockState state = this.getBlockState();
@@ -309,7 +312,7 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     public void dropAllContents() {
-        if (this.level == null || this.level.isClientSide) {
+        if (this.level == null || this.level.isClientSide()) {
             return;
         }
         Containers.dropContents(this.level, this.worldPosition, this.treasures);
@@ -520,7 +523,7 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     private void pruneExpiredCrowClaims() {
-        if (this.level == null || this.level.isClientSide) {
+        if (this.level == null || this.level.isClientSide()) {
             return;
         }
         long expiryTime = this.level.getGameTime() - CROW_CLAIM_EXPIRY_TICKS;
@@ -530,64 +533,56 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        CompoundTag treasureTag = new CompoundTag();
-        ContainerHelper.saveAllItems(treasureTag, this.treasures);
-        tag.put(TREASURES_TAG, treasureTag);
-        tag.putBoolean(NATURAL_NEST_TAG, this.naturalNest);
-        ListTag claimTags = new ListTag();
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        // The original nested Treasures compound and its Items list remain intact.
+        ContainerHelper.saveAllItems(output.child(TREASURES_TAG), this.treasures);
+        output.putBoolean(NATURAL_NEST_TAG, this.naturalNest);
+        ValueOutput.ValueOutputList claims = output.childrenList(CROW_CLAIMS_TAG);
         for (Map.Entry<UUID, Long> entry : this.crowClaims.entrySet()) {
-            CompoundTag claimTag = new CompoundTag();
-            claimTag.putUUID(CLAIM_CROW_TAG, entry.getKey());
-            claimTag.putLong(CLAIM_TIME_TAG, entry.getValue());
-            claimTags.add(claimTag);
+            ValueOutput claim = claims.addChild();
+            claim.putIntArray(CLAIM_CROW_TAG, uuidToIntArray(entry.getKey()));
+            claim.putLong(CLAIM_TIME_TAG, entry.getValue());
         }
-        tag.put(CROW_CLAIMS_TAG, claimTags);
-        tag.putInt(RUMMAGED_MASK_TAG, this.rummagedMask);
-        tag.putInt(CURRENT_SEARCH_SLOT_TAG, this.currentSearchSlot);
-        tag.putInt(SEARCH_TICKS_TAG, this.searchTicks);
-        tag.putInt(SEARCH_TOTAL_TICKS_TAG, this.searchTotalTicks);
-        tag.putLong(LOOT_LAYOUT_SEED_TAG, this.lootLayoutSeed);
-        tag.putIntArray(LOOT_FOOTPRINTS_TAG, this.lootFootprints);
-        tag.putIntArray(LOOT_COLUMNS_TAG, this.lootColumns);
-        tag.putIntArray(LOOT_ROWS_TAG, this.lootRows);
+        output.putInt(RUMMAGED_MASK_TAG, this.rummagedMask);
+        output.putInt(CURRENT_SEARCH_SLOT_TAG, this.currentSearchSlot);
+        output.putInt(SEARCH_TICKS_TAG, this.searchTicks);
+        output.putInt(SEARCH_TOTAL_TICKS_TAG, this.searchTotalTicks);
+        output.putLong(LOOT_LAYOUT_SEED_TAG, this.lootLayoutSeed);
+        output.putIntArray(LOOT_FOOTPRINTS_TAG, this.lootFootprints);
+        output.putIntArray(LOOT_COLUMNS_TAG, this.lootColumns);
+        output.putIntArray(LOOT_ROWS_TAG, this.lootRows);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
         for (int slot = 0; slot < this.treasures.size(); slot++) {
             this.treasures.set(slot, ItemStack.EMPTY);
         }
-        if (tag.contains(TREASURES_TAG, CompoundTag.TAG_COMPOUND)) {
-            ContainerHelper.loadAllItems(tag.getCompound(TREASURES_TAG), this.treasures);
-        }
-        this.naturalNest = tag.getBoolean(NATURAL_NEST_TAG)
+        ContainerHelper.loadAllItems(input.childOrEmpty(TREASURES_TAG), this.treasures);
+        this.naturalNest = input.getBooleanOr(NATURAL_NEST_TAG, false)
                 || (this.getBlockState().hasProperty(CrowNestBlock.NATURAL_NEST)
                 && this.getBlockState().getValue(CrowNestBlock.NATURAL_NEST));
         this.crowClaims.clear();
-        if (tag.contains(CROW_CLAIMS_TAG, CompoundTag.TAG_LIST)) {
-            ListTag claimTags = tag.getList(CROW_CLAIMS_TAG, CompoundTag.TAG_COMPOUND);
-            for (int index = 0; index < claimTags.size(); ++index) {
-                CompoundTag claimTag = claimTags.getCompound(index);
-                if (claimTag.hasUUID(CLAIM_CROW_TAG)) {
-                    this.crowClaims.put(claimTag.getUUID(CLAIM_CROW_TAG), claimTag.getLong(CLAIM_TIME_TAG));
-                }
-            }
+        for (ValueInput claim : input.childrenListOrEmpty(CROW_CLAIMS_TAG)) {
+            claim.getIntArray(CLAIM_CROW_TAG)
+                    .filter(parts -> parts.length == 4)
+                    .map(CrowNestBlockEntity::uuidFromIntArray)
+                    .ifPresent(uuid -> this.crowClaims.put(uuid, claim.getLongOr(CLAIM_TIME_TAG, 0L)));
         }
-        this.rummagedMask = tag.getInt(RUMMAGED_MASK_TAG) & ((1 << TREASURE_SLOTS) - 1);
-        this.currentSearchSlot = tag.contains(CURRENT_SEARCH_SLOT_TAG) ? tag.getInt(CURRENT_SEARCH_SLOT_TAG) : -1;
-        this.searchTicks = Math.max(0, tag.getInt(SEARCH_TICKS_TAG));
-        this.searchTotalTicks = Math.max(0, tag.getInt(SEARCH_TOTAL_TICKS_TAG));
-        this.lootLayoutSeed = tag.getLong(LOOT_LAYOUT_SEED_TAG);
+        this.rummagedMask = input.getIntOr(RUMMAGED_MASK_TAG, 0) & ((1 << TREASURE_SLOTS) - 1);
+        this.currentSearchSlot = input.getIntOr(CURRENT_SEARCH_SLOT_TAG, -1);
+        this.searchTicks = Math.max(0, input.getIntOr(SEARCH_TICKS_TAG, 0));
+        this.searchTotalTicks = Math.max(0, input.getIntOr(SEARCH_TOTAL_TICKS_TAG, 0));
+        this.lootLayoutSeed = input.getLongOr(LOOT_LAYOUT_SEED_TAG, 0L);
         Arrays.fill(this.lootFootprints, 0);
         Arrays.fill(this.lootColumns, -1);
         Arrays.fill(this.lootRows, -1);
-        int[] savedFootprints = tag.getIntArray(LOOT_FOOTPRINTS_TAG);
+        int[] savedFootprints = input.getIntArray(LOOT_FOOTPRINTS_TAG).orElseGet(() -> new int[0]);
         System.arraycopy(savedFootprints, 0, this.lootFootprints, 0, Math.min(savedFootprints.length, TREASURE_SLOTS));
-        int[] savedColumns = tag.getIntArray(LOOT_COLUMNS_TAG);
-        int[] savedRows = tag.getIntArray(LOOT_ROWS_TAG);
+        int[] savedColumns = input.getIntArray(LOOT_COLUMNS_TAG).orElseGet(() -> new int[0]);
+        int[] savedRows = input.getIntArray(LOOT_ROWS_TAG).orElseGet(() -> new int[0]);
         System.arraycopy(savedColumns, 0, this.lootColumns, 0, Math.min(savedColumns.length, TREASURE_SLOTS));
         System.arraycopy(savedRows, 0, this.lootRows, 0, Math.min(savedRows.length, TREASURE_SLOTS));
         for (int slot = 0; slot < TREASURE_SLOTS; slot++) {
@@ -611,14 +606,20 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
         }
     }
 
-    @Override
-    public CompoundTag getUpdateTag() {
-        return this.saveWithoutMetadata();
+    private static int[] uuidToIntArray(UUID uuid) {
+        long most = uuid.getMostSignificantBits();
+        long least = uuid.getLeastSignificantBits();
+        return new int[]{(int)(most >> 32), (int)most, (int)(least >> 32), (int)least};
+    }
+
+    private static UUID uuidFromIntArray(int[] parts) {
+        return new UUID(((long)parts[0] << 32) | (parts[1] & 0xffffffffL),
+                ((long)parts[2] << 32) | (parts[3] & 0xffffffffL));
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        this.load(tag);
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return this.saveWithoutMetadata(registries);
     }
 
     @Override
@@ -626,15 +627,6 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
-        CompoundTag tag = packet.getTag();
-        if (tag != null) {
-            this.load(tag);
-        }
-    }
-
-    @Override
     public AABB getRenderBoundingBox() {
         return new AABB(this.worldPosition).inflate(0.25D, 0.25D, 0.25D);
     }
@@ -880,12 +872,12 @@ public class CrowNestBlockEntity extends BlockEntity implements GeoBlockEntity {
     private static boolean canMerge(ItemStack stored, ItemStack incoming) {
         return !stored.isEmpty()
                 && stored.getCount() < stored.getMaxStackSize()
-                && ItemStack.isSameItemSameTags(stored, incoming);
+                && ItemStack.isSameItemSameComponents(stored, incoming);
     }
 
     private void sync() {
         this.setChanged();
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             BlockState state = this.getBlockState();
             this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
         }

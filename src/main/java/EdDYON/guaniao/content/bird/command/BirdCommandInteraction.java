@@ -23,7 +23,7 @@ public final class BirdCommandInteraction {
                 || !player.getOffhandItem().isEmpty()) {
             return InteractionResult.PASS;
         }
-        if (!bird.level().isClientSide) {
+        if (!bird.level().isClientSide()) {
             if (!BirdConfigManager.petBirdCommandsEnabled()) {
                 return InteractionResult.PASS;
             }
@@ -36,6 +36,6 @@ public final class BirdCommandInteraction {
         }
         // Consume the client's valid gesture even when its local config differs;
         // the server remains responsible for the setting and command change.
-        return InteractionResult.sidedSuccess(bird.level().isClientSide);
+        return InteractionResult.sidedSuccess(bird.level().isClientSide());
     }
 }

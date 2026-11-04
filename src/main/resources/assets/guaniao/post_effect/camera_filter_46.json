@@ -1,0 +1,57 @@
+{
+  "targets": {
+    "guaniao_camera_swap": {}
+  },
+  "passes": [
+    {
+      "vertex_shader": "minecraft:core/screentriangle",
+      "fragment_shader": "guaniao:post/camera_universal",
+      "inputs": [
+        {
+          "sampler_name": "In",
+          "target": "minecraft:main"
+        }
+      ],
+      "output": "guaniao_camera_swap",
+      "uniforms": {
+        "FilterConfig": [
+          {
+            "name": "FilterMode",
+            "type": "float",
+            "value": 46
+          },
+          {
+            "name": "Time",
+            "type": "float",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "vertex_shader": "minecraft:core/screentriangle",
+      "fragment_shader": "minecraft:post/blit",
+      "inputs": [
+        {
+          "sampler_name": "In",
+          "target": "guaniao_camera_swap"
+        }
+      ],
+      "uniforms": {
+        "BlitConfig": [
+          {
+            "name": "ColorModulate",
+            "type": "vec4",
+            "value": [
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      "output": "minecraft:main"
+    }
+  ]
+}

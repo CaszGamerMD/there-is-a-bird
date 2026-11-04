@@ -1,11 +1,12 @@
 package EdDYON.guaniao.command;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.config.BirdConfigData;
 import EdDYON.guaniao.config.BirdConfigManager;
 import EdDYON.guaniao.content.note.BirdNoteContent;
-import EdDYON.guaniao.network.GuaniaoNetwork;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.server.permissions.Permissions;
 import EdDYON.guaniao.network.OpenBirdConfigPacket;
 import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
@@ -20,35 +21,33 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
 public final class BirdConfigCommands {
     private BirdConfigCommands() {
     }
 
-    @SubscribeEvent
-    public static void onRegisterCommands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("guaniaoconfig")
+    public static void registerCallbacks() {
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+        dispatcher.register(Commands.literal("guaniaoconfig")
                 .requires(BirdConfigCommands::canEdit)
                 .executes(context -> open(context.getSource())));
-        event.getDispatcher().register(Commands.literal("birdconfig")
+        dispatcher.register(Commands.literal("birdconfig")
                 .requires(BirdConfigCommands::canEdit)
                 .executes(context -> open(context.getSource())));
-        event.getDispatcher().register(Commands.literal("guaniao")
+        dispatcher.register(Commands.literal("guaniao")
                 .requires(BirdConfigCommands::canEdit)
                 .then(Commands.literal("seagullRaid")
                         .executes(context -> seagullRaid(context.getSource())))
                 .then(Commands.literal("birdNotes")
                         .executes(context -> birdNotes(context.getSource()))));
+        });
     }
 
     private static int open(CommandSourceStack source) throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         BirdConfigManager.loadForServer(source.getServer());
-        GuaniaoNetwork.sendToPlayer(new OpenBirdConfigPacket(BirdConfigManager.snapshot()), player);
+        if (!ServerPlayNetworking.canSend(player, OpenBirdConfigPacket.TYPE)) return 0;
+        ServerPlayNetworking.send(player, new OpenBirdConfigPacket(BirdConfigManager.snapshot()));
         return 1;
     }
 
@@ -130,7 +129,7 @@ public final class BirdConfigCommands {
     }
 
     public static boolean canEdit(CommandSourceStack source) {
-        if (source.hasPermission(2)) {
+        if (source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)) {
             return true;
         }
         return source.getEntity() instanceof ServerPlayer player

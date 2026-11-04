@@ -13,7 +13,7 @@ import EdDYON.guaniao.content.bird.scale.BirdModelScaleProfile;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.BlockTags;
@@ -23,7 +23,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -31,12 +31,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class CockatooEntity extends BudgerigarEntity {
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.idle");
@@ -63,7 +63,7 @@ public class CockatooEntity extends BudgerigarEntity {
     }
 
     public static boolean canCockatooSpawn(EntityType<CockatooEntity> type, ServerLevelAccessor level,
-                                           MobSpawnType reason, BlockPos pos, RandomSource random) {
+                                           EntitySpawnReason reason, BlockPos pos, RandomSource random) {
         // The placement predicate can also run at a world-generation region edge.
         if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) return false;
         BlockState below = level.getBlockState(pos.below());
@@ -84,7 +84,7 @@ public class CockatooEntity extends BudgerigarEntity {
     }
 
     @Override
-    public ResourceLocation getTextureResource() {
+    public Identifier getTextureResource() {
         return CockatooDefinition.TEXTURE;
     }
 
@@ -106,7 +106,7 @@ public class CockatooEntity extends BudgerigarEntity {
     @Nullable
     @Override
     public CockatooEntity getBreedOffspring(ServerLevel level, AgeableMob mate) {
-        CockatooEntity child = GuaniaoEntityTypes.COCKATOO.get().create(level);
+        CockatooEntity child = GuaniaoEntityTypes.COCKATOO.get().create(level, EntitySpawnReason.BREEDING);
         if (child != null) {
             float otherScale = mate instanceof CockatooEntity other ? other.getIndividualModelScale() : getIndividualModelScale();
             child.setIndividualModelScale(BirdModelScale.inheritIndividualScale(
@@ -161,9 +161,9 @@ public class CockatooEntity extends BudgerigarEntity {
         controllers.add(new BirdMovementAnimationController<>(this, "movement", 4, this::movementController));
     }
 
-    private PlayState movementController(AnimationState<CockatooEntity> state) {
-        state.getController().setAnimationSpeed(1.0D);
-        state.getController().transitionLength(4);
+    private PlayState movementController(AnimationTest<CockatooEntity> state) {
+        state.controller().setAnimationSpeed(1.0D);
+        state.controller().setTransitionTicks(4);
         if (preview != GuidePreviewAnimation.NONE) {
             return state.setAndContinue(switch (preview) {
                 case WALK -> WALK;
@@ -176,8 +176,8 @@ public class CockatooEntity extends BudgerigarEntity {
             });
         }
         if (shouldPlayFlyAnimation()) {
-            state.getController().transitionLength(0);
-            state.getController().setAnimationSpeed(flightAnimationSpeed());
+            state.controller().setTransitionTicks(0);
+            state.controller().setAnimationSpeed(flightAnimationSpeed());
             return BirdFlightAnimation.play(state, FLY);
         }
         BudgerigarBehaviorState behavior = getBehaviorState();

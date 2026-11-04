@@ -15,8 +15,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.FishingRodItem;
-import net.minecraftforge.event.ForgeEventFactory;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.world.entity.ai.control.BodyRotationControl;
 
 import EdDYON.guaniao.content.bird.flight.BirdFlightAnimation;
@@ -82,7 +80,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -91,7 +89,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.animal.AbstractFish;
+import net.minecraft.world.entity.animal.fish.AbstractFish;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -103,17 +101,17 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 public class NightHeronEntity
 extends TamableAnimal
@@ -210,22 +208,22 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
 
     public NightHeronEntity(EntityType<? extends NightHeronEntity> entityType, Level level) {
         super(entityType, level);
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0f);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0f);
-        this.setPathfindingMalus(BlockPathTypes.WATER_BORDER, 0.0f);
+        this.setPathfindingMalus(PathType.LEAVES, 0.0f);
+        this.setPathfindingMalus(PathType.WATER, -1.0f);
+        this.setPathfindingMalus(PathType.WATER_BORDER, 0.0f);
     }
 
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
-        this.entityData.define(FISH_PURPOSE, HeldFishPurpose.NONE.id());
-        this.entityData.define(OFFER_TICKS, 0);
-        this.entityData.define(BEHAVIOR_STATE, NightHeronBehaviorState.IDLE.ordinal());
-        this.entityData.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
-        this.entityData.define(HELD_FISH, ItemStack.EMPTY);
-        this.entityData.define(HELD_FISH_POSE_SEED, 0);
-        this.entityData.define(EATING_TICKS, 0);
-        this.entityData.define(MUTATION, BirdMutation.NONE.ordinal());
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(COMMAND_MODE, BirdCommandMode.FREE.ordinal());
+        builder.define(FISH_PURPOSE, HeldFishPurpose.NONE.id());
+        builder.define(OFFER_TICKS, 0);
+        builder.define(BEHAVIOR_STATE, NightHeronBehaviorState.IDLE.ordinal());
+        builder.define(MODEL_SCALE, BirdModelScale.DEFAULT_INDIVIDUAL_SCALE);
+        builder.define(HELD_FISH, ItemStack.EMPTY);
+        builder.define(HELD_FISH_POSE_SEED, 0);
+        builder.define(EATING_TICKS, 0);
+        builder.define(MUTATION, BirdMutation.NONE.ordinal());
     }
 
     @Override
@@ -249,7 +247,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         return PathfinderMob.createMobAttributes().add(Attributes.MAX_HEALTH, 14.0).add(Attributes.MOVEMENT_SPEED, 0.2).add(Attributes.FLYING_SPEED, 0.45).add(Attributes.FOLLOW_RANGE, 24.0).add(Attributes.ATTACK_DAMAGE, 2.0);
     }
 
-    public static boolean canSpawn(EntityType<NightHeronEntity> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+    public static boolean canSpawn(EntityType<NightHeronEntity> entityType, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
         BlockState below = level.getBlockState(pos.below());
         boolean validGround = below.is(BlockTags.ANIMALS_SPAWNABLE_ON) || below.is(Blocks.MUD) || below.is(Blocks.CLAY) || below.is(Blocks.SAND) || below.is(Blocks.RED_SAND);
         return validGround
@@ -258,7 +256,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnGroupData, CompoundTag compoundTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, new AgeableMob.AgeableMobGroupData(false), compoundTag);
         if (compoundTag == null || !compoundTag.contains(BirdModelScale.NBT_KEY, 5)) {
             this.randomizeModelScale();
@@ -305,7 +303,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         if (this.isControlledFlightActive()) {
             this.fallDistance = 0.0f;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             this.birdBrain.tick();
             this.tickStaleFlightRecovery();
             this.tickFlightStateGuard();
@@ -359,7 +357,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
 
     public boolean hurt(DamageSource damageSource, float amount) {
         boolean hurt = super.hurt(damageSource, amount);
-        if (hurt && !this.level().isClientSide) {
+        if (hurt && !this.level().isClientSide()) {
             this.clearEatingFish();
             Entity attacker = damageSource.getEntity();
             Vec3 sourcePos = attacker != null ? attacker.position() : this.position();
@@ -508,7 +506,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
 
     @Override
     public void wakeFromLoudSound(Vec3 soundPosition) {
-        if (this.level().isClientSide || !this.isBirdSleeping()) {
+        if (this.level().isClientSide() || !this.isBirdSleeping()) {
             return;
         }
         Vec3 sourcePos = soundPosition == null ? this.position() : soundPosition;
@@ -556,7 +554,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
     @Override public BirdCommandMode getBirdCommandMode() { return BirdCommandMode.byId(this.entityData.get(COMMAND_MODE)); }
     @Override public void setBirdCommandMode(BirdCommandMode mode) {
         this.entityData.set(COMMAND_MODE, mode.ordinal());
-        if (!this.level().isClientSide && this.fishTask != null) {
+        if (!this.level().isClientSide() && this.fishTask != null) {
             this.setOfferTicks(0);
             this.getNavigation().stop();
             this.flybyFlightTicks = 0;
@@ -604,7 +602,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
             return stack.isEmpty() || food || stack.getItem() instanceof FishingRodItem
                     ? InteractionResult.PASS : super.mobInteract(player, hand);
         }
-        if (this.level().isClientSide) return InteractionResult.SUCCESS;
+        if (this.level().isClientSide()) return InteractionResult.SUCCESS;
         long now = this.level().getGameTime();
         if (this.lastPetInteractionTick == now) return InteractionResult.CONSUME;
         this.lastPetInteractionTick = now;
@@ -641,7 +639,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
             ItemEntity drop = this.spawnAtLocation(this.getHeldFishForRendering());
             if (drop != null) {
                 drop.setTarget(this.getOwnerUUID());
-                drop.getPersistentData().putBoolean(NightHeronFishTask.DELIVERED_MARKER, true);
+                NightHeronFishTask.markOwnerDelivery(drop);
                 this.setHeldFish(ItemStack.EMPTY, HeldFishPurpose.NONE);
             }
         }
@@ -717,7 +715,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         this.setDeltaMovement(movement);
         this.faceMovementDirection(movement);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     @Override
@@ -738,7 +736,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         this.setDeltaMovement(movement);
         this.faceMovementDirection(movement);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
         return true;
     }
 
@@ -847,7 +845,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         this.getNavigation().stop();
         this.setDeltaMovement(Vec3.ZERO);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
         this.clearLandingApproach();
         this.setBehaviorState(nextState);
     }
@@ -867,7 +865,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         Vec3 movement = this.getDeltaMovement();
         this.setDeltaMovement(movement.x * 0.45, Math.min(movement.y, -0.045), movement.z * 0.45);
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
         this.setBehaviorState(NightHeronBehaviorState.LANDING);
     }
 
@@ -1021,8 +1019,8 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
     }
 
     void eatThrownFish(ItemEntity itemEntity) {
-        if (this.level().isClientSide || this.hasHeldFishForRendering() || !this.canEatThrownFish()
-                || itemEntity.getPersistentData().getBoolean(NightHeronFishTask.DELIVERED_MARKER)) return;
+        if (this.level().isClientSide() || this.hasHeldFishForRendering() || !this.canEatThrownFish()
+                || NightHeronFishTask.wasOwnerDelivery(itemEntity)) return;
         ItemStack stack = itemEntity.getItem();
         if (!NightHeronEntity.isDroppedFishCandidate(stack)) {
             return;
@@ -1174,10 +1172,10 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
     }
 
     boolean catchFish(AbstractFish fish, HeldFishPurpose purpose) {
-        if (this.level().isClientSide || this.capturingFish || !this.canCaptureFish(fish, purpose)) return false;
+        if (this.level().isClientSide() || this.capturingFish || !this.canCaptureFish(fish, purpose)) return false;
         this.capturingFish = true;
         try {
-            if (MinecraftForge.EVENT_BUS.post(new NightHeronFishCaptureEvent(this, fish, purpose))
+            if (NightHeronFishCaptureEvent.isCancelled(this, fish, purpose)
                     || !this.canCaptureFish(fish, purpose)) return false;
             ItemStack caught = new ItemStack(itemForCaughtFish(fish));
             fish.discard();
@@ -1346,7 +1344,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         int x = Mth.floor((double)this.getX());
         int z = Mth.floor((double)this.getZ());
         int startY = Mth.floor((double)this.getY());
-        int minY = this.level().getMinBuildHeight();
+        int minY = this.level().getMinY();
         for (int y = startY; y >= minY; --y) {
             mutablePos.set(x, y, z);
             BlockState state = this.level().getBlockState((BlockPos)mutablePos);
@@ -1557,9 +1555,9 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         return highFlight && (NightHeronFlightController.shouldGlide(this) || state == NightHeronBehaviorState.GLIDE) ? FLY_LOOP_ANIMATION : FLY_FLAPPING_WING_LOOP_ANIMATION;
     }
 
-    private <T extends NightHeronEntity> PlayState movementController(AnimationState<T> animationState) {
-        animationState.getController().setAnimationSpeed(1.0D);
-        animationState.getController().transitionLength(4);
+    private <T extends NightHeronEntity> PlayState movementController(AnimationTest<T> animationState) {
+        animationState.controller().setAnimationSpeed(1.0D);
+        animationState.controller().setTransitionTicks(4);
         RawAnimation guidePreviewRawAnimation = this.guidePreviewAnimation.animation();
         if (guidePreviewRawAnimation != null) {
             return animationState.setAndContinue(guidePreviewRawAnimation);
@@ -1617,7 +1615,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         }
         if (!this.onGround() && this.getDeltaMovement().lengthSqr() < 0.0025) {
             this.setDeltaMovement(0.0, -0.08, 0.0);
-            this.hasImpulse = true;
+            this.needsSync = true;
             this.fallDistance = 0.0f;
         }
     }
@@ -1628,7 +1626,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
                 this.setNoGravity(false);
                 if (!this.onGround() && this.getDeltaMovement().lengthSqr() < 0.0025) {
                     this.setDeltaMovement(0.0, -0.08, 0.0);
-                    this.hasImpulse = true;
+                    this.needsSync = true;
                 }
             }
             return;
@@ -1637,7 +1635,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
             this.setNoGravity(false);
             this.setBehaviorState(NightHeronBehaviorState.IDLE);
             this.setDeltaMovement(0.0, -0.08, 0.0);
-            this.hasImpulse = true;
+            this.needsSync = true;
             this.fallDistance = 0.0f;
         }
     }
@@ -1712,7 +1710,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
             }
         }
         this.fallDistance = 0.0f;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private BlockPos findNearestDryEscapePosition(BlockPos origin) {
@@ -1812,7 +1810,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         Vec3 movement = this.getDeltaMovement();
         this.setDeltaMovement(movement.x * 0.45D, Math.min(movement.y, -0.06D), movement.z * 0.45D);
         this.fallDistance = 0.0F;
-        this.hasImpulse = true;
+        this.needsSync = true;
     }
 
     private static NightHeronBehaviorState decodeBehaviorState(int ordinal) {

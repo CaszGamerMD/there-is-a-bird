@@ -1,0 +1,87 @@
+{
+  "targets": {
+    "guaniao_optics_swap": {}
+  },
+  "passes": [
+    {
+      "vertex_shader": "minecraft:core/screentriangle",
+      "fragment_shader": "guaniao:post/camera_optics",
+      "inputs": [
+        {
+          "sampler_name": "In",
+          "target": "minecraft:main"
+        },
+        {
+          "sampler_name": "MainDepth",
+          "target": "minecraft:main",
+          "use_depth_buffer": true
+        }
+      ],
+      "output": "guaniao_optics_swap",
+      "uniforms": {
+        "OpticsConfig": [
+          {
+            "name": "NearPlane",
+            "type": "float",
+            "value": 0.05
+          },
+          {
+            "name": "FarPlane",
+            "type": "float",
+            "value": 512
+          },
+          {
+            "name": "FocusDistance",
+            "type": "float",
+            "value": 12
+          },
+          {
+            "name": "Aperture",
+            "type": "float",
+            "value": 5.6
+          },
+          {
+            "name": "FocalLength",
+            "type": "float",
+            "value": 50
+          },
+          {
+            "name": "DofMultiplier",
+            "type": "float",
+            "value": 1
+          },
+          {
+            "name": "LensDistortion",
+            "type": "float",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "vertex_shader": "minecraft:core/screentriangle",
+      "fragment_shader": "minecraft:post/blit",
+      "inputs": [
+        {
+          "sampler_name": "In",
+          "target": "guaniao_optics_swap"
+        }
+      ],
+      "output": "minecraft:main",
+      "uniforms": {
+        "BlitConfig": [
+          {
+            "name": "ColorModulate",
+            "type": "vec4",
+            "value": [
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

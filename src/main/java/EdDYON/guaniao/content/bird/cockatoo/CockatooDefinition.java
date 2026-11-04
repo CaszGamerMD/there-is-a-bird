@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.cockatoo;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class CockatooDefinition {
     public static final String ENTITY_ID = "cockatoo";
@@ -15,13 +15,13 @@ public final class CockatooDefinition {
     public static final double FOLLOW_RANGE = 28.0D;
     // Authored toes sit slightly below the origin after the leg/cube rotations.
     public static final float FOOT_OFFSET_PIXELS = 0.751F;
-    public static final ResourceLocation MODEL = resource("geo/cockatoo.geo.json");
-    public static final ResourceLocation ANIMATION = resource("animations/cockatoo.animation.json");
-    public static final ResourceLocation TEXTURE = resource("textures/entity/cockatoo.png");
+    public static final Identifier MODEL = resource("geo/cockatoo.geo.json");
+    public static final Identifier ANIMATION = resource("animations/cockatoo.animation.json");
+    public static final Identifier TEXTURE = resource("textures/entity/cockatoo.png");
 
     private CockatooDefinition() { }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation("guaniao", path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath("guaniao", path);
     }
 }

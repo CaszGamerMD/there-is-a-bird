@@ -10,15 +10,16 @@ import EdDYON.guaniao.content.bird.command.BirdCommandInteraction;
 import EdDYON.guaniao.content.bird.command.BirdCommandMode;
 import EdDYON.guaniao.content.bird.command.CommandableBird;
 import EdDYON.guaniao.event.BirdPopulationTracker;
+import EdDYON.guaniao.event.BirdTamePermissionEvents;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -34,23 +35,25 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.BodyRotationControl;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.ForgeEventFactory;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.*;
-import software.bernie.geckolib.util.GeckoLibUtil;
-import javax.annotation.Nullable;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.util.GeckoLibUtil;
+import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
-public final class HummingbirdEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, CommandableBird {
+public final class HummingbirdEntity extends TamableAnimal implements GeoEntity, CommandableBird {
     // Lowest authored standing foot corners after waist/leg/cube bind rotations, in blocks.
     public static final double HEAD_PERCH_SOLE_Y = 0.002158524900375658D / 16.0D;
     public static final double HEAD_PERCH_SOLE_FORWARD = 0.5828997379737713D / 16.0D;
@@ -58,8 +61,8 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         HOVER, TRAVEL, NECTAR_ENTER, NECTAR_LOOP, NECTAR_EXIT, TAKEOFF, LAND,
         PERCH, SLEEP_ENTER, SLEEP, WAKE, DROP_SEED, HEAD_PERCH, TERRITORY, PANIC
     }
-    public static final TagKey<Item> FOODS = TagKey.create(Registries.ITEM, new ResourceLocation("guaniao", "hummingbird_foods"));
-    public static final TagKey<Item> TEMPT = TagKey.create(Registries.ITEM, new ResourceLocation("guaniao", "hummingbird_tempt_items"));
+    public static final TagKey<Item> FOODS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("guaniao", "hummingbird_foods"));
+    public static final TagKey<Item> TEMPT = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("guaniao", "hummingbird_tempt_items"));
     private static final EntityDataAccessor<Integer> ACTIVITY = SynchedEntityData.defineId(HummingbirdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> COMMAND = SynchedEntityData.defineId(HummingbirdEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> MALE = SynchedEntityData.defineId(HummingbirdEntity.class, EntityDataSerializers.BOOLEAN);
@@ -95,17 +98,17 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 4).add(Attributes.MOVEMENT_SPEED, 0.15)
                 .add(Attributes.FLYING_SPEED, 0.30).add(Attributes.FOLLOW_RANGE, 32);
     }
-    public static boolean canSpawn(EntityType<HummingbirdEntity> type, ServerLevelAccessor level, MobSpawnType reason,
+    public static boolean canSpawn(EntityType<HummingbirdEntity> type, ServerLevelAccessor level, EntitySpawnReason reason,
                                    BlockPos pos, RandomSource random) {
         return level.getRawBrightness(pos, 0) > 8 && Mob.checkMobSpawnRules(type, level, reason, pos, random);
     }
-    @Override protected void defineSynchedData() {
-        super.defineSynchedData();
-        entityData.define(ACTIVITY, Activity.HOVER.ordinal()); entityData.define(COMMAND, 0);
-        entityData.define(MALE, false); entityData.define(NECTAR, 0F); entityData.define(BANK, 0F);
-        entityData.define(FORWARD, 0F); entityData.define(BACKWARD, 0F); entityData.define(LATERAL, 0F);
-        entityData.define(IDLE_DETAIL, 0);
-        entityData.define(CARRY, ItemStack.EMPTY);
+    @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ACTIVITY, Activity.HOVER.ordinal()); builder.define(COMMAND, 0);
+        builder.define(MALE, false); builder.define(NECTAR, 0F); builder.define(BANK, 0F);
+        builder.define(FORWARD, 0F); builder.define(BACKWARD, 0F); builder.define(LATERAL, 0F);
+        builder.define(IDLE_DETAIL, 0);
+        builder.define(CARRY, ItemStack.EMPTY);
     }
     @Override protected BodyRotationControl createBodyControl() {
         return new BodyRotationControl(this) {
@@ -117,9 +120,9 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         };
     }
     @Override protected void registerGoals() { /* All motion is owned by the hover state machine. */ }
-    @Override protected void customServerAiStep() {
-        super.customServerAiStep();
-        if (level() instanceof ServerLevel server && isAlive()) {
+    @Override protected void customServerAiStep(ServerLevel server) {
+        super.customServerAiStep(server);
+        if (isAlive()) {
             if (motor.escapeWater(server)) {
                 behavior.prepareWaterEscape();
                 return;
@@ -135,7 +138,7 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         previousWingStrokeTime = wingStrokeTime;
         previousVisualBank = visualBank;
         super.tick();
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             // Client motion packets are intermittent. Send the authoritative pose target,
             // then interpolate it locally instead of repeatedly restarting fly/hover clips.
             double yaw = getYRot() * Mth.DEG_TO_RAD;
@@ -187,7 +190,12 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         setNoGravity(false);
         super.travel(Vec3.ZERO);
     }
-    @Override public boolean isFlying() { return isAirborne(); }
+    @Override
+    protected boolean omnidirectionalAirMover() {
+        return true;
+    }
+
+    public boolean isFlying() { return isAirborne(); }
     public boolean isAirborne() {
         if (preview != null) return !preview.equals("idle") && !preview.equals("sleep");
         return switch (activity()) {
@@ -284,7 +292,7 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
     public void setGuidePreviewAnimation(@Nullable String name) { preview = name; }
     @Override public BirdCommandMode getBirdCommandMode() { return BirdCommandMode.byId(entityData.get(COMMAND)); }
     @Override public void setBirdCommandMode(BirdCommandMode mode) {
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             entityData.set(COMMAND, mode.ordinal());
             behavior.commandChanged();
         }
@@ -300,22 +308,23 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
             playInteractionSound();
             return command;
         }
-        if (isTame() && isOwnedBy(player) && player.isShiftKeyDown() && stack.is(net.minecraft.tags.ItemTags.FLOWERS)) {
-            if (!level().isClientSide) {
+        if (isTame() && isOwnedBy(player) && player.isShiftKeyDown()
+                && stack.is(net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags.FLOWERS)) {
+            if (!level().isClientSide()) {
                 behavior.bindGarden((ServerLevel)level(), player.blockPosition());
                 playInteractionSound();
             }
-            return InteractionResult.sidedSuccess(level().isClientSide);
+            return level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
         }
         if (!BirdFoodSafety.matchesClean(FOODS, stack)) return InteractionResult.PASS;
         if (isTame() && !isOwnedBy(player)) return InteractionResult.PASS;
-        if (!level().isClientSide && level().getGameTime() >= nextFeedTick) {
+        if (!level().isClientSide() && level().getGameTime() >= nextFeedTick) {
             nextFeedTick = level().getGameTime() + 10;
             if (!isTame()) {
                 if (!player.getUUID().equals(tamingCandidate)) { tamingCandidate = player.getUUID(); tamingProgress = 0; }
                 tamingProgress++;
                 if (tamingProgress >= HummingbirdConfig.tamingFeeds()) {
-                    if (!ForgeEventFactory.onAnimalTame(this, player)) {
+                    if (BirdTamePermissionEvents.BEFORE_TAME.invoker().canTame(this, player)) {
                         tame(player); setBirdCommandMode(BirdCommandMode.FOLLOW);
                         setPersistenceRequired(); level().broadcastEntityEvent(this, (byte)7);
                     } else tamingProgress = Math.max(0, HummingbirdConfig.tamingFeeds() - 1);
@@ -324,11 +333,11 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
             if (!player.getAbilities().instabuild) stack.shrink(1);
             playInteractionSound();
         }
-        return InteractionResult.sidedSuccess(level().isClientSide);
+        return level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
-    @Override public boolean hurt(DamageSource source, float amount) {
-        boolean hurt = super.hurt(source, amount);
-        if (hurt && !level().isClientSide && isAlive()) behavior.panic(source.getEntity());
+    @Override public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        boolean hurt = super.hurtServer(level, source, amount);
+        if (hurt && isAlive()) behavior.panic(source.getEntity());
         return hurt;
     }
     @Override public void rideTick() {
@@ -364,39 +373,44 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
         Entity old = getVehicle(); super.removeVehicle();
         if (old instanceof Player owner) syncHeadPassenger(owner);
     }
-    @Override public boolean canRiderInteract() { return true; }
-    @Override public boolean causeFallDamage(float distance, float multiplier, DamageSource source) { return false; }
+    // In 26.2 riding interactions no longer dispatch canRiderInteract; retain
+    // the named method for downstream integrations that query this bird.
+    public boolean canRiderInteract() { return true; }
+    @Override public boolean causeFallDamage(double distance, float multiplier, DamageSource source) { return false; }
     @Override protected void checkFallDamage(double distance, boolean onGround, net.minecraft.world.level.block.state.BlockState state, BlockPos pos) { }
     @Override public boolean shouldRenderAtSqrDistance(double distance) { return BirdVisibility.shouldRender(distance, Entity.getViewScale()); }
     @Override public boolean removeWhenFarAway(double distance) { return !isTame() && distance > BirdVisibility.TRACKING_DISTANCE_SQUARED; }
-    @Override protected void dropCustomDeathLoot(DamageSource source, int looting, boolean hit) {
-        super.dropCustomDeathLoot(source, looting, hit);
-        if (!getHeldGardenItem().isEmpty()) { spawnAtLocation(getHeldGardenItem().copy()); setHeldGardenItem(ItemStack.EMPTY); }
+    @Override protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean hit) {
+        super.dropCustomDeathLoot(level, source, hit);
+        if (!getHeldGardenItem().isEmpty()) { spawnAtLocation(level, getHeldGardenItem().copy()); setHeldGardenItem(ItemStack.EMPTY); }
     }
     @Override public void remove(RemovalReason reason) {
-        if (!level().isClientSide) behavior.release();
+        if (!level().isClientSide()) behavior.release();
         super.remove(reason);
     }
-    @Override public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
-        tag.putInt("HummingbirdCommand", getBirdCommandMode().ordinal()); tag.putBoolean("Male", isMale());
-        tag.putInt("TamingProgress", tamingProgress);
-        if (tamingCandidate != null) tag.putUUID("TamingCandidate", tamingCandidate);
-        if (!getHeldGardenItem().isEmpty()) tag.put("GardenItem", getHeldGardenItem().save(new CompoundTag()));
-        behavior.save(tag);
+    @Override protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putInt("HummingbirdCommand", getBirdCommandMode().ordinal());
+        output.putBoolean("Male", isMale());
+        output.putInt("TamingProgress", tamingProgress);
+        if (tamingCandidate != null) output.store("TamingCandidate", UUIDUtil.CODEC, tamingCandidate);
+        if (!getHeldGardenItem().isEmpty()) output.store("GardenItem", ItemStack.CODEC, getHeldGardenItem());
+        behavior.save(output);
     }
-    @Override public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        entityData.set(COMMAND, BirdCommandMode.byId(tag.getInt("HummingbirdCommand")).ordinal());
-        if (tag.contains("Male")) entityData.set(MALE, tag.getBoolean("Male"));
-        tamingCandidate = tag.hasUUID("TamingCandidate") ? tag.getUUID("TamingCandidate") : null;
-        tamingProgress = Math.max(0, Math.min(tag.getInt("TamingProgress"), HummingbirdConfig.tamingFeeds() - 1));
-        ItemStack held = ItemStack.of(tag.getCompound("GardenItem")); held.setCount(Math.min(1, held.getCount()));
-        setHeldGardenItem(held); behavior.load(tag);
+    @Override protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        entityData.set(COMMAND, BirdCommandMode.byId(input.getIntOr("HummingbirdCommand", 0)).ordinal());
+        entityData.set(MALE, input.getBooleanOr("Male", isMale()));
+        tamingCandidate = input.read("TamingCandidate", UUIDUtil.CODEC).orElse(null);
+        tamingProgress = Math.max(0, Math.min(input.getIntOr("TamingProgress", 0), HummingbirdConfig.tamingFeeds() - 1));
+        ItemStack held = input.read("GardenItem", ItemStack.CODEC).orElse(ItemStack.EMPTY);
+        if (!held.isEmpty()) { held = held.copy(); held.setCount(1); }
+        setHeldGardenItem(held);
+        behavior.load(input);
     }
     @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         // Explicit enter/exit clips provide transitions; keep all three layer clocks aligned.
-        controllers.add(new AnimationController<>(this, "body", 0, state -> {
+        controllers.add(new AnimationController<>("body", 0, state -> {
             int detail = preview == null ? entityData.get(IDLE_DETAIL) : 0;
             String name = detail != 0 ? "idle_diff_" + detail
                     : preview != null ? switch (preview) { case "fly" -> "flight"; case "nectar" -> "nectar_loop"; case "sleep" -> "sleep"; default -> "idle"; }
@@ -410,13 +424,13 @@ public final class HummingbirdEntity extends TamableAnimal implements GeoEntity,
             RawAnimation animation = RawAnimation.begin();
             return state.setAndContinue(loop ? animation.thenLoop("animation.body." + name) : animation.thenPlayAndHold("animation.body." + name));
         }));
-        controllers.add(new AnimationController<>(this, "wings", 0, state -> {
+        controllers.add(new AnimationController<>("wings", 0, state -> {
             int detail = preview == null ? entityData.get(IDLE_DETAIL) : 0;
             return state.setAndContinue(detail != 0
                     ? RawAnimation.begin().thenPlayAndHold("animation.wings.idle_diff_" + detail)
                     : RawAnimation.begin().thenLoop("animation.wings." + (isAirborne() ? "fly" : "idle")));
         }));
-        controllers.add(new AnimationController<>(this, "eyes", 0, state -> {
+        controllers.add(new AnimationController<>("eyes", 0, state -> {
             int detail = preview == null ? entityData.get(IDLE_DETAIL) : 0;
             return state.setAndContinue(detail != 0
                     ? RawAnimation.begin().thenPlayAndHold("animation.eyes.idle_diff_" + detail)

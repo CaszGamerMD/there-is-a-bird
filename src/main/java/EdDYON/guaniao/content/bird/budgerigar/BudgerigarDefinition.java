@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.budgerigar;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class BudgerigarDefinition {
     public static final String ENTITY_ID = "budgerigar";
@@ -16,10 +16,10 @@ public final class BudgerigarDefinition {
     public static final int SOCIAL_RADIUS = 14;
     public static final int MIN_FLOCK_SIZE = 3;
     public static final int MAX_FLOCK_SIZE = 10;
-    public static final ResourceLocation MODEL = BudgerigarDefinition.resource("geo/budgerigar.geo.json");
-    public static final ResourceLocation TEXTURE = BudgerigarDefinition.resource("textures/entity/budgerigar.png");
-    public static final ResourceLocation ANIMATION = BudgerigarDefinition.resource("animations/budgerigar.animation.json");
-    public static final ResourceLocation[] TEXTURE_VARIANTS = new ResourceLocation[] {
+    public static final Identifier MODEL = BudgerigarDefinition.resource("geo/budgerigar.geo.json");
+    public static final Identifier TEXTURE = BudgerigarDefinition.resource("textures/entity/budgerigar.png");
+    public static final Identifier ANIMATION = BudgerigarDefinition.resource("animations/budgerigar.animation.json");
+    public static final Identifier[] TEXTURE_VARIANTS = new Identifier[] {
             TEXTURE,
             BudgerigarDefinition.resource("textures/entity/budgerigar/white_lark.png"),
             BudgerigarDefinition.resource("textures/entity/budgerigar/mystery_green.png"),
@@ -35,14 +35,14 @@ public final class BudgerigarDefinition {
     private BudgerigarDefinition() {
     }
 
-    public static ResourceLocation textureForVariant(int variant) {
+    public static Identifier textureForVariant(int variant) {
         if (variant < 0 || variant >= TEXTURE_VARIANTS.length) {
             return TEXTURE;
         }
         return TEXTURE_VARIANTS[variant];
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation("guaniao", path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath("guaniao", path);
     }
 }

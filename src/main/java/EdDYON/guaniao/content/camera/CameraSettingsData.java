@@ -1,7 +1,9 @@
 package EdDYON.guaniao.content.camera;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 
 public final class CameraSettingsData {
     private static final String TAG_FILTER = "CameraFilter";
@@ -16,41 +18,43 @@ public final class CameraSettingsData {
     }
 
     public static CameraFilter filter(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        return tag == null ? CameraFilter.NONE : CameraFilter.byId(tag.getInt(TAG_FILTER));
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return data == null ? CameraFilter.NONE : CameraFilter.byId(data.copyTag().getIntOr(TAG_FILTER, 0));
     }
 
     public static void setFilter(ItemStack stack, CameraFilter filter) {
-        stack.getOrCreateTag().putInt(TAG_FILTER, filter.id());
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putInt(TAG_FILTER, filter.id()));
     }
 
     public static CameraState state(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
         CameraState defaults = CameraState.defaults();
-        if (tag == null) {
+        if (data == null) {
             return defaults;
         }
+        CompoundTag tag = data.copyTag();
         return new CameraState(
-                CameraFilter.byId(tag.getInt(TAG_FILTER)),
-                tag.contains(TAG_LENS) ? CameraLens.byId(tag.getInt(TAG_LENS)) : defaults.lens(),
+                CameraFilter.byId(tag.getIntOr(TAG_FILTER, 0)),
+                tag.contains(TAG_LENS) ? CameraLens.byId(tag.getIntOr(TAG_LENS, 0)) : defaults.lens(),
                 tag.contains(TAG_SHOOTING_MODE)
-                        ? CameraShootingMode.byId(tag.getInt(TAG_SHOOTING_MODE))
+                        ? CameraShootingMode.byId(tag.getIntOr(TAG_SHOOTING_MODE, 0))
                         : defaults.shootingMode(),
-                tag.contains(TAG_FOCAL_LENGTH) ? tag.getDouble(TAG_FOCAL_LENGTH) : defaults.focalLength(),
-                tag.contains(TAG_APERTURE) ? CameraAperture.byId(tag.getInt(TAG_APERTURE)) : defaults.aperture(),
-                tag.contains(TAG_FOCUS_MODE) ? CameraFocusMode.byId(tag.getInt(TAG_FOCUS_MODE)) : defaults.focusMode(),
-                tag.contains(TAG_FOCUS_DISTANCE) ? tag.getDouble(TAG_FOCUS_DISTANCE) : defaults.focusDistance()
+                tag.contains(TAG_FOCAL_LENGTH) ? tag.getDoubleOr(TAG_FOCAL_LENGTH, 0.0D) : defaults.focalLength(),
+                tag.contains(TAG_APERTURE) ? CameraAperture.byId(tag.getIntOr(TAG_APERTURE, 0)) : defaults.aperture(),
+                tag.contains(TAG_FOCUS_MODE) ? CameraFocusMode.byId(tag.getIntOr(TAG_FOCUS_MODE, 0)) : defaults.focusMode(),
+                tag.contains(TAG_FOCUS_DISTANCE) ? tag.getDoubleOr(TAG_FOCUS_DISTANCE, 0.0D) : defaults.focusDistance()
         );
     }
 
     public static void setState(ItemStack stack, CameraState state) {
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putInt(TAG_FILTER, state.filter().id());
-        tag.putInt(TAG_LENS, state.lens().id());
-        tag.putInt(TAG_SHOOTING_MODE, state.shootingMode().id());
-        tag.putDouble(TAG_FOCAL_LENGTH, state.focalLength());
-        tag.putInt(TAG_APERTURE, state.aperture().id());
-        tag.putInt(TAG_FOCUS_MODE, state.focusMode().id());
-        tag.putDouble(TAG_FOCUS_DISTANCE, state.focusDistance());
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
+            tag.putInt(TAG_FILTER, state.filter().id());
+            tag.putInt(TAG_LENS, state.lens().id());
+            tag.putInt(TAG_SHOOTING_MODE, state.shootingMode().id());
+            tag.putDouble(TAG_FOCAL_LENGTH, state.focalLength());
+            tag.putInt(TAG_APERTURE, state.aperture().id());
+            tag.putInt(TAG_FOCUS_MODE, state.focusMode().id());
+            tag.putDouble(TAG_FOCUS_DISTANCE, state.focusDistance());
+        });
     }
 }

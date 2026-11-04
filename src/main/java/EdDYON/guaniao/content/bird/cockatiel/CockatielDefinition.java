@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.cockatiel;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class CockatielDefinition {
     public static final String ENTITY_ID = "cockatiel";
@@ -13,9 +13,9 @@ public final class CockatielDefinition {
     public static final double WALK_SPEED = 0.24D;
     public static final double FLYING_SPEED = 0.34D;
     public static final double FOLLOW_RANGE = 20.0D;
-    public static final ResourceLocation MODEL = resource("geo/cockatiel.geo.json");
-    public static final ResourceLocation ANIMATION = resource("animations/cockatiel.animation.json");
-    public static final ResourceLocation[] TEXTURE_VARIANTS = new ResourceLocation[]{
+    public static final Identifier MODEL = resource("geo/cockatiel.geo.json");
+    public static final Identifier ANIMATION = resource("animations/cockatiel.animation.json");
+    public static final Identifier[] TEXTURE_VARIANTS = new Identifier[]{
             resource("textures/entity/cockatiel/gray_yellow_face.png"),
             resource("textures/entity/cockatiel/dark_gray_yellow_face.png"),
             resource("textures/entity/cockatiel/gray_white_face.png"),
@@ -26,11 +26,11 @@ public final class CockatielDefinition {
     private CockatielDefinition() {
     }
 
-    public static ResourceLocation textureForVariant(int variant) {
+    public static Identifier textureForVariant(int variant) {
         return TEXTURE_VARIANTS[Math.floorMod(variant, TEXTURE_VARIANTS.length)];
     }
 
-    private static ResourceLocation resource(String path) {
-        return new ResourceLocation("guaniao", path);
+    private static Identifier resource(String path) {
+        return Identifier.fromNamespaceAndPath("guaniao", path);
     }
 }

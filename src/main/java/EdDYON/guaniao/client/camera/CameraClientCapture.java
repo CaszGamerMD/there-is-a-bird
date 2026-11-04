@@ -7,18 +7,16 @@ import EdDYON.guaniao.content.camera.CameraSettingsData;
 import EdDYON.guaniao.content.camera.CameraState;
 import EdDYON.guaniao.content.camera.PhotographData;
 import EdDYON.guaniao.content.camera.PhotoImageCodec;
-import EdDYON.guaniao.network.GuaniaoNetwork;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import EdDYON.guaniao.network.SetCameraSettingsPacket;
 import EdDYON.guaniao.registry.GuaniaoItems;
-import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -29,7 +27,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.ViewportEvent;
 import org.lwjgl.glfw.GLFW;
 import java.util.UUID;
 
@@ -37,8 +34,6 @@ public final class CameraClientCapture {
     private static final int CLEAN_CAPTURE_DELAY_FRAMES = 0;
     private static final double DEFAULT_FOCAL_LENGTH = 50.0D;
     private static final double FOCAL_LENGTH_SCROLL_STEP = 4.0D;
-    private static final double FULL_FRAME_SENSOR_WIDTH = 36.0D;
-    private static final double MIN_VIEWFINDER_SENSITIVITY_SCALE = 0.28D;
     private static final double MAX_AUTOFOCUS_DISTANCE = CameraState.MAX_FOCUS_DISTANCE;
 
     private static boolean viewfinderOpen;
@@ -69,8 +64,8 @@ public final class CameraClientCapture {
     public static void openViewfinder(InteractionHand hand) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || cleanCapturePending || PhotoClientRepository.hasPendingCapture()
-                || !isCameraStillHeld(minecraft, hand) || minecraft.screen != null
-                || minecraft.getOverlay() != null || !minecraft.isWindowActive()) {
+                || !isCameraStillHeld(minecraft, hand) || minecraft.gui.screen() != null
+                || minecraft.gui.overlay() != null || !minecraft.isWindowActive()) {
             return;
         }
 
@@ -125,6 +120,7 @@ public final class CameraClientCapture {
         SHUTTER_INPUT.reset();
         focusTargetId = -1;
         CameraPreviewPostEffect.close();
+        CameraWorldFrame26.reset();
         restoreSensitivity(Minecraft.getInstance());
     }
 
@@ -184,7 +180,7 @@ public final class CameraClientCapture {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen != null || minecraft.getOverlay() != null) {
+        if (minecraft.gui.screen() != null || minecraft.gui.overlay() != null) {
             SHUTTER_INPUT.suspend(false);
             return false;
         }
@@ -266,7 +262,7 @@ public final class CameraClientCapture {
 
     private static boolean inputContextReady(Minecraft minecraft) {
         return minecraft.player != null && minecraft.level != null && minecraft.isWindowActive()
-                && minecraft.screen == null && minecraft.getOverlay() == null && minecraft.mouseHandler.isMouseGrabbed();
+                && minecraft.gui.screen() == null && minecraft.gui.overlay() == null && minecraft.mouseHandler.isMouseGrabbed();
     }
 
     private static boolean hasShortcutModifiers(int modifiers) {
@@ -371,25 +367,32 @@ public final class CameraClientCapture {
         return updateFocusFromCrosshair(Minecraft.getInstance(), true);
     }
 
-    public static void renderViewfinder(GuiGraphics graphics, float partialTick) {
+    /**
+     * Extract the authored camera HUD only after the actual filtered world
+     * frame is available. This is called by the Fabric 26.2 HUD registry,
+     * not the old immediate Forge RenderGuiEvent.Post.
+     */
+    public static void renderViewfinder(GuiGraphicsExtractor graphics) {
         if (!viewfinderOpen
                 || cleanCapturePending
-                || Minecraft.getInstance().screen != null) {
+                || Minecraft.getInstance().gui.screen() != null) {
             return;
         }
-        CameraViewfinderOverlay.render(graphics, currentState);
+        CameraViewfinderHud26.extract(graphics, currentState,
+                (g, left, top, right, bottom) -> CameraPreviewGuiBridge.drawPreview(
+                        g, left, top, right, bottom, currentState.filter()));
     }
 
-    public static void modifyFov(ViewportEvent.ComputeFov event) {
-        if (!event.usedConfiguredFov()) {
-            return;
-        }
-
-        if (viewfinderOpen) {
-            event.setFOV(currentFov());
-        } else if (cleanCapturePending) {
-            event.setFOV(pendingCaptureFov);
-        }
+    /**
+     * Used only by Camera.calculateFov's world projection.
+     * The older Forge ComputeFov.usedConfiguredFov() guard maps to this
+     * specific 26.2 world-FOV method, not to Camera.calculateHudFov().
+     * Inactive cameras leave vanilla's computed value unchanged.
+     */
+    public static float overrideWorldFov(float vanillaFov) {
+        if (viewfinderOpen) return (float) currentFov();
+        if (cleanCapturePending) return (float) pendingCaptureFov;
+        return vanillaFov;
     }
 
     public static void onRenderTickStart() {
@@ -436,42 +439,50 @@ public final class CameraClientCapture {
             return;
         }
 
-        RenderTarget captureTarget = CameraPreviewPostEffect.cleanCaptureTarget(minecraft.getMainRenderTarget());
-        try (NativeImage image = Screenshot.takeScreenshot(captureTarget)) {
-            int[] pixels = cropSquare(image, PhotographData.IMAGE_SIZE);
-            CameraImageFilters.apply(
-                    pixels,
-                    PhotographData.IMAGE_SIZE,
-                    PhotographData.IMAGE_SIZE,
-                    pendingCaptureState.filter(),
-                    System.nanoTime()
-            );
-            byte[] jpeg = PhotoImageCodec.encodeJpeg(pixels, PhotographData.IMAGE_SIZE, PhotographData.IMAGE_SIZE);
-            PhotoClientRepository.upload(pendingCaptureId, hand, jpeg);
-            captureSubmitted = true;
-        } catch (Exception exception) {
-            GuaniaoMod.LOGGER.warn("Failed to capture photograph", exception);
-        }
-    }
-
-    private static int[] cropSquare(NativeImage image, int size) {
-        Minecraft minecraft = Minecraft.getInstance();
+        // 26.2 screenshots are asynchronous. Snapshot ALL capture state now,
+        // before onRenderTickEnd restores the GUI, viewfinder and pending ID.
+        UUID uploadId = pendingCaptureId;
+        CameraFilter filter = pendingCaptureState.filter();
         int guiWidth = minecraft.getWindow().getGuiScaledWidth();
         int guiHeight = minecraft.getWindow().getGuiScaledHeight();
-        CameraViewfinderFrame.Pixels crop = CameraViewfinderFrame.layout(
-                guiWidth, guiHeight, minecraft.font.lineHeight).pixels(
-                guiWidth, guiHeight, image.getWidth(), image.getHeight());
-        int[] pixels = new int[size * size];
+        int fontHeight = minecraft.font.lineHeight;
+        int photoSize = PhotographData.IMAGE_SIZE;
+        RenderTarget captureTarget = CameraPreviewPostEffect.cleanCaptureTarget(
+                minecraft.gameRenderer.mainRenderTarget());
 
-        for (int y = 0; y < size; y++) {
-            int sampleY = crop.top() + Math.min(crop.height() - 1, (int)((y + 0.5D) * crop.height() / size));
-            for (int x = 0; x < size; x++) {
-                int sampleX = crop.left() + Math.min(crop.width() - 1, (int)((x + 0.5D) * crop.width() / size));
-                pixels[y * size + x] = image.getPixelRGBA(sampleX, sampleY);
-            }
+        // A queued GPU readback counts as a submitted shutter. The callback
+        // owns its NativeImage; network work is scheduled on the client thread.
+        captureSubmitted = true;
+        try {
+            Screenshot.takeScreenshot(captureTarget, image -> {
+                try (image) {
+                    int[] pixels = CameraPhotoSampler.cropSquare(
+                            guiWidth, guiHeight, fontHeight,
+                            image.getWidth(), image.getHeight(), photoSize,
+                            (x, y) -> CameraPhotoSampler.argbToAbgr(image.getPixel(x, y)));
+                    CameraImageFilters.apply(pixels, photoSize, photoSize, filter, System.nanoTime());
+                    byte[] jpeg = PhotoImageCodec.encodeJpeg(pixels, photoSize, photoSize);
+                    minecraft.execute(() -> {
+                        try {
+                            PhotoClientRepository.upload(uploadId, hand, jpeg);
+                        } catch (Exception exception) {
+                            GuaniaoMod.LOGGER.warn("Failed to upload captured photograph", exception);
+                            PhotoClientRepository.cancelCapture(uploadId);
+                        }
+                    });
+                } catch (Exception exception) {
+                    minecraft.execute(() -> {
+                        GuaniaoMod.LOGGER.warn("Failed to encode captured photograph", exception);
+                        PhotoClientRepository.cancelCapture(uploadId);
+                    });
+                }
+            });
+        } catch (Exception exception) {
+            // If GPU readback never started, restoreAfterCleanCapture must
+            // cancel the reservation instead of leaving the shutter locked.
+            captureSubmitted = false;
+            GuaniaoMod.LOGGER.warn("Failed to request photograph screenshot", exception);
         }
-
-        return pixels;
     }
 
     private static void beginCleanCapture(InteractionHand hand, double fov) {
@@ -492,6 +503,7 @@ public final class CameraClientCapture {
 
         viewfinderOpen = false;
         CameraPreviewPostEffect.close();
+        CameraWorldFrame26.reset();
         cleanCapturePending = true;
         pendingCaptureId = captureId;
         captureSubmitted = false;
@@ -503,18 +515,29 @@ public final class CameraClientCapture {
         persistCurrentState();
         pendingCameraYRot = minecraft.player.getViewYRot(1.0F);
         pendingCameraXRot = minecraft.player.getViewXRot(1.0F);
-        storedHideGui = minecraft.options.hideGui;
+        storedHideGui = minecraft.gui.hud.isHidden();
         storedCameraType = minecraft.options.getCameraType();
-        minecraft.options.hideGui = true;
+        setHudHidden(minecraft, true);
         if (storedCameraType != CameraType.THIRD_PERSON_FRONT) {
             minecraft.options.setCameraType(CameraType.FIRST_PERSON);
         }
         minecraft.player.playSound(SoundEvents.SPYGLASS_USE, 0.45F, 1.4F);
     }
 
+    /**
+     * Minecraft 26.2 moved F1/HUD visibility from Options.hideGui into Hud.
+     * Hud has a toggle but no absolute setter, so only toggle when necessary.
+     * This restores the player's original F1 preference after clean capture.
+     */
+    private static void setHudHidden(Minecraft minecraft, boolean hidden) {
+        if (minecraft.gui.hud.isHidden() != hidden) {
+            minecraft.gui.hud.toggle();
+        }
+    }
+
     private static void restoreAfterCleanCapture() {
         Minecraft minecraft = Minecraft.getInstance();
-        minecraft.options.hideGui = storedHideGui;
+        setHudHidden(minecraft, storedHideGui);
         minecraft.options.setCameraType(storedCameraType);
         minecraft.gameRenderer.setRenderBlockOutline(true);
         restoreSensitivity(minecraft);
@@ -541,10 +564,7 @@ public final class CameraClientCapture {
     }
 
     private static double focalLengthToFov(double focalLength) {
-        double fov = Math.toDegrees(2.0D * Math.atan(FULL_FRAME_SENSOR_WIDTH / (2.0D * focalLength)));
-        // Minecraft consumes this as a vertical FOV. Keep the wide-angle safeguard,
-        // but preserve the full telephoto range: 150 mm and 200 mm are both below 14 degrees.
-        return Math.min(fov, 110.0D);
+        return CameraLensMath.focalLengthToFov(focalLength);
     }
 
     private static void beginSensitivityAdjustment(Minecraft minecraft) {
@@ -570,14 +590,8 @@ public final class CameraClientCapture {
     }
 
     private static double focalSensitivityScale() {
-        double normalized = Mth.clamp(
-                (currentState.focalLength() - CameraState.MIN_FOCAL_LENGTH)
-                        / (CameraState.MAX_FOCAL_LENGTH - CameraState.MIN_FOCAL_LENGTH),
-                0.0D,
-                1.0D
-        );
-        double smooth = normalized * normalized * (3.0D - 2.0D * normalized);
-        return Mth.lerp(smooth, 1.0D, MIN_VIEWFINDER_SENSITIVITY_SCALE);
+        return CameraLensMath.focalSensitivityScale(currentState.focalLength(),
+                CameraState.MIN_FOCAL_LENGTH, CameraState.MAX_FOCAL_LENGTH);
     }
 
     private static void tickContinuousFocus(Minecraft minecraft) {
@@ -660,6 +674,6 @@ public final class CameraClientCapture {
         }
         ItemStack camera = minecraft.player.getItemInHand(viewfinderHand);
         CameraSettingsData.setState(camera, currentState);
-        GuaniaoNetwork.sendToServer(new SetCameraSettingsPacket(viewfinderHand, currentState));
+        ClientPlayNetworking.send(new SetCameraSettingsPacket(viewfinderHand, currentState));
     }
 }

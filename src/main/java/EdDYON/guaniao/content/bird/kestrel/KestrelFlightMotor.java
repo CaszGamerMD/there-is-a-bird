@@ -1,6 +1,6 @@
 package EdDYON.guaniao.content.bird.kestrel;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 

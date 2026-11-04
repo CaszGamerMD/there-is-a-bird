@@ -1,60 +1,34 @@
 package EdDYON.guaniao.content.bird.hummingbird;
 
-import EdDYON.guaniao.GuaniaoMod;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = GuaniaoMod.MOD_ID)
+/** Fabric server callbacks for the shared flower index and hummingbird crop scheduler. */
 public final class HummingbirdEcologyEvents {
     private HummingbirdEcologyEvents() { }
 
-    @SubscribeEvent
-    public static void tick(TickEvent.LevelTickEvent event) {
-        if (event.phase == TickEvent.Phase.END && event.level instanceof ServerLevel level) {
-            FlowerHabitatIndex.tick(level);
-            HummingbirdPollinationService.tick(level);
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void placed(BlockEvent.EntityPlaceEvent event) {
-        if (event.getLevel() instanceof ServerLevel level) FlowerHabitatIndex.invalidate(level, event.getPos());
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void broken(BlockEvent.BreakEvent event) {
-        if (event.getLevel() instanceof ServerLevel level) FlowerHabitatIndex.invalidate(level, event.getPos());
-    }
-
-    @SubscribeEvent
-    public static void left(EntityLeaveLevelEvent event) {
-        if (event.getLevel() instanceof ServerLevel level && event.getEntity() instanceof Mob mob
-                && HummingbirdPollinationService.isHummingbird(mob)) {
-            HummingbirdPollinationService.remove(mob);
-            FlowerHabitatIndex.releaseAll(level, mob.getUUID());
-        }
-    }
-
-    @SubscribeEvent
-    public static void chunkUnloaded(ChunkEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
-            FlowerHabitatIndex.unloadChunk(level, event.getChunk().getPos().x, event.getChunk().getPos().z);
-        }
-    }
-
-    @SubscribeEvent
-    public static void levelUnloaded(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) {
+    public static void registerCallbacks() {
+        ServerTickEvents.END_LEVEL_TICK.register(HummingbirdEcologyEvents::tick);
+        ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
+            if (entity instanceof Mob mob && HummingbirdPollinationService.isHummingbird(mob)) {
+                HummingbirdPollinationService.remove(mob);
+                FlowerHabitatIndex.releaseAll(level, mob.getUUID());
+            }
+        });
+        ServerChunkEvents.CHUNK_UNLOAD.register((level, chunk) ->
+                FlowerHabitatIndex.unloadChunk(level, chunk.getPos().x(), chunk.getPos().z()));
+        ServerLevelEvents.UNLOAD.register((server, level) -> {
             FlowerHabitatIndex.forgetLevel(level);
             HummingbirdPollinationService.forgetLevel(level);
-        }
+        });
+    }
+
+    private static void tick(ServerLevel level) {
+        FlowerHabitatIndex.tick(level);
+        HummingbirdPollinationService.tick(level);
     }
 }

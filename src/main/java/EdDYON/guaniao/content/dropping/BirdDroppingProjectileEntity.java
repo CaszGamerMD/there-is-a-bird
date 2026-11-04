@@ -4,9 +4,7 @@ import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import EdDYON.guaniao.content.bird.kingfisher.KingfisherEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -19,24 +17,25 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.animal.IronGolem;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.util.Mth;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.UUID;
 
@@ -48,7 +47,7 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     private static final EntityDataAccessor<Boolean> DATA_STRIP_DROPPING = SynchedEntityData.defineId(BirdDroppingProjectileEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_SOURCE_BIRD_ID = SynchedEntityData.defineId(BirdDroppingProjectileEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Long> DATA_STRIP_STARTED_AT = SynchedEntityData.defineId(BirdDroppingProjectileEntity.class, EntityDataSerializers.LONG);
-    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache((GeoAnimatable)this);
+    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private int lifeTicks;
     private boolean impactResolved;
     private boolean laxativeDropping;
@@ -61,18 +60,19 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     }
 
     public BirdDroppingProjectileEntity(Level level, LivingEntity owner, BirdDroppingVariant variant) {
-        super(GuaniaoEntityTypes.BIRD_DROPPING_PROJECTILE.get(), owner, level);
+        super(GuaniaoEntityTypes.BIRD_DROPPING_PROJECTILE.get(), owner, level,
+                new ItemStack(variant == null ? BirdDroppingVariant.ONE.item() : variant.item()));
         this.setVariant(variant);
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(DATA_VARIANT, BirdDroppingVariant.ONE.id());
-        this.entityData.define(DATA_NATURAL_DROPPING, false);
-        this.entityData.define(DATA_STRIP_DROPPING, false);
-        this.entityData.define(DATA_SOURCE_BIRD_ID, -1);
-        this.entityData.define(DATA_STRIP_STARTED_AT, 0L);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_VARIANT, BirdDroppingVariant.ONE.id());
+        builder.define(DATA_NATURAL_DROPPING, false);
+        builder.define(DATA_STRIP_DROPPING, false);
+        builder.define(DATA_SOURCE_BIRD_ID, -1);
+        builder.define(DATA_STRIP_STARTED_AT, 0L);
     }
 
     @Override
@@ -81,17 +81,17 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     }
 
     @Override
-    protected float getGravity() {
-        return this.isStripDropping() ? 0.025F : 0.06F;
+    protected double getDefaultGravity() {
+        return this.isStripDropping() ? 0.025D : 0.06D;
     }
 
     @Override
     public void tick() {
-        if (this.level().isClientSide && this.isStripDropping()) {
+        if (this.level().isClientSide() && this.isStripDropping()) {
             this.rememberStripPosition();
         }
         super.tick();
-        if (this.level().isClientSide || this.isRemoved()) {
+        if (this.level().isClientSide() || this.isRemoved()) {
             return;
         }
         ++this.lifeTicks;
@@ -107,7 +107,7 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
-        if (this.level().isClientSide || !this.beginImpactResolution()) {
+        if (this.level().isClientSide() || !this.beginImpactResolution()) {
             return;
         }
 
@@ -122,14 +122,14 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
             if (this.isNaturalDropping()) {
                 BirdDroppingPrankHandler.handleNaturalHitPlayer(this, player);
             } else {
-                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 0));
+                player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 80, 0));
             }
         } else if (hit instanceof Villager villager) {
             BirdDroppingPrankHandler.handleVillagerHit(this, villager);
         } else if (hit instanceof IronGolem golem) {
             BirdDroppingPrankHandler.handleIronGolemHit(this, golem);
         } else if (hit instanceof LivingEntity living) {
-            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 0));
+            living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 80, 0));
         }
 
         this.attachStickySplat(hit);
@@ -159,7 +159,7 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
-        if (this.level().isClientSide || !this.beginImpactResolution()) {
+        if (this.level().isClientSide() || !this.beginImpactResolution()) {
             return;
         }
 
@@ -208,7 +208,7 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
 
     private void splat() {
         Level level = this.level();
-        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, 0.65F, 0.85F + level.random.nextFloat() * 0.25F);
+        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_HIT, SoundSource.NEUTRAL, 0.65F, 0.85F + level.getRandom().nextFloat() * 0.25F);
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.POOF, this.getX(), this.getY(), this.getZ(), 4, 0.08D, 0.04D, 0.08D, 0.004D);
         }
@@ -313,7 +313,7 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(ValueOutput tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("Variant", this.getVariant().id());
         tag.putBoolean("NaturalDropping", this.isNaturalDropping());
@@ -322,31 +322,24 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
         tag.putBoolean("LaxativeDropping", this.isLaxativeDropping());
         tag.putInt("LifeTicks", this.lifeTicks);
         if (this.sourceBirdUuid != null) {
-            tag.putUUID("SourceBirdUuid", this.sourceBirdUuid);
+            tag.store("SourceBirdUuid", UUIDUtil.CODEC, this.sourceBirdUuid);
         }
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(ValueInput tag) {
         super.readAdditionalSaveData(tag);
-        this.setVariant(BirdDroppingVariant.byId(tag.getInt("Variant")));
-        this.entityData.set(DATA_NATURAL_DROPPING, tag.getBoolean("NaturalDropping"));
-        this.setStripDropping(tag.getBoolean("StripDropping"));
-        this.laxativeDropping = tag.getBoolean("LaxativeDropping");
-        this.lifeTicks = Math.max(0, tag.getInt("LifeTicks"));
+        this.setVariant(BirdDroppingVariant.byId(tag.getIntOr("Variant", 0)));
+        this.entityData.set(DATA_NATURAL_DROPPING, tag.getBooleanOr("NaturalDropping", false));
+        this.setStripDropping(tag.getBooleanOr("StripDropping", false));
+        this.laxativeDropping = tag.getBooleanOr("LaxativeDropping", false);
+        this.lifeTicks = Math.max(0, tag.getIntOr("LifeTicks", 0));
         this.entityData.set(DATA_SOURCE_BIRD_ID, -1);
-        this.entityData.set(DATA_STRIP_STARTED_AT, tag.contains("StripStartedAt")
-                ? tag.getLong("StripStartedAt") : this.level().getGameTime() - this.lifeTicks);
+        this.entityData.set(DATA_STRIP_STARTED_AT, tag.getLongOr("StripStartedAt",
+                this.level().getGameTime() - this.lifeTicks));
         this.stripTrail = null;
         this.stripTrailCount = 0;
-        if (tag.hasUUID("SourceBirdUuid")) {
-            this.sourceBirdUuid = tag.getUUID("SourceBirdUuid");
-        }
-    }
-
-    @Override
-    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+        this.sourceBirdUuid = tag.read("SourceBirdUuid", UUIDUtil.CODEC).orElse(null);
     }
 
     @Override

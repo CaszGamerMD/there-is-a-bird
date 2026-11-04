@@ -1,23 +1,34 @@
 package EdDYON.guaniao.client.entity.nightheron;
 
 import EdDYON.guaniao.client.entity.mutation.BirdMutationTextureFactory;
+import EdDYON.guaniao.client.entity.mutation.BirdMutationRenderData;
+import EdDYON.guaniao.client.entity.mutation.GuaniaoGeckoAssets;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronDefinition;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronEntity;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
+import net.minecraft.resources.Identifier;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.model.GeoModel;
 
 public class NightHeronModel
 extends GeoModel<NightHeronEntity> {
-    public ResourceLocation getModelResource(NightHeronEntity animatable) {
-        return NightHeronDefinition.MODEL;
+    public Identifier getModelResource(GeoRenderState renderState) {
+        return GuaniaoGeckoAssets.model(NightHeronDefinition.MODEL);
     }
 
-    public ResourceLocation getTextureResource(NightHeronEntity animatable) {
-        return BirdMutationTextureFactory.textureFor(NightHeronDefinition.TEXTURE, animatable);
+    public Identifier getTextureResource(GeoRenderState renderState) {
+        return BirdMutationRenderData.texture(renderState, NightHeronDefinition.TEXTURE);
     }
 
-    public ResourceLocation getAnimationResource(NightHeronEntity animatable) {
-        return NightHeronDefinition.ANIMATION;
+    @Override
+    public void addAdditionalStateData(NightHeronEntity animatable, Object relatedObject, GeoRenderState renderState) {
+        renderState.addGeckolibData(BirdMutationRenderData.MODEL_SCALE,
+                animatable.getModelRenderScale());
+        BirdMutationRenderData.capture(renderState,
+                BirdMutationTextureFactory.textureFor(NightHeronDefinition.TEXTURE, animatable));
+    }
+
+    public Identifier getAnimationResource(NightHeronEntity animatable) {
+        return GuaniaoGeckoAssets.animation(NightHeronDefinition.ANIMATION);
     }
 }
 

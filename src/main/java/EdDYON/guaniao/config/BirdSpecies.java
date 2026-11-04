@@ -1,10 +1,11 @@
 package EdDYON.guaniao.config;
 
 import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -85,7 +86,7 @@ public enum BirdSpecies {
         return this.requiresOpenSkyForNaturalSpawn;
     }
 
-    @javax.annotation.Nullable
+    @Nullable
     private EntityType<?> entityTypeCache;
 
     public EntityType<?> entityType() {
@@ -93,7 +94,7 @@ public enum BirdSpecies {
         if (type == null) {
             // Resolved lazily so callers before registry init simply get null
             // (uncached) instead of caching it forever.
-            type = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(GuaniaoMod.MOD_ID, this.id));
+            type = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, this.id));
             if (type != null) {
                 this.entityTypeCache = type;
             }
@@ -106,7 +107,8 @@ public enum BirdSpecies {
     }
 
     public static BirdSpecies from(EntityType<?> entityType) {
-        ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(entityType);
+        if (entityType == null) return null;
+        Identifier key = BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
         if (key == null || !GuaniaoMod.MOD_ID.equals(key.getNamespace())) {
             return null;
         }

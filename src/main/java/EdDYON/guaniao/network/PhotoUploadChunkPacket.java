@@ -2,12 +2,24 @@ package EdDYON.guaniao.network;
 
 import EdDYON.guaniao.content.camera.PhotoTransferLimits;
 import java.util.UUID;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import EdDYON.guaniao.GuaniaoMod;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public record PhotoUploadChunkPacket(UUID uploadId, int chunkIndex, byte[] data) {
+public record PhotoUploadChunkPacket(UUID uploadId, int chunkIndex, byte[] data) implements CustomPacketPayload {
+    public static final Type<PhotoUploadChunkPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, "photo_upload_chunk"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PhotoUploadChunkPacket> CODEC =
+            StreamCodec.of((RegistryFriendlyByteBuf buffer, PhotoUploadChunkPacket packet) ->
+                    encode(packet, buffer), PhotoUploadChunkPacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+
     public static void encode(PhotoUploadChunkPacket packet, FriendlyByteBuf buffer) {
         if (packet.data.length <= 0 || packet.data.length > PhotoTransferLimits.MAX_CHUNK_BYTES) {
             throw new IllegalArgumentException("Invalid photograph chunk size");
@@ -25,12 +37,7 @@ public record PhotoUploadChunkPacket(UUID uploadId, int chunkIndex, byte[] data)
         );
     }
 
-    public static void handle(PhotoUploadChunkPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        ServerPlayer player = context.getSender();
-        if (player != null) {
-            PhotoUploadManager.acceptChunk(player, packet.uploadId, packet.chunkIndex, packet.data);
-        }
-        context.setPacketHandled(true);
+    public void handle(ServerPlayer player) {
+        PhotoUploadManager.acceptChunk(player, uploadId, chunkIndex, data);
     }
 }

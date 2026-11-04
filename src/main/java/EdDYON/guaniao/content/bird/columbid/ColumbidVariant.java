@@ -1,7 +1,7 @@
 package EdDYON.guaniao.content.bird.columbid;
 
 import EdDYON.guaniao.GuaniaoMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public enum ColumbidVariant {
     SPOTTED_DOVE("spotted_dove", "textures/entity/spotted_dove.png", 0x7D5E4C, 0xD6C4B4),
@@ -9,13 +9,13 @@ public enum ColumbidVariant {
     WHITE_PIGEON("white_pigeon", "textures/entity/pigeon_white.png", 0xE8E5DD, 0xC4C0B8);
 
     private final String id;
-    private final ResourceLocation texture;
+    private final Identifier texture;
     private final int baseColor;
     private final int spotColor;
 
     ColumbidVariant(String id, String texturePath, int baseColor, int spotColor) {
         this.id = id;
-        this.texture = new ResourceLocation(GuaniaoMod.MOD_ID, texturePath);
+        this.texture = Identifier.fromNamespaceAndPath(GuaniaoMod.MOD_ID, texturePath);
         this.baseColor = baseColor;
         this.spotColor = spotColor;
     }
@@ -24,7 +24,7 @@ public enum ColumbidVariant {
         return this.id;
     }
 
-    public ResourceLocation texture() {
+    public Identifier texture() {
         return this.texture;
     }
 

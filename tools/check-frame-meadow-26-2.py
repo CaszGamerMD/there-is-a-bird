@@ -11,7 +11,7 @@ screen=(ROOT/(BASE+"FrameWorkbenchScreen.java")).read_text("utf-8")
 progress=(ROOT/(BASE+"FrameCraftingProgress.java")).read_text("utf-8")
 bird=(ROOT/(BASE+"FrameWorkshopBird.java")).read_text("utf-8")
 old_bird=subprocess.check_output(["git","show","origin/main:"+BASE+"FrameWorkshopBird.java"],
-                                 cwd=ROOT,text=True).replace("\\r\\n","\\n")
+                                 cwd=ROOT,text=True).replace("\r\n","\n")
 for sprite in ("block/grass_block_side","block/grass_block_side_overlay",
                "block/cornflower","block/dandelion","block/grass"):
     assert sprite in old and sprite in new,sprite
@@ -45,6 +45,8 @@ for token in ('new Species("sparrow",1.30F,1.65F,.65F)',
               'Mth.clamp(size,0,56)', 'myna.setGuidePreviewAnimation',
               'sparrow.setGuidePreviewAnimation','budgerigar.setGuidePreviewAnimation'):
     assert token in bird,token
+    if token.startswith("new Species(") or token.startswith("Items.") or token=="0x6a09e667f3bcc909L":
+        assert token in old_bird,token
 for obsolete in ('net.minecraftforge.', 'GuiGraphics', 'Lighting.setupFor',
                  'new GeoEntityRenderer', 'BakedGeoModel', 'LocalBones'):
     assert obsolete not in bird,obsolete

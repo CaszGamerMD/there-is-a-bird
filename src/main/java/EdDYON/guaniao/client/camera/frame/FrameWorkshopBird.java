@@ -13,7 +13,7 @@ import net.minecraft.world.item.Items;
  *
  * Minecraft 26.2 GUI rendering is deferred: this class deliberately owns no
  * Forge event subscribers, mutable renderer instances, baked GeoBones or
- * immediate GuiGraphics calls. A PiP renderer consumes this stable actor data.
+ * immediate GUI draw calls. A PiP renderer consumes this stable actor data.
  */
 final class FrameWorkshopBird {
     private static final Species[] SPECIES={

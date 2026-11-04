@@ -12,7 +12,8 @@ config=json.loads((root/"src/main/resources/guaniao.mixins.json").read_text("utf
 gradle=(root/"build.gradle").read_text("utf-8")
 client=(root/(path+"fabric/GuaniaoFabricClientEntrypoint.java")).read_text("utf-8")
 screen=(root/(path+"client/camera/frame/FrameWorkbenchScreen.java")).read_text("utf-8")
-renderer=(root/(path+"client/camera/frame/FrameDesignRenderer.java")).read_text("utf-8")
+preview=(root/(path+"client/camera/frame/FrameWorkbenchPreview3DRenderer.java")).read_text("utf-8")
+submitter=(root/(path+"client/camera/frame/FrameWorkbenchMeshSubmitter.java")).read_text("utf-8")
 
 assert 'GuaniaoGuiRenderStateAccess' in config['client']
 assert 'GuaniaoGuiRenderStateAccess' not in config['mixins']
@@ -37,10 +38,18 @@ for source in ('GuaniaoGuiRenderStateAccess.java','FrameWorkbenchPipBridge.java'
     assert source in gradle
 # The probe is not a real renderer registration or visible artifact.
 assert 'GuaniaoFramePictureInPictureProof' not in client
-# Neither 3D author feature may be removed as an expedient "port".
-for token in ('FrameCraftingAnimation.renderDelivery(', 'FrameCraftingAnimation.renderObserver(',
-              'FrameDesignRenderer.render(', 'FrameCraftingProgress.render('):
+# Verify the actual 26.2 production path, not the removed 1.20.1 immediate
+# renderer. Static frame preview is live; assembly animation, the visitor and
+# the independent 3D progress bird still require their own deferred PiP states.
+for token in ('private void extractPreview3D(', 'FrameWorkbenchPreview3DFactory.capture(',
+              'FrameWorkbenchPipBridge.submit(graphics,state);'):
     assert token in screen,token
-assert 'public static void renderWorkshop(' in renderer
-print("FRAME WORKBENCH 26.2 PIP BRIDGE OK: client-only render-state accessor,"
-      " deferred 3D submission and isolated geometry API proof; preview unfinished")
+for token in ('FrameWorkbenchMeshSubmitter.submit(', 'extends PictureInPictureRenderer<FrameWorkbenchPreview3DState>',
+              'collector, light'):
+    assert token in preview,token
+assert 'collector.submitCustomGeometry(' in submitter
+for obsolete in ('FrameCraftingAnimation.renderDelivery(', 'FrameCraftingAnimation.renderObserver(',
+                 'FrameDesignRenderer.render(', 'FrameCraftingProgress.render('):
+    assert obsolete not in screen,obsolete
+print("FRAME WORKBENCH 26.2 PIP BRIDGE OK: live deferred 3D frame preview and geometry submitter; "
+      "assembly/visitor/progress-bird PiP still pending")

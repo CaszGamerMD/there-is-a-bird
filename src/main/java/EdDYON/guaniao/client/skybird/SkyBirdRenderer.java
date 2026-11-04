@@ -3,7 +3,7 @@ package EdDYON.guaniao.client.skybird;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightCoordsUtil;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.util.Mth;
@@ -33,7 +33,7 @@ public final class SkyBirdRenderer {
             return;
         }
 
-        Vec3 cameraPosition = context.camera().getPosition();
+        Vec3 cameraPosition = context.camera().position();
         float partialTick = context.deltaTracker().getGameTimeDeltaPartialTick(false);
         Minecraft minecraft = Minecraft.getInstance();
         double farStart = manager.farFadeStart(minecraft);

@@ -97,7 +97,7 @@ public class BirdMotivation {
     }
 
     private float readFloat(CompoundTag tag, String key, float fallback) {
-        float value = tag.contains(key, 99) ? tag.getFloat(key) : fallback;
+        float value = tag.getFloat(key).orElse(fallback);
         return Float.isFinite(value) ? this.clamp(value) : fallback;
     }
 

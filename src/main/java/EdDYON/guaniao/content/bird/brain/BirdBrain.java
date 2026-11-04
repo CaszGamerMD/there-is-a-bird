@@ -22,7 +22,7 @@ public class BirdBrain {
     }
 
     public void tick() {
-        if (this.bird.level().isClientSide) {
+        if (this.bird.level().isClientSide()) {
             return;
         }
 
@@ -89,18 +89,18 @@ public class BirdBrain {
     }
 
     public void load(CompoundTag tag) {
-        if (!tag.contains("BirdBrain", 10)) {
+        CompoundTag brainTag = tag.getCompound("BirdBrain").orElse(null);
+        if (brainTag == null) {
             this.personality = BirdPersonality.create(this.bird.getRandom(), this.profile);
             return;
         }
-        CompoundTag brainTag = tag.getCompound("BirdBrain");
-        if (brainTag.contains("Motivation", 10)) {
-            this.motivation.load(brainTag.getCompound("Motivation"));
+        brainTag.getCompound("Motivation").ifPresent(this.motivation::load);
+        Long migrationTick = brainTag.getLong("Migration").orElse(null);
+        if (migrationTick != null) {
+            this.nextMigrationTick = migrationTick;
         }
-        if (brainTag.contains("Migration", 4)) {
-            this.nextMigrationTick = brainTag.getLong("Migration");
-        }
-        this.personality = BirdPersonality.load(brainTag.getCompound("Personality"), this.bird.getRandom(), this.profile);
+        CompoundTag personalityTag = brainTag.getCompound("Personality").orElseGet(CompoundTag::new);
+        this.personality = BirdPersonality.load(personalityTag, this.bird.getRandom(), this.profile);
     }
 
     public PathfinderMob bird() {

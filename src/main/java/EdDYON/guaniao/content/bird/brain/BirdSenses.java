@@ -32,7 +32,7 @@ public class BirdSenses {
      * accumulation reads onGround/airborne every tick, and a stale value made a
      * landed bird keep accruing flight fatigue for up to a whole scan interval. */
     public void refreshPhysicalState(PathfinderMob bird) {
-        this.dayTime = bird.level().getDayTime() % 24000L;
+        this.dayTime = bird.level().getDefaultClockTime() % 24000L;
         this.onGround = bird.onGround();
         this.airborne = !this.onGround;
     }

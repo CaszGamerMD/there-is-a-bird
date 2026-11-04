@@ -94,12 +94,18 @@ for obsolete in ("mouseClicked(double mouseX,double mouseY,int button)",
                  "renderString(GuiGraphics graphics"):
     assert obsolete not in screen,obsolete
 
-# The 3D preview / crafting-bird renderer MUST still exist. This guard is
-# deliberately NOT a full compile claim; the remaining old GUI method
-# signatures are staged for the next conversion without dropping visuals.
-assert "FrameCraftingAnimation.renderDelivery(" in screen
-assert "FrameCraftingProgress.render(" in screen
-assert "FrameDesignRenderer.renderWorkshop(" in new("FrameCraftingAnimation")
-assert "FrameDesignRenderer.render(" in new("FrameCraftingAnimation")
-print("FRAME WORKBENCH 26.2 PARTIAL GUI PARITY OK: controls, outline editor,"
-      " button labels and scaled pointer dispatch; 3D render migration remains")
+# Static 3D frame preview is already a real deferred 26.2 PiP renderer.
+# The assembly sequence, curious visitor and second progress bird are separate
+# PiP actors still pending; do not accept old immediate GuiGraphics methods.
+animation=new("FrameCraftingAnimation")
+for token in ("observerPose(", "private static ObserverPose curious(", "private static ObserverPose flight("):
+    assert token in animation,token
+for token in ("private void extractPreview3D(", "FrameWorkbenchPreview3DFactory.capture(",
+              "FrameWorkbenchPipBridge.submit(graphics,state);",
+              "FrameCraftingProgress2D.extract(graphics,"):
+    assert token in screen,token
+for obsolete in ("FrameCraftingAnimation.renderDelivery(", "FrameCraftingAnimation.renderObserver(",
+                 "FrameCraftingProgress.render(", "FrameDesignRenderer.render("):
+    assert obsolete not in screen,obsolete
+print("FRAME WORKBENCH 26.2 GUI PARITY OK: controls, outline editor, pointer routing,"
+      " static deferred frame preview and 2D meal; animated 3D actors remain pending")

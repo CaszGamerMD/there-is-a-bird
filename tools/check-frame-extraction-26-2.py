@@ -79,13 +79,19 @@ for original in (
 assert "net.minecraftforge." not in food
 assert "GuiGraphics graphics" not in food
 assert "FrameCraftingProgress2D.java" in (ROOT/"build.gradle").read_text("utf-8")
-# Don't quietly discard any original 3D authored content to get source checks green.
-for original in ("FrameCraftingAnimation.renderObserver(",
-                 "FrameCraftingAnimation.renderDelivery(",
-                 "FrameCraftingAnimation.renderPreview(",
-                 "FrameCraftingProgress.render(",
+# The old 1.20.1 immediate 3D draw calls are intentionally not compiled.
+# Keep the observer's authored path timing as data for its pending 26.2 PiP renderer,
+# and keep the genuine static frame preview on the active deferred pipeline.
+animation=(ROOT/(BASE+"FrameCraftingAnimation.java")).read_text("utf-8")
+for marker in ("if(ticks<28)", "if(ticks<62)", "if(ticks<108)", "if(ticks<149)",
+               "if(ticks<198)", "if(ticks<231)", "if(ticks<272)", "private static ObserverPose flight("):
+    assert marker in animation,marker
+for marker in ("private void extractPreview3D(", "FrameWorkbenchPreview3DFactory.capture(",
+               "FrameWorkbenchPipBridge.submit(graphics,state);"):
+    assert marker in new,marker
+for obsolete in ("FrameCraftingAnimation.renderObserver(", "FrameCraftingAnimation.renderDelivery(",
+                 "FrameCraftingAnimation.renderPreview(", "FrameCraftingProgress.render(",
                  "FrameDesignRenderer.render("):
-    assert original in new,original
-print("FRAME WORKBENCH EXTRACTOR PARITY OK: scaled slot/native controls, masked"
-      " 32x32 canvas, 140-cell modal, no click-through, tooltip coordinates,"
-      " 2D crafting clock/food and original 3D features still retained")
+    assert obsolete not in new,obsolete
+print("FRAME WORKBENCH EXTRACTOR PARITY OK: scaled native controls, masked canvas, modal/input,"
+      " 2D crafting meadow/food and live static PiP; assembly/visitor rendering still pending")

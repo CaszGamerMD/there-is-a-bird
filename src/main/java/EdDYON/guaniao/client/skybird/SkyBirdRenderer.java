@@ -1,52 +1,57 @@
 package EdDYON.guaniao.client.skybird;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.Camera;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.LightCoordsUtil;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Client sky ecology renderer for Minecraft 26.2.
+ *
+ * All mutable flock data and interpolated positions are captured during world
+ * extraction. The later render callback consumes immutable camera-relative
+ * vertices and submits deferred geometry; it never reads the live ClientLevel
+ * or advances the flock simulation while drawing.
+ */
 public final class SkyBirdRenderer {
     private static final Vec3 WORLD_UP = new Vec3(0.0D, 1.0D, 0.0D);
+    private static volatile Snapshot pending = Snapshot.EMPTY;
 
     private SkyBirdRenderer() {
     }
 
-    public static void render(RenderLevelStageEvent event, SkyBirdManager manager) {
+    static void extract(LevelExtractionContext context, SkyBirdManager manager) {
         if (!manager.textureReady() || manager.flocks().isEmpty()) {
+            pending = Snapshot.EMPTY;
             return;
         }
 
+        Vec3 cameraPosition = context.camera().getPosition();
+        float partialTick = context.deltaTracker().getGameTimeDeltaPartialTick(false);
         Minecraft minecraft = Minecraft.getInstance();
-        Camera camera = event.getCamera();
-        Vec3 cameraPosition = camera.getPosition();
-        PoseStack poseStack = event.getPoseStack();
-        MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
-        float partialTick = event.getPartialTick();
+        double farStart = manager.farFadeStart(minecraft);
+        double farEnd = manager.farFadeEnd(minecraft);
+        List<SpeciesBatch> batches = new ArrayList<>();
 
         for (SkyBirdSpecies species : SkyBirdSpecies.values()) {
             if (!manager.textureReady(species)) {
                 continue;
             }
-            // Draw on the sky layer before clouds. The custom type uses no
-            // mipmaps and no depth writes, so a transparent sprite cell cannot
-            // punch a rectangular hole through the later cloud pass.
-            RenderType renderType = SkyBirdRenderTypes.translucent(species.texture());
-            VertexConsumer vertices = buffers.getBuffer(renderType);
-            int renderedForSpecies = 0;
 
+            List<Vertex> vertices = new ArrayList<>();
+            int renderedForSpecies = 0;
             for (SkyFlock flock : manager.flocks()) {
                 if (flock.species() != species) {
                     continue;
                 }
+
                 for (SkyBird bird : flock.birds()) {
                     Vec3 forward = flock.birdRenderVelocity(bird, partialTick).normalize();
                     if (forward.lengthSqr() < 1.0E-6D) {
@@ -59,46 +64,50 @@ public final class SkyBirdRenderer {
                     Vec3 up = forward.cross(right).normalize();
                     Vec3 birdPosition = flock.birdPosition(bird, partialTick);
                     double distance = cameraPosition.distanceTo(birdPosition);
-                    float distanceAlpha = distanceAlpha(
-                            distance,
-                            manager.farFadeStart(minecraft),
-                            manager.farFadeEnd(minecraft)
-                    );
-                    if (distanceAlpha <= 0.0F) {
+                    float alpha = distanceAlpha(distance, farStart, farEnd)
+                            * viewAlpha(cameraPosition, birdPosition)
+                            * flock.lifecycleAlpha(partialTick);
+                    if (alpha <= 0.0F) {
                         continue;
                     }
-                    float viewAlpha = viewAlpha(cameraPosition, birdPosition);
-                    if (viewAlpha <= 0.0F) {
-                        continue;
-                    }
-                    float lifecycleAlpha = flock.lifecycleAlpha(partialTick);
-                    if (lifecycleAlpha <= 0.0F) {
-                        continue;
-                    }
-                    float alpha = distanceAlpha * viewAlpha * lifecycleAlpha;
 
-                    renderBird(
-                            poseStack,
-                            vertices,
-                            cameraPosition,
-                            birdPosition,
-                            forward,
-                            right,
-                            up,
+                    appendBird(vertices, cameraPosition, birdPosition, forward, right, up,
                             animationFrame(flock, bird, partialTick),
-                            flock.renderRoll(bird, partialTick),
-                            alpha,
-                            bird.size(),
-                            species
-                    );
+                            flock.renderRoll(bird, partialTick), alpha, bird.size(), species);
                     renderedForSpecies++;
                 }
             }
-            buffers.endBatch(renderType);
-            if (renderedForSpecies > 0) {
+            if (!vertices.isEmpty()) {
+                batches.add(new SpeciesBatch(species.texture(), List.copyOf(vertices)));
                 manager.recordRenderedSpecies(species, renderedForSpecies);
             }
         }
+        pending = batches.isEmpty() ? Snapshot.EMPTY : new Snapshot(List.copyOf(batches));
+    }
+
+    static void submit(LevelRenderContext context) {
+        Snapshot snapshot = pending;
+        if (snapshot.batches().isEmpty()) {
+            return;
+        }
+        SubmitNodeCollector collector = context.submitNodeCollector();
+        for (SpeciesBatch batch : snapshot.batches()) {
+            RenderType renderType = SkyBirdRenderTypes.translucent(batch.texture());
+            collector.submitCustomGeometry(context.poseStack(), renderType, (pose, output) -> {
+                for (Vertex vertex : batch.vertices()) {
+                    output.addVertex(pose, vertex.x(), vertex.y(), vertex.z())
+                            .setColor(255, 255, 255, vertex.alpha())
+                            .setUv(vertex.u(), vertex.v())
+                            .setOverlay(0)
+                            .setLight(LightCoordsUtil.FULL_BRIGHT)
+                            .setNormal(pose, vertex.nx(), vertex.ny(), vertex.nz());
+                }
+            });
+        }
+    }
+
+    static void clear() {
+        pending = Snapshot.EMPTY;
     }
 
     private static float distanceAlpha(double distance, double farStart, double farEnd) {
@@ -106,7 +115,7 @@ public final class SkyBirdRenderer {
         if (distance <= SkyBirdManager.NEAR_FADE_START) {
             nearAlpha = 0.0F;
         } else if (distance < SkyBirdManager.NEAR_FADE_END) {
-            nearAlpha = (float)((distance - SkyBirdManager.NEAR_FADE_START)
+            nearAlpha = (float) ((distance - SkyBirdManager.NEAR_FADE_START)
                     / (SkyBirdManager.NEAR_FADE_END - SkyBirdManager.NEAR_FADE_START));
         } else {
             nearAlpha = 1.0F;
@@ -118,7 +127,7 @@ public final class SkyBirdRenderer {
         } else if (distance >= farEnd) {
             farAlpha = 0.0F;
         } else {
-            farAlpha = (float)((farEnd - distance) / (farEnd - farStart));
+            farAlpha = (float) ((farEnd - distance) / (farEnd - farStart));
         }
         return nearAlpha * farAlpha;
     }
@@ -134,7 +143,7 @@ public final class SkyBirdRenderer {
         if (heightAboveCamera <= 4.0D) {
             altitudeAlpha = 0.0F;
         } else if (heightAboveCamera < 18.0D) {
-            altitudeAlpha = (float)((heightAboveCamera - 4.0D) / 14.0D);
+            altitudeAlpha = (float) ((heightAboveCamera - 4.0D) / 14.0D);
         } else {
             altitudeAlpha = 1.0F;
         }
@@ -148,22 +157,20 @@ public final class SkyBirdRenderer {
         if (underside <= 0.15D) {
             angleAlpha = 0.0F;
         } else if (underside < 0.30D) {
-            angleAlpha = (float)((underside - 0.15D) / 0.15D);
+            angleAlpha = (float) ((underside - 0.15D) / 0.15D);
         } else {
             angleAlpha = 1.0F;
         }
         return altitudeAlpha * angleAlpha;
     }
 
-    private static void renderBird(PoseStack poseStack, VertexConsumer vertices,
-                                   Vec3 cameraPosition, Vec3 birdPosition,
-                                   Vec3 forward, Vec3 right, Vec3 up,
-                                   int frame, float rollDegrees, float alpha,
-                                   float individualSize, SkyBirdSpecies species) {
+    private static void appendBird(List<Vertex> out, Vec3 cameraPosition, Vec3 birdPosition,
+                                   Vec3 forward, Vec3 right, Vec3 up, int frame,
+                                   float rollDegrees, float alpha, float individualSize,
+                                   SkyBirdSpecies species) {
         double roll = Math.toRadians(rollDegrees);
         Vec3 bankedRight = right.scale(Math.cos(roll)).add(up.scale(Math.sin(roll))).normalize();
-        // The sky render type culls back faces. These atmosphere birds
-        // use both windings below so they remain visible from above and below.
+        // Keep both windings so the atmosphere sprite remains visible from above and below.
         Vec3 surfaceNormal = forward.cross(bankedRight).scale(-1.0D).normalize();
         float halfSize = species.renderSize() * individualSize * 0.5F;
 
@@ -172,42 +179,31 @@ public final class SkyBirdRenderer {
         Vec3 bottomRight = birdPosition.subtract(forward.scale(halfSize)).add(bankedRight.scale(halfSize));
         Vec3 bottomLeft = birdPosition.subtract(forward.scale(halfSize)).subtract(bankedRight.scale(halfSize));
 
-        // Sample texel centres instead of atlas borders. Sampling an exact frame
-        // boundary can pull a beak, wing tip or tail from the neighbouring frame.
+        // Sample texel centres instead of atlas borders to avoid neighbouring frames bleeding in.
         float atlasWidth = species.textureWidthPixels();
         float u0 = (frame * SkyBirdSpecies.FRAME_PIXELS + 0.5F) / atlasWidth;
         float u1 = ((frame + 1) * SkyBirdSpecies.FRAME_PIXELS - 0.5F) / atlasWidth;
         float v0 = 0.5F / SkyBirdSpecies.FRAME_PIXELS;
         float v1 = (SkyBirdSpecies.FRAME_PIXELS - 0.5F) / SkyBirdSpecies.FRAME_PIXELS;
-        int alphaByte = Mth.clamp((int)(alpha * 255.0F), 0, 255);
-        PoseStack.Pose pose = poseStack.last();
-        Matrix4f matrix = pose.pose();
-        Matrix3f normal = pose.normal();
+        int alphaByte = Mth.clamp((int) (alpha * 255.0F), 0, 255);
 
-        vertex(vertices, matrix, normal, topLeft.subtract(cameraPosition), u0, v0, alphaByte, surfaceNormal);
-        vertex(vertices, matrix, normal, bottomLeft.subtract(cameraPosition), u0, v1, alphaByte, surfaceNormal);
-        vertex(vertices, matrix, normal, bottomRight.subtract(cameraPosition), u1, v1, alphaByte, surfaceNormal);
-        vertex(vertices, matrix, normal, topRight.subtract(cameraPosition), u1, v0, alphaByte, surfaceNormal);
+        add(out, topLeft, cameraPosition, u0, v0, alphaByte, surfaceNormal);
+        add(out, bottomLeft, cameraPosition, u0, v1, alphaByte, surfaceNormal);
+        add(out, bottomRight, cameraPosition, u1, v1, alphaByte, surfaceNormal);
+        add(out, topRight, cameraPosition, u1, v0, alphaByte, surfaceNormal);
 
-        // Submit the reverse face as well. The atmosphere sprite must remain
-        // visible from every observer height even when the selected RenderType
-        // performs back-face culling.
         Vec3 reverseNormal = surfaceNormal.scale(-1.0D);
-        vertex(vertices, matrix, normal, topRight.subtract(cameraPosition), u1, v0, alphaByte, reverseNormal);
-        vertex(vertices, matrix, normal, bottomRight.subtract(cameraPosition), u1, v1, alphaByte, reverseNormal);
-        vertex(vertices, matrix, normal, bottomLeft.subtract(cameraPosition), u0, v1, alphaByte, reverseNormal);
-        vertex(vertices, matrix, normal, topLeft.subtract(cameraPosition), u0, v0, alphaByte, reverseNormal);
+        add(out, topRight, cameraPosition, u1, v0, alphaByte, reverseNormal);
+        add(out, bottomRight, cameraPosition, u1, v1, alphaByte, reverseNormal);
+        add(out, bottomLeft, cameraPosition, u0, v1, alphaByte, reverseNormal);
+        add(out, topLeft, cameraPosition, u0, v0, alphaByte, reverseNormal);
     }
 
-    private static void vertex(VertexConsumer vertices, Matrix4f matrix, Matrix3f normal,
-                               Vec3 position, float u, float v, int alpha, Vec3 surfaceNormal) {
-        vertices.vertex(matrix, (float)position.x, (float)position.y, (float)position.z)
-                .color(255, 255, 255, alpha)
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(LightTexture.FULL_BRIGHT)
-                .normal(normal, (float)surfaceNormal.x, (float)surfaceNormal.y, (float)surfaceNormal.z)
-                .endVertex();
+    private static void add(List<Vertex> out, Vec3 position, Vec3 cameraPosition,
+                            float u, float v, int alpha, Vec3 normal) {
+        Vec3 relative = position.subtract(cameraPosition);
+        out.add(new Vertex((float) relative.x, (float) relative.y, (float) relative.z,
+                u, v, alpha, (float) normal.x, (float) normal.y, (float) normal.z));
     }
 
     private static int animationFrame(SkyFlock flock, SkyBird bird, float partialTick) {
@@ -250,4 +246,17 @@ public final class SkyBirdRenderer {
         return Mth.floor(animationTick / species.frameInterval()) % species.frameCount();
     }
 
+    private record Vertex(float x, float y, float z, float u, float v, int alpha,
+                          float nx, float ny, float nz) {
+    }
+
+    private record SpeciesBatch(net.minecraft.resources.Identifier texture, List<Vertex> vertices) {
+        private SpeciesBatch {
+            vertices = List.copyOf(vertices);
+        }
+    }
+
+    private record Snapshot(List<SpeciesBatch> batches) {
+        private static final Snapshot EMPTY = new Snapshot(List.of());
+    }
 }

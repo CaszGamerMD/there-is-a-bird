@@ -15,3 +15,22 @@ for species in ("GOOSE", "EAGLE", "SEAGULL", "SWALLOW", "CRANE", "VULTURE", "STA
     if species + "(" not in ported:
         raise SystemExit("Missing sky-bird variant: " + species)
 print("SKY-BIRD PARITY OK: 7 sprite IDs and original flock/flight parameters")
+
+# The old Forge render-stage event and mutable MultiBufferSource path are replaced
+# by an extraction snapshot followed by a 26.2 deferred SubmitNodeCollector pass.
+renderer = (root / "src/main/java/EdDYON/guaniao/client/skybird/SkyBirdRenderer.java").read_text("utf-8")
+events = (root / "src/main/java/EdDYON/guaniao/client/skybird/SkyBirdClientEvents.java").read_text("utf-8")
+types = (root / "src/main/java/EdDYON/guaniao/client/skybird/SkyBirdRenderTypes.java").read_text("utf-8")
+for token in ("LevelExtractionContext", "getGameTimeDeltaPartialTick(false)",
+              "List.copyOf(vertices)", "private record Snapshot(", "cameraPosition",
+              "animationFrame(", "distanceAlpha(", "viewAlpha(", "flock.lifecycleAlpha(partialTick)",
+              "context.submitNodeCollector()", "submitCustomGeometry(", "LightCoordsUtil.FULL_BRIGHT"):
+    assert token in renderer, token
+for token in ("ClientTickEvents.END_CLIENT_TICK", "ClientPlayConnectionEvents.DISCONNECT",
+              "LevelExtractionEvents.END_EXTRACTION", "LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN",
+              "SkyBirdRenderer.clear()"):
+    assert token in events, token
+assert "RenderTypes.entityTranslucentEmissive(texture, false)" in types
+for obsolete in ("net.minecraftforge.", "RenderLevelStageEvent", "MultiBufferSource",
+                 "RenderStateShard", "class SkyBirdRenderTypes extends RenderType"):
+    assert obsolete not in renderer + events + types, obsolete

@@ -11,7 +11,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
@@ -35,11 +34,11 @@ public final class EarthwormRainEvents {
             int z = player.getBlockZ() + level.getRandom().nextInt(33) - 16;
             BlockPos column = new BlockPos(x, player.getBlockY(), z);
             if (!level.hasChunkAt(column)) continue;
-            long cell = ChunkPos.asLong(Math.floorDiv(x, 32), Math.floorDiv(z, 32));
+            long cell = cellKey(Math.floorDiv(x, 32), Math.floorDiv(z, 32));
             boolean cooling = false;
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dz = -1; dz <= 1; dz++) {
-                    if (cells.getOrDefault(ChunkPos.asLong(Math.floorDiv(x, 32) + dx,
+                    if (cells.getOrDefault(cellKey(Math.floorDiv(x, 32) + dx,
                             Math.floorDiv(z, 32) + dz), 0L) > now) cooling = true;
                 }
             }
@@ -52,6 +51,11 @@ public final class EarthwormRainEvents {
                 return;
             }
         }
+    }
+
+    /** Same signed X/Z bit layout as the removed ChunkPos.asLong(x,z) helper. */
+    private static long cellKey(int x, int z) {
+        return (x & 0xffffffffL) | ((long) z << 32);
     }
 
     public static void onUnload(ServerLevel level) {

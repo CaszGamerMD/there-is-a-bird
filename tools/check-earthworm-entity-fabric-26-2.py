@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Protect earthworm burrow/motion behavior through the 26.2 Entity API port."""
+"""Protect earthworm entity and rain-spawn behavior through the 26.2 API port."""
 from pathlib import Path
 import subprocess
 
@@ -53,3 +53,24 @@ assert "public void lerpTo(" not in new, "Removed 26.2 entity interpolation hook
 build = (root / "build.gradle").read_text("utf-8")
 assert "GuaniaoEarthwormEntityProof.java" in build
 print("EARTHWORM ENTITY OK: identical soil/burrow motion, 26.2 save keys and vanilla spawn/interaction contracts.")
+
+# The rain callback has already moved to Fabric lifecycle events. Its chunk-sized
+# cooldown keys keep the exact packed X/Z representation used by ChunkPos.asLong.
+rain_rel = "src/main/java/EdDYON/guaniao/event/EarthwormRainEvents.java"
+old_rain = subprocess.check_output(["git", "show", "origin/main:" + rain_rel], cwd=root, text=True)
+rain = (root / rain_rel).read_text("utf-8")
+for token in ("ChunkPos.asLong(Math.floorDiv(x, 32), Math.floorDiv(z, 32))",
+              "for (int dx = -1; dx <= 1; dx++)",
+              "for (int dz = -1; dz <= 1; dz++)",
+              "cells.put(cell, now + 800L)"):
+    assert token in old_rain, f"Original rain cooldown invariant missing: {token}"
+for token in ("ServerTickEvents.END_LEVEL_TICK.register(EarthwormRainEvents::onLevelTick)",
+              "ServerLevelEvents.UNLOAD.register((server, level) -> onUnload(level))",
+              "cellKey(Math.floorDiv(x, 32), Math.floorDiv(z, 32))",
+              "private static long cellKey(int x, int z)",
+              "return (x & 0xffffffffL) | ((long) z << 32)",
+              "for (int dx = -1; dx <= 1; dx++)",
+              "for (int dz = -1; dz <= 1; dz++)",
+              "cells.put(cell, now + 800L)"):
+    assert token in rain, f"Fabric rain cooldown invariant missing: {token}"
+assert "ChunkPos.asLong(" not in rain and "net.minecraftforge." not in rain

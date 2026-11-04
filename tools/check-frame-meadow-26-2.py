@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the second progress bird's original resource-pack-aware meadow geometry."""
+"""Keep the extracted 26.2 crafting meadow and seeded food presentation."""
 from pathlib import Path
 import subprocess
 ROOT=Path(__file__).resolve().parents[1]
@@ -26,11 +26,17 @@ for marker in ("getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS)",
 for obsolete in ("GuiGraphics;", "getTextureAtlas(", "getBlockColors().getColor(",
                  "net.minecraftforge.", "graphics.blit("):
     assert obsolete not in new,obsolete
-# Preserve food and GeckoLib progress bird in the original rendering caller;
-# the meadow helper is staged pending the shared 3D PiP integration.
-assert "FrameWorkshopBird.renderProgress(" in progress
-assert "FrameWorkshopBird.progressFood(seed)" in progress
-assert "FrameCraftingProgress.render(" in screen
-assert "FrameCraftingMeadow.java" in (ROOT/"build.gradle").read_text("utf-8")
+# The real 26.2 path submits the meadow and deterministic food through the
+# extracted GUI lifecycle. The legacy immediate-mode GeckoLib bird call is
+# intentionally NOT counted as migrated; its dedicated 3D PiP work remains pending.
+assert "FrameCraftingProgress2D.extract(graphics, food, eatingTicks)" in progress
+assert "FrameCraftingProgress.extract(graphics," in screen
+assert "FrameWorkshopBird.progressFood(this.activeWorkSeed)" in screen
+assert "FrameWorkshopBird.progressFood(this.progressBirdClock.seed())" in screen
+assert "FrameWorkshopBird.renderProgress(" not in progress
+assert "FrameCraftingProgress.render(" not in screen
+for obsolete in ("import net.minecraft.client.gui.GuiGraphics;", "renderBg(", "void render(",
+                 "FrameCraftingAnimation.renderPreview(", "FrameCraftingAnimation.renderObserver("):
+    assert obsolete not in screen, obsolete
 print("FRAME CRAFTING MEADOW 26.2 PARITY OK: 11 grass tiles, four plants,"
-      " original positions and inventory-tinted resource-pack sprites")
+      " original positions and inventory-tinted resource-pack sprites; 3D progress bird pending PiP")

@@ -634,7 +634,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
             Component countdown=text("seconds_remaining",
                     (Math.max(0,this.menu.getCraftTicksRemaining())+19)/20);
             graphics.text(this.font,countdown,285-this.font.width(countdown)/2,224,WOOD_TEXT,false);
-            FrameCraftingProgress2D.extract(graphics,
+            FrameCraftingProgress.extract(graphics,
                     FrameWorkshopBird.progressFood(this.activeWorkSeed),-1);
         } else if(this.isCraftingUi()) {
             graphics.text(this.font,text("waiting"),247,237,WOOD_TEXT,false);
@@ -643,7 +643,7 @@ public final class FrameWorkbenchScreen extends AbstractContainerScreen<FrameWor
             if(this.progressBirdClock.isDeparting()) {
                 float eating=this.progressBirdClock.renderExit(System.nanoTime(),this.minecraft.isPaused());
                 if(eating<FrameObserverClock.EXIT_TICKS) {
-                    FrameCraftingProgress2D.extract(graphics,
+                    FrameCraftingProgress.extract(graphics,
                             FrameWorkshopBird.progressFood(this.progressBirdClock.seed()),eating);
                 } else this.progressBirdClock.clear();
             }
